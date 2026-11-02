@@ -65,7 +65,7 @@ app.innerHTML = `
 </div></header>
 <main><div class="wrap" id="view"></div></main>
 <footer class="footer"><div class="wrap row" style="justify-content:space-between">
- <span>TrainTanmay · Made by Tanmay V · Edexcel A level Design &amp; Technology (Product Design) 9DT0 · Paper 1 revision</span>
+ <span>TrainTanmay · Made by Tanmay Vashishtha · Edexcel A level Design &amp; Technology (Product Design) 9DT0 · Paper 1 revision</span>
  <span class="mono">Progress is saved in this browser · <a href="#progress">backup</a></span>
 </div></footer>`;
 $('#theme').value=S.settings.theme;
