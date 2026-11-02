@@ -107,6 +107,7 @@ function applyDys() {
 document.getElementById('theme').addEventListener('change', (e) => {
   Store.setSetting('theme', e.target.value === 'system' ? null : e.target.value);
   applyTheme();
+  window.dispatchEvent(new Event('themechange'));
   if (typeof applyDys === "function") applyDys();
 });
 document.getElementById('btnDys').addEventListener('click', () => {
@@ -385,6 +386,7 @@ function storageBanner() {
     in a normal tab and everything is saved automatically.</span></div>`;
 }
 
+let heroStop = null;
 function viewOverview() {
   const st = analyse();
   const P = pool();
@@ -413,17 +415,25 @@ function viewOverview() {
 
   view.innerHTML = `
     ${storageBanner()}
-    <div class="page-head">
-      <div>
-        <h1>Overview</h1>
-        <p>${P.length} questions from ${META.papers.length} past papers, filtered to the
-        current ESAT content specification. Everything you do is stored in this browser only.</p>
+    <section class="hero">
+      <div class="hero-text">
+        <span class="eyebrow">ESAT · Maths 1 · Maths 2 · Physics</span>
+        <h1 id="pun" class="pun" aria-live="polite"></h1>
+        <p>${P.length} real ENGAA, NSAA and TMUA questions from ${META.papers.length} past papers, sorted
+        into the current ESAT topics. Drill a topic, sit a timed 27-in-40 test, or sharpen your
+        mental maths.</p>
+        <div class="row">
+          <a class="btn btn-primary" href="#/build">Start a test</a>
+          <a class="btn" href="#/topics">Practise a topic</a>
+          <a class="btn btn-ghost" href="#/mental">Mental maths →</a>
+        </div>
       </div>
-      <div class="row">
-        <a class="btn" href="#/topics">Practise a topic</a>
-        <a class="btn btn-primary" href="#/build">New test</a>
+      <div class="hero-play" id="hero-play">
+        <div class="hero-hint"><span class="hl">Aim with your mouse · click to launch · hit the flag</span><span class="hs">Tap to aim and launch · hit the flag</span></div>
+        <div class="hero-readout" aria-live="off"></div>
+        <div class="titleblock"><span>PAPER</span><span>TrainTanmay</span><span>SPEC</span><span>ESAT</span></div>
       </div>
-    </div>
+    </section>
 
     ${
       active
@@ -500,6 +510,7 @@ function viewOverview() {
       ${quickCard('Full mock — Physics', '27 questions, 40 minutes, exam conditions.', 'mock-ph')}
     </div>`;
 
+  heroStop = Hero.mount(view);
   const drop = document.getElementById('drop-active');
   if (drop)
     drop.onclick = () => {
@@ -1726,6 +1737,7 @@ function render() {
     if (match) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
+  if (heroStop) { heroStop(); heroStop = null; }
   if (typeof MM !== 'undefined') MM.stop();
   if (!path[0].startsWith('run')) {
     Player.commit();

@@ -67,7 +67,7 @@ app.innerHTML=`<header class="topbar"><div class="wrap"><a class="brand" href="#
 <select class="theme-select" id="theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="blush">Blush</option></select>
 <button class="iconbtn menubtn" id="menu" aria-label="Menu">${I.menu}</button></div></div></header>
 <main class="wrap"><div id="view"></div></main>
-<footer class="footer"><div class="wrap row" style="justify-content:space-between"><span>TrainTanmay Physics · OCR A Level Physics A (H556) and AS (H156). Progress is saved in this browser.</span><span>Past papers and topic questions link to <a href="https://www.physicsandmathstutor.com/physics-revision/a-level-ocr-a/" target="_blank" rel="noopener">Physics &amp; Maths Tutor</a>.</span></div></footer>`;
+<footer class="footer"><div class="wrap row" style="justify-content:space-between"><span>TrainTanmay Physics · Made by Tanmay Vashishtha · OCR A Level Physics A (H556) and AS (H156). Progress is saved in this browser.</span><span>Past papers and topic questions link to <a href="https://www.physicsandmathstutor.com/physics-revision/a-level-ocr-a/" target="_blank" rel="noopener">Physics &amp; Maths Tutor</a>.</span></div></footer>`;
 $('#theme').value=S.settings.theme; $('#theme').onchange=e=>{ S.settings.theme=e.target.value; save(); applyTheme(); };
 $('#dys').onclick=e=>{ S.settings.dys=!S.settings.dys; e.currentTarget.setAttribute('aria-pressed',S.settings.dys); applyDys(); save(); window.dispatchEvent(new Event('themechange')); };
 const drawer=$('#drawer');
