@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrainTanmay ESAT</title>
+    <meta
+      name="description"
+      content="Practise real ENGAA, NSAA and TMUA questions filtered to the current ESAT content specification. Topic drills, timed mock tests, weak-point sets and per-question timing analytics."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="vendor/katex/katex.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/neon.css" />
+    <link rel="stylesheet" href="css/theme.css" />
+    <script>
+      /* apply saved theme + font before first paint */
+      (function () {
+        try {
+          var st = JSON.parse(window['local' + 'Storage'].getItem('esat.trainer.v1') || '{}').settings || {};
+          var t = st.theme || 'system';
+          if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+          if (st.dys) document.documentElement.classList.add('dys');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#/" aria-label="TrainTanmay home">
+        <svg width="38" height="38" viewBox="0 0 48 48" aria-hidden="true"><rect class="logo-tile" x="1" y="1" width="46" height="46" rx="11"/><path class="logo-T" d="M8 10h22v6h-7.6v24h-6.8V16H8z"/><path class="logo-t" d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z"/></svg>
+        <span>TrainTanmay<small>ESAT practice · ENGAA · NSAA · TMUA</small></span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="#/">Overview</a>
+        <a href="#/topics">Topics</a>
+        <a href="#/build">New test</a>
+        <a href="#/mental">Mental maths</a>
+        <a href="#/hub">Revision hub</a>
+        <a href="#/stats">Analytics</a>
+        <a href="#/history">History</a>
+        <a href="#/data">Data</a>
+      </nav>
+      <button
+        class="icon-btn"
+        id="fullscreen"
+        aria-label="Enter full screen"
+        aria-pressed="false"
+        title="Full screen (Shift + F)"
+        hidden
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            id="fs-icon"
+            d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <div class="tb-controls">
+        <button class="icon-btn dysbtn" id="btnDys" aria-pressed="false" title="Dyslexia-friendly font" aria-label="Dyslexia-friendly font">Aa</button>
+        <select class="theme-select" id="theme" aria-label="Colour theme">
+          <option value="system">Auto</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="salmon">Salmon</option>
+        </select>
+      </div>
+    </header>
+
+    <main id="view" aria-live="polite">
+      <div class="grid cols-4" aria-hidden="true">
+        <div class="skel" style="height: 104px"></div>
+        <div class="skel" style="height: 104px"></div>
+        <div class="skel" style="height: 104px"></div>
+        <div class="skel" style="height: 104px"></div>
+      </div>
+    </main>
+
+    <footer class="site-foot">Made by Tanmay V</footer>
+
+    <div id="clock-slot"></div>
+
+    <!-- Vendored locally (marked 12.0.2, KaTeX 0.16.11) so the app has no
+         third-party script dependency at runtime. -->
+    <script src="vendor/marked/marked.min.js"></script>
+    <script src="vendor/katex/katex.min.js"></script>
+    <script src="vendor/katex/auto-render.min.js"></script>
+    <script src="js/imgpack.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/extras.js"></script>
+    <script src="js/hubdata.js"></script>
+    <script src="js/mental.js"></script>
+    <script src="js/hub.js"></script>
+    <script src="js/app.js"></script>
+    <script src="../switcher.js"></script></body>
+</html>
