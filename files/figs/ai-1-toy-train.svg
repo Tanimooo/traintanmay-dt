@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="Arial,sans-serif">
+<defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9c99a"/><stop offset="1" stop-color="#c99a62"/></linearGradient>
+<pattern id="g" width="40" height="8" patternUnits="userSpaceOnUse"><path d="M0 4 Q10 1 20 4 T40 4" stroke="#b5854f" stroke-width="1" fill="none" opacity=".5"/></pattern></defs>
+<rect width="640" height="300" fill="#f7f4ee"/>
+<line x1="20" y1="252" x2="620" y2="252" stroke="#888" stroke-width="3"/>
+<!-- engine -->
+<g stroke="#7a5530" stroke-width="2">
+<rect x="60" y="150" width="200" height="70" rx="6" fill="url(#w)"/><rect x="60" y="150" width="200" height="70" rx="6" fill="url(#g)"/>
+<rect x="170" y="80" width="90" height="75" rx="6" fill="url(#w)"/><rect x="170" y="80" width="90" height="75" rx="6" fill="url(#g)"/>
+<rect x="188" y="96" width="54" height="34" rx="4" fill="#f7f4ee"/>
+<rect x="160" y="70" width="110" height="14" rx="4" fill="#c99a62"/>
+<rect x="85" y="100" width="34" height="52" rx="4" fill="#c99a62"/>
+<rect x="78" y="92" width="48" height="12" rx="4" fill="#b5854f"/>
+<circle cx="60" cy="200" r="7" fill="#b5854f"/>
+</g>
+<!-- carriage -->
+<g stroke="#7a5530" stroke-width="2">
+<rect x="320" y="140" width="230" height="80" rx="6" fill="url(#w)"/><rect x="320" y="140" width="230" height="80" rx="6" fill="url(#g)"/>
+<rect x="345" y="105" width="60" height="38" rx="6" fill="#c99a62"/><rect x="420" y="112" width="45" height="31" rx="6" fill="#d9b07a"/><rect x="478" y="100" width="52" height="43" rx="26" fill="#c99a62"/>
+</g>
+<line x1="260" y1="200" x2="320" y2="200" stroke="#7a5530" stroke-width="5"/>
+<circle cx="268" cy="200" r="6" fill="#555"/><circle cx="312" cy="200" r="6" fill="#555"/>
+<!-- wheels -->
+<g fill="#c99a62" stroke="#7a5530" stroke-width="3">
+<circle cx="105" cy="226" r="25"/><circle cx="215" cy="226" r="25"/><circle cx="365" cy="226" r="25"/><circle cx="505" cy="226" r="25"/></g>
+<g fill="#7a5530"><circle cx="105" cy="226" r="5"/><circle cx="215" cy="226" r="5"/><circle cx="365" cy="226" r="5"/><circle cx="505" cy="226" r="5"/></g>
+<g font-size="13" fill="#333"><text x="300" y="40" text-anchor="middle" font-weight="bold" font-size="16">Figure A – child's wooden toy train (solid beech)</text>
+<text x="20" y="285">Rounded edges · no small detachable parts · magnetic couplings · clear lacquer finish</text></g>
+</svg>
