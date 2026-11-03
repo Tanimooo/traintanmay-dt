@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How to use TrainTanmay</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f6f1;--surface:#fff;--ink:#16181d;--muted:#5d6270;--line:#e1ded3;--navy:#0b2545;--dt:#1f5fbf;--ph:#c81e66;--es:#e0a800;--grid:rgba(11,37,69,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#101217;--surface:#181b22;--ink:#eef0f4;--muted:#a3a9b6;--line:#2c313b;--navy:#9fc3ff;--dt:#5b9cff;--ph:#ff5c9e;--es:#ffd23f;--grid:rgba(159,195,255,.04)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'IBM Plex Sans',system-ui,sans-serif;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none}
+.brand svg{width:38px;height:38px}
+.brand b{font:800 1.3rem 'Barlow Semi Condensed',sans-serif;display:block;line-height:1}
+.brand small{font:500 .62rem 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+main{max-width:860px;margin:0 auto;padding:28px 20px 60px}
+h1,h2,h3{font-family:'Barlow Semi Condensed',sans-serif;line-height:1.15;margin:0 0 .4em}
+h1{font-size:clamp(2rem,5vw,2.8rem);font-weight:800}
+h2{font-size:1.6rem;margin-top:1.6em}
+h3{font-size:1.15rem;margin-top:1.1em}
+p{margin:.4em 0 .9em}
+.lead{font-size:1.1rem;color:var(--muted);max-width:62ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0}
+.app{border-left:6px solid var(--c)}
+.app h2{margin-top:0;display:flex;align-items:center;gap:10px}
+.app h2 svg{width:34px;height:34px;flex:none}
+.app a.go{display:inline-block;margin-top:6px;padding:7px 14px;border-radius:8px;background:var(--c);color:#fff;text-decoration:none;font-weight:600}
+.app.es a.go{color:#1d1600}
+ul{padding-left:1.2em;margin:.3em 0 .8em}li{margin:.2em 0}
+.tip{border-left:6px solid #2c7a4e;background:color-mix(in srgb,#2c7a4e 8%,var(--surface))}
+kbd{font:500 .85em 'IBM Plex Mono',monospace;border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--bg)}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./" aria-label="TrainTanmay apps">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#3b3f48"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#fff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#c9ccd3"/></svg>
+    <span><b>TrainTanmay</b><small>How to use</small></span>
+  </a>
+</header>
+<main>
+  <h1>How to use TrainTanmay</h1>
+  <p class="lead">TrainTanmay is a set of free revision sites made by an A level student for other students. Each one puts notes, practice questions, past papers and interactive tools for a subject in one place, so you don't have to hunt across lots of websites.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0">Switching between apps</h3>
+    <p>Click the <b>TrainTanmay logo in the top left</b> of any page. A menu opens with the three apps (Design &amp; Technology, Physics and ESAT) and this help page. The logo colour tells you which app you're in: <b style="color:var(--dt)">blue</b> for D&amp;T, <b style="color:var(--ph)">pink</b> for Physics, <b style="color:var(--es)">yellow</b> for ESAT.</p>
+    <p style="margin-bottom:0">To get back to the home page of the app you're in, open the same menu and choose <b>"Go to … home"</b> at the bottom.</p>
+  </div>
+
+  <div class="card tip">
+    <h3 style="margin-top:0">If a picture doesn't load</h3>
+    <p style="margin-bottom:0">Just <b>reload the page</b> (<kbd>⌘ R</kbd> on Mac, <kbd>F5</kbd> or <kbd>Ctrl R</kbd> on Windows, or pull down on a phone) and it will appear. Reloading is safe: you stay on the same question and the same part of the page, and anything you've typed into an answer box is kept.</p>
+  </div>
+
+  <div class="card app" style="--c:var(--dt)">
+    <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#1f5fbf"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#fff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#bcd4ff"/></svg>Design &amp; Technology</h2>
+    <p>For Edexcel A level D&amp;T Product Design (9DT0). Until now there have been very few good revision materials online for this course, so this app covers the whole specification.</p>
+    <ul>
+      <li><b>Topics:</b> every spec topic has notes, key terms, flashcards, a quiz, exam questions, labs, downloads and videos. Use the tabs along the top of a topic page.</li>
+      <li><b>Exam Qs:</b> every question from the 2019–2025 Paper 1s, tagged by topic, plus AI-generated practice questions in the same style. Write your answer, then reveal the mark scheme and a model answer and mark yourself. Switch AI questions on or off with the toggle.</li>
+      <li><b>Labs:</b> interactive tools for things like materials, processes and technical drawing.</li>
+      <li><b>Papers and Downloads:</b> past papers, topic tests (with mark schemes) and one-page cheat sheets for each topic.</li>
+      <li><b>Progress:</b> shows how confident you are on each topic. Rate yourself ("Not yet", "Partly", "Confident") on each topic page. You can back up your progress to a file and restore it on another device.</li>
+      <li>Use the <b>Aa</b> button for a dyslexia-friendly font and the theme menu for light, dark or salmon colours.</li>
+    </ul>
+    <a class="go" href="./">Open D&amp;T</a>
+  </div>
+
+  <div class="card app" style="--c:var(--ph)">
+    <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#c81e66"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#fff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#ffd0e4"/></svg>Physics</h2>
+    <p>For OCR A level Physics A (H556) and AS (H156). It brings together questions from Physics &amp; Maths Tutor and past papers, including older papers where the content still matches the spec.</p>
+    <ul>
+      <li><b>Topics:</b> notes and key definitions for modules 1–6, plus <b>Flashcards</b> and a <b>Quiz</b> for each.</li>
+      <li><b>Practice questions and Practice tests:</b> past-paper questions sorted by topic, with mark schemes, or built into a timed test.</li>
+      <li><b>Past papers:</b> links to full past papers and mark schemes, including legacy papers with notes on which parts still fit.</li>
+      <li><b>Labs:</b> simulations you can experiment with (mechanics, waves, circuits, modern physics). Use the speed and pause controls, and try the "Experiments to try" on the right.</li>
+      <li><b>Practicals:</b> simulated required practicals, so you can practise taking readings, plotting graphs and working out uncertainties.</li>
+    </ul>
+    <a class="go" href="physics/">Open Physics</a>
+  </div>
+
+  <div class="card app es" style="--c:var(--es)">
+    <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#ffc917"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#1d1600"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#9a6200"/></svg>ESAT</h2>
+    <p>For the Engineering and Science Admissions Test. It uses real ENGAA, NSAA and TMUA questions, filtered to what's on the current ESAT content specification.</p>
+    <ul>
+      <li><b>Topics:</b> drill one area at a time (Maths 1, Maths 2, Physics).</li>
+      <li><b>New test:</b> build a timed mock or a practice set. If you close or reload mid-test, it carries on where you left off.</li>
+      <li><b>Mental maths:</b> quick-fire times tables, powers and Pythagorean triples to build speed without a calculator.</li>
+      <li><b>Revision hub:</b> formulas, units and constants to learn, with a printable cheat sheet.</li>
+      <li><b>Analytics and History:</b> your accuracy and time per question, so you can see weak spots and target them.</li>
+    </ul>
+    <a class="go" href="esat/">Open ESAT</a>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Where is my progress saved?</h3>
+    <p style="margin-bottom:0">Everything is saved in <b>your browser on this device</b>. There's no account and nothing is sent anywhere. Clearing your browser's history or website data will wipe it, and it won't appear automatically on another device. Use the backup option in each app (Progress in D&amp;T and Physics, Data in ESAT) to save a copy.</p>
+  </div>
+</main>
+<footer>Made by Tanmay V</footer>
+<script src="switcher.js"></script>
+</body>
+</html>
