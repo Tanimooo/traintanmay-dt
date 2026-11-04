@@ -456,7 +456,7 @@ function pageProgress(){
 }
 
 /* ---------------- practice questions (whole exam questions + mark schemes, self-marked) ---------------- */
-const QBASE = 'https://tanimooo.github.io/trainTanmay-maths/q/';
+const QBASE = 'img/q/', QALT = 'https://tanimooo.github.io/trainTanmay-maths/q/';
 const PR = window.PRACTICE || {packs: [], q: []};
 const PQC = {};
 const PQ = PR.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = PR.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; });
@@ -470,7 +470,7 @@ function pfilter(f = PF()){
   return PQ.filter(q => (!f.cs.length || f.cs.includes(q.c)) && (!f.ts.length || f.ts.includes(q.c + '/' + q.t) || !f.ts.some(k => k.startsWith(q.c + '/'))) && (!f.srcs.length || f.srcs.includes(q.src)) && (
     f.st === 'all' || (f.st === 'new' && !S.prac[q.id]) || (f.st === 'weak' && pscore(q) != null && pscore(q) < .6) || (f.st === 'flag' && S.prac[q.id]?.f)));
 }
-const qimg = (p, cls = '') => p ? `<div class="qimg ${cls}" style="aspect-ratio:${p[3]}/${p[2]};max-width:${Math.round(p[3] / 1.6 * 1.3)}px"><img src="${QBASE}${esc(p[0])}" alt="" decoding="async" style="width:${(p[4] / p[3] * 100).toFixed(3)}%;margin-top:-${(p[1] / p[3] * 100).toFixed(4)}%"></div>` : '';
+const qimg = (p, cls = '') => p ? `<div class="qimg ${cls}" style="aspect-ratio:${p[3]}/${p[2]};max-width:${Math.round(p[3] / 1.6 * 1.3)}px"><img src="${QBASE}${esc(p[0])}" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${QALT}${esc(p[0])}'}" alt="" decoding="async" style="width:${(p[4] / p[3] * 100).toFixed(3)}%;margin-top:-${(p[1] / p[3] * 100).toFixed(4)}%"></div>` : '';
 const pcount = (c, t) => PQ.filter(q => q.c === c && (!t || q.t === t)).length;
 function pstatus(q){ const r = S.prac[q.id]; if (!r || r.m == null) return r?.f ? '<span class="chip acc">Flagged</span>' : '';
   const s = r.of ? r.m / r.of : 0; return `<span class="chip ${s >= .8 ? 'g' : s >= .5 ? 'a' : 'r'}">${r.m}/${r.of}</span>${r.f ? ' <span class="chip acc">Flagged</span>' : ''}`; }
