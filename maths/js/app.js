@@ -456,7 +456,7 @@ function pageProgress(){
 }
 
 /* ---------------- practice questions (whole exam questions + mark schemes, self-marked) ---------------- */
-const QBASE = 'https://tanimooo.github.io/traintanmay-maths/q/';
+const QBASE = 'https://tanimooo.github.io/trainTanmay-maths/q/';
 const PR = window.PRACTICE || {packs: [], q: []};
 const PQC = {};
 const PQ = PR.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = PR.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; });
