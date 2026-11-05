@@ -255,13 +255,27 @@ function drillCard(d){
 }
 
 
+function mdNotes(src){
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  let out = '', list = false;
+  const close = () => { if (list) { out += '</ul>'; list = false; } };
+  src.split('\n').forEach(l => {
+    if (l.startsWith('<svg')) { close(); out += `<figure class="ndiag">${l}</figure>`; return; }
+    if (l.startsWith('### ')) { close(); out += `<h3>${inl(l.slice(4))}</h3>`; return; }
+    if (l.startsWith('- ')) { if (!list) { out += '<ul>'; list = true; } out += `<li>${inl(l.slice(2))}</li>`; return; }
+    if (!l.trim()) { close(); return; }
+    close(); out += `<p>${inl(l)}</p>`;
+  });
+  close(); return out;
+}
 function notesHTML(cid, tid){
-  const L = ((window.NOTES || {})[cid] || {})[tid]; if (!L) return '';
+  const N = (window.NOTES || {})[cid] || {}, L = N[tid]; if (!L) return '';
+  const body = Array.isArray(L) ? `<ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : mdNotes(L);
   const vids = (VID.by[cid] || []).filter(v => v.t === tid).slice(0, 4);
-  return `<section class="notes card"><div class="sec-head"><h2>Quick notes</h2><span class="chip">AI generated</span></div>
-  <ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-  <p class="muted" style="font-size:.85rem">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
-  ${vids.length ? `<p style="margin:10px 0 6px"><b>Need more help? Watch:</b></p><div class="vids">${vids.map(vidCard).join('')}</div>` : `<p class="muted" style="font-size:.85rem">For more help, see the <a href="#videos">videos page</a>.</p>`}</section>`;
+  return `<section class="notes card"><div class="sec-head"><h2>Topic notes</h2><span class="chip">AI generated</span></div>
+  <p class="note" style="margin:6px 0 12px">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
+  <details open><summary>Show notes</summary><div class="nbody">${body}</div></details>
+  ${vids.length ? `<p style="margin:14px 0 6px"><b>Need more help? Watch:</b></p><div class="vids">${vids.map(vidCard).join('')}</div>` : `<p class="muted" style="font-size:.85rem;margin-top:10px">For more help, see the <a href="#videos">videos page</a>.</p>`}</section>`;
 }
 function pageTopic(cid, tid){
   const c = CBY[cid]; if (!c) return pageHome();
