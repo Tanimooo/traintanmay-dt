@@ -1,19 +1,22 @@
 /* TrainTanmay Maths – Edexcel 9MA0 / 9FM0 revision app */
 (function(){
 'use strict';
-const CAT = window.CAT, DR = window.DRILLS || [], VIS = window.VIS || {};
+const HIDE = (() => { try { const h = JSON.parse(localStorage.getItem('tt-maths-v1') || '{}').settings?.hide; return Array.isArray(h) ? h : []; } catch(e) { return []; } })();
+const hid = c => HIDE.includes(c);
+const CAT = window.CAT, DR = hid('pure') ? [] : (window.DRILLS || []), VIS = window.VIS || {};
 { const M = {'pure/diff': ['p1_12', 'p2_9'], 'pure/integ': ['p1_13', 'p2_11'], 'pure/num': ['p2_10'], 'pure/trig': ['p1_9', 'p1_10', 'p2_5', 'p2_7'], 'pure/vec': ['p1_11', 'p2_12'], 'pure/seq': ['p2_3'],
   'mech/forces': ['m1_10', 'm2_5', 'm2_7'], 'mech/mom': ['m2_4'], 'mech/kin': ['m1_9', 'm1_11', 'm2_6', 'm2_8'], 'stats/data': ['s1_2', 's1_3', 's1_4'], 'stats/hyp': ['s1_7', 's2_1', 's2_3']};
-  Object.values(VIS).forEach(v => { if (v.topics) v.topics = v.topics.flatMap(([c, t]) => (M[c + '/' + t] || [t]).map(x => [c, x])); }); }
+  Object.values(VIS).forEach(v => { if (v.topics) v.topics = v.topics.flatMap(([c, t]) => (M[c + '/' + t] || [t]).map(x => [c, x])); });
+  Object.keys(VIS).forEach(k => { const t = VIS[k].topics; if (t && t.length) { VIS[k].topics = t.filter(([c]) => !hid(c)); if (!VIS[k].topics.length) delete VIS[k]; } }); }
 const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const app = $('#app');
 
 /* ---------------- data indexes ---------------- */
-const COURSES = CAT.courses, CBY = Object.fromEntries(COURSES.map(c => [c.id, c]));
+const ALLC = CAT.courses, COURSES = ALLC.filter(c => !hid(c.id)), CBY = Object.fromEntries(ALLC.map(c => [c.id, c]));
 const TOP = CAT.topics;
 const url = u => { const i = u.indexOf('|'); return i > 0 && CAT.pfx[u.slice(0, i)] ? CAT.pfx[u.slice(0, i)] + u.slice(i + 1) : u; };
-const ITEMS = CAT.items, IBY = Object.fromEntries(ITEMS.map(it => [it.i, it]));
+const ITEMS = CAT.items.filter(it => !hid(it.c)), IBY = Object.fromEntries(ITEMS.map(it => [it.i, it]));
 const byC = {}, byT = {};
 ITEMS.forEach(it => { (byC[it.c] = byC[it.c] || []).push(it); if (it.t) (byT[it.c + '/' + it.t] = byT[it.c + '/' + it.t] || []).push(it); });
 const tname = (c, t) => (TOP[c] || []).find(x => x[0] === t)?.[1] || t;
@@ -57,7 +60,7 @@ const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['p
 function renderNav(active){
   $('#nav').innerHTML = NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${ic(k)}<span>${l}</span></a>`).join('');
   $('#drawerpanel').innerHTML = `<input type="search" id="dsearch" placeholder="Search everything…" aria-label="Search">` + NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
-    '<hr style="border:0;border-top:1px solid var(--line);width:100%">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('');
+    '<hr style="border:0;border-top:1px solid var(--line);width:100%">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') + `<a href="#mycourses" ${active === 'mycourses' ? 'aria-current="page"' : ''}>⚙ My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>`;
   const ds = $('#dsearch'); if (ds) ds.addEventListener('keydown', e => { if (e.key === 'Enter') { Q.q = ds.value; closeDrawer(); location.hash = 'search'; if (location.hash === '#search') route(); } });
 }
 const closeDrawer = () => { $('#drawer').hidden = true; };
@@ -147,8 +150,9 @@ function pageHome(){
     <a class="qtile" href="#videos"><span class="ic">${ic('videos')}</span><span><b>Videos</b><span>Topic videos & revision</span></span></a>
     <a class="qtile" href="#progress"><span class="ic">${ic('progress')}</span><span><b>Progress</b><span>Scores & weak topics</span></span></a>
   </div></section>
-  <section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>
-  <section><div class="sec-head"><h2>Further Maths</h2><span class="muted">9FM0 · all modules</span></div><div class="grid g4">${fm.map(courseCard).join('')}</div></section>`;
+  ${maths.length ? `<section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>` : ''}
+  ${fm.length ? `<section><div class="sec-head"><h2>Further Maths</h2><span class="muted">${HIDE.length ? '9FM0 · your modules' : '9FM0 · all modules'}</span></div><div class="grid g4">${fm.map(courseCard).join('')}</div></section>` : ''}
+  <p class="muted" style="margin-top:14px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>`;
   $('#bigsearch').onsubmit = e => { e.preventDefault(); Q.q = $('#bsq').value; location.hash = 'search'; };
   $('#heroart').onclick = () => location.hash = 'vis-matrix2d';
   bindItems(app);
@@ -156,7 +160,7 @@ function pageHome(){
 function streak(){ const set = new Set(S.days); let n = 0; const d = new Date(); if (!set.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1); while (set.has(d.toISOString().slice(0, 10))) { n++; d.setDate(d.getDate() - 1); } return n; }
 
 function pageCourses(){
-  app.innerHTML = `<p class="eyebrow">Choose a course</p><h1>Courses</h1>
+  app.innerHTML = `<p class="eyebrow">Choose a course</p><h1>Courses</h1><p class="muted" style="margin:-6px 0 8px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses · ` : ''}<a href="#mycourses">Choose your courses</a></p>
   <section><h2>A level Maths (9MA0)</h2><div class="grid g3">${COURSES.filter(c => c.q === 'maths').map(courseCard).join('')}</div></section>
   <section><h2>Further Maths (9FM0)</h2><p class="lead" style="margin:-4px 0 12px">Core Pure 1 & 2 are compulsory; the options are Further Pure, Further Statistics, Further Mechanics and Decision.</p><div class="grid g4">${COURSES.filter(c => c.q === 'further').map(courseCard).join('')}</div></section>
   <section><h2>Beyond A level</h2><div class="grid g3"><a class="ccard" href="#c-ext"><span class="code">Madas Maths</span><h3>University-style booklets</h3><div class="meta">${(byC.ext || []).length} booklets for stretch and challenge</div></a></div></section>`;
@@ -166,6 +170,7 @@ const SPECS = [['cur', 'Current spec'], ['as', 'AS papers'], ['extra', 'Practice
 function visFor(c, t){ return Object.entries(VIS).filter(([, v]) => (v.topics || []).some(([vc, vt]) => vc === c && (!t || vt === t || vt === '*'))); }
 function visCard([id, v]){ return `<a class="viscard" href="#vis-${id}"><span class="ic">${v.icon || ''}</span><span><b>${esc(v.name)}</b><span>${esc(v.desc)}</span></span></a>`; }
 const VID = Object.assign({by: {}, whole: {}, fun: [], res: [], full: {}}, window.VIDEOS || {});
+HIDE.forEach(c => { delete VID.by[c]; delete VID.whole[c]; delete VID.full[c]; });
 const ytId = u => (String(u).match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([\w-]{11})/) || [])[1];
 const vidCard = v => { const id = ytId(v.u);
   if (!id) return `<a class="vid" href="${esc(v.u)}" target="_blank" rel="noopener"><span class="yt" aria-hidden="true"></span><span><b>${esc(v.l || v.n)}</b><span>${esc(v.l ? v.n : (v.w || ''))}</span></span></a>`;
@@ -462,7 +467,7 @@ function pageProgress(){
 const QBASE = 'img/q/', QALT = 'https://tanimooo.github.io/trainTanmay-maths/q/';
 const PR = window.PRACTICE || {packs: [], q: []};
 const PQC = {};
-const PQ = PR.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = PR.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; });
+const PQ = PR.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = PR.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; }).filter(q => !hid(q.c));
 const CIDX = Object.fromEntries(COURSES.map((c, i) => [c.id, i])), PTIDX = q => (TOP[q.c] || []).findIndex(x => x[0] === q.t);
 PQ.sort((a, b) => (CIDX[a.c] - CIDX[b.c]) || (PTIDX(a) - PTIDX(b)));
 const PQBY = Object.fromEntries(PQ.map(q => [q.id, q]));
@@ -573,6 +578,16 @@ function practiceProgress(){
   return `<section><h2>Practice questions</h2>${rows.length ? `<div class="grid g4">${rows.map(c => { const b = by[c.id], p = Math.round(100 * b.m / b.of); return `<a class="tcard" href="#px-${c.id}"><div class="top"><h4>${esc(c.name)}</h4></div><div class="bar"><i style="width:${p}%"></i></div><span class="muted" style="font-size:.8rem">${b.n} questions · ${p}% of marks</span></a>`; }).join('')}</div>` : '<p class="muted">No practice questions marked yet. <a href="#practice">Start practising</a>.</p>'}</section>`;
 }
 
+function pageMyCourses(){
+  const grp = (q, h) => `<section><h2>${h}</h2><div class="mc">${ALLC.filter(c => c.q === q).map(c => `<label class="mcrow"><input type="checkbox" data-mc="${c.id}" ${hid(c.id) ? '' : 'checked'}><span><b>${esc(c.name)}</b><span class="muted">${esc(c.code)}</span></span></label>`).join('')}</div></section>`;
+  app.innerHTML = `<p class="eyebrow">Settings</p><h1>My courses</h1><p class="lead">Untick anything you're not studying. It disappears from the home page, courses, papers, practice questions, videos, visualisers, search and progress. Your progress is kept, so ticking a course again brings everything back.</p>
+  ${grp('maths', 'A level Maths (9MA0)')}${grp('further', 'Further Maths (9FM0)')}
+  <div class="row" style="gap:10px;margin-top:20px"><button class="btn primary" id="mcsave">Save</button><button class="btn" id="mcall">Show all courses</button></div>`;
+  const apply = hide => { S.settings.hide = hide; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} location.hash = 'home'; location.reload(); };
+  $('#mcsave').onclick = () => { const hide = $$('[data-mc]').filter(x => !x.checked).map(x => x.dataset.mc); if (hide.length === ALLC.length) { $('#mcsave').textContent = 'Pick at least one course'; return; } apply(hide); };
+  $('#mcall').onclick = () => apply([]);
+}
+
 /* ---------------- router ---------------- */
 function route(){
   if (unmount) { try { unmount(); } catch(e) {} unmount = null; }
@@ -581,6 +596,7 @@ function route(){
   let m, nav = 'home';
   if (h === 'home') pageHome();
   else if (h === 'courses') { nav = 'courses'; pageCourses(); }
+  else if ((m = h.match(/^(?:c|cp|cx|cr|t|px)-(\w+?)(?:-|$)/)) && hid(m[1])) pageMyCourses();
   else if ((m = h.match(/^(c|cp|cx|cr)-(\w+)$/))) { nav = m[1] === 'cp' ? 'papers' : 'courses'; pageCourse(m[2], {c: 'topics', cp: 'papers', cx: 'practice', cr: 'resources'}[m[1]]); }
   else if ((m = h.match(/^t-(\w+?)-(\w+)$/))) { nav = 'courses'; pageTopic(m[1], m[2]); }
   else if (h === 'papers') { nav = 'papers'; pagePapers(); }
@@ -596,6 +612,7 @@ function route(){
   else if (h === 'videos') { nav = ''; pageVideos(); }
   else if (h === 'progress') { nav = 'progress'; pageProgress(); const h1 = $('h1', app); if (h1) h1.insertAdjacentHTML('afterend', practiceProgress()); }
   else if (h === 'search') { nav = ''; pageSearch(); }
+  else if (h === 'mycourses') { nav = 'mycourses'; pageMyCourses(); }
   else pageHome();
   renderNav(nav);
   if (!h.startsWith('drill-') || !V) window.scrollTo({top: 0});
