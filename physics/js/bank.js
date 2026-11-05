@@ -70,14 +70,14 @@ async function runAI(q,ansText,mode,out,onMark){
 
 /* ---------- bank list ---------- */
 function filterQs(f){
-  return Q.filter(q=>(!f.t||q.t.includes(f.t))&&(!f.m||q.t.some(t=>byId[t]&&byId[t].mod===+f.m))&&(!f.src||srcOf(q)===f.src)&&(!f.type||(f.type==='mcq'?!!q.mcq:!q.mcq))
+  return Q.filter(q=>(!f.t||q.t.every(t=>t===f.t))&&(!f.m||q.t.every(t=>byId[t]&&byId[t].mod===+f.m))&&(!f.src||srcOf(q)===f.src)&&(!f.type||(f.type==='mcq'?!!q.mcq:!q.mcq))
     &&(!f.st||(f.st==='todo'?!(S.bank[q.id]&&S.bank[q.id].got!=null):f.st==='wrong'?(S.bank[q.id]&&S.bank[q.id].got!=null&&S.bank[q.id].got<(q.m||1)*0.6):(S.bank[q.id]&&S.bank[q.id].got!=null)))
     &&(!f.q||(q.s+' '+pk(q).title).toLowerCase().includes(f.q)));
 }
 function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
   v.innerHTML=`<span class="eyebrow">Past paper and exam-style questions</span><h1>Practice questions</h1>
-  <p class="muted" style="max-width:78ch">${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H556. Questions that cover several spec points appear under every topic they test. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
+  <p class="muted" style="max-width:78ch">${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H556. Filtering by a topic or module only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
   <div class="filters"><label class="field">Module<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
   <label class="field">Topic<select id="bt"><option value="">All topics</option>${topicOpts(pre.t)}</select></label>
   <label class="field">Source<select id="bs"><option value="">All sources</option>${Object.entries(SRCL).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
@@ -131,11 +131,11 @@ function viewBankQ(v,id){
 /* ---------- mock tests ---------- */
 const DEF={topics:[],src:['cur','old','ext','tt'],types:['mcq','str'],mode:'random',marks:40,timed:true,reveal:'end',order:'paper'};
 function pickQs(cfg){
-  let pool=Q.filter(q=>(!cfg.topics.length||q.t.some(t=>cfg.topics.includes(t)))&&cfg.src.includes(srcOf(q))&&cfg.types.includes(q.mcq?'mcq':'str')&&(q.m||0)>0);
+  let pool=Q.filter(q=>(!cfg.topics.length||q.t.every(t=>cfg.topics.includes(t)))&&cfg.src.includes(srcOf(q))&&cfg.types.includes(q.mcq?'mcq':'str')&&(q.m||0)>0);
   const att=q=>S.bank[q.id]&&S.bank[q.id].got!=null, wrong=q=>att(q)&&S.bank[q.id].got<(q.m||1)*0.6;
   if(cfg.mode==='weak'){ const tp={}; Q.forEach(q=>{ const r=S.bank[q.id]; if(!r||r.got==null) return; q.t.forEach(t=>{ const x=tp[t]||(tp[t]={g:0,m:0}); x.g+=r.got; x.m+=q.m||1; }); });
     const weak=Object.entries(tp).filter(([t,x])=>x.m>=3).sort((a,b)=>a[1].g/a[1].m-b[1].g/b[1].m).slice(0,4).map(e=>e[0]);
-    if(weak.length) pool=pool.filter(q=>q.t.some(t=>weak.includes(t))); }
+    if(weak.length) pool=pool.filter(q=>q.t.every(t=>weak.includes(t))); }
   // every question is taken as a whole unit: all of its parts, in order
   const seen=new Set(); let units=[];
   pool.forEach(q=>{ const u=unitOf(q); if(seen.has(u[0].id)) return; seen.add(u[0].id); units.push(u); });
@@ -267,7 +267,7 @@ function viewMockRes(v,id){
   if(!m.logged){ qs.forEach(q=>{ const a=m.a[q.id]; if(a&&a.got!=null) S.bank[q.id]=Object.assign(S.bank[q.id]||{},{got:a.got,ts:Date.now(),rev:1}); }); m.logged=true; save(); }
   draw();
 }
-const topicCount=id=>Q.filter(q=>q.t.includes(id)).length;
+const topicCount=id=>Q.filter(q=>q.t.every(t=>t===id)).length;
 const score=id=>{ let got=0,max=0,n=0; Q.forEach(q=>{ const r=S.bank[q.id]; if(!r||r.got==null) return; if(id&&!q.t.includes(id)) return; got+=r.got; max+=q.m||1; n++; }); return {got,max,n}; };
 return {viewBank,viewBankQ,viewMock,viewMockRun,viewMockRes,topicCount,score,resumeBar,count:Q.length};
 };
