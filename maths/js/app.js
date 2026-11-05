@@ -254,6 +254,15 @@ function drillCard(d){
   return `<a class="tcard" href="#drill-${d.key}"><div class="top"><h4>${esc(d.name)}</h4></div><div class="bar"><i style="width:${Math.round(100 * g / d.items.length)}%"></i></div><span class="muted" style="font-size:.8rem">${g}/${d.items.length} correct</span></a>`;
 }
 
+
+function notesHTML(cid, tid){
+  const L = ((window.NOTES || {})[cid] || {})[tid]; if (!L) return '';
+  const vids = (VID.by[cid] || []).filter(v => v.t === tid).slice(0, 4);
+  return `<section class="notes card"><div class="sec-head"><h2>Quick notes</h2><span class="chip">AI generated</span></div>
+  <ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+  <p class="muted" style="font-size:.85rem">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
+  ${vids.length ? `<p style="margin:10px 0 6px"><b>Need more help? Watch:</b></p><div class="vids">${vids.map(vidCard).join('')}</div>` : `<p class="muted" style="font-size:.85rem">For more help, see the <a href="#videos">videos page</a>.</p>`}</section>`;
+}
 function pageTopic(cid, tid){
   const c = CBY[cid]; if (!c) return pageHome();
   const list = byT[cid + '/' + tid] || [];
@@ -276,6 +285,7 @@ function pageTopic(cid, tid){
    ${!examS.length && !prac.length ? `<div class="empty" style="margin-top:20px">No topic packs for this one – head to <a href="#cp-${cid}">${esc(c.name)} papers</a> for full papers.</div>` : ''}
    <section id="sw"><h2>Videos</h2>${topicVids(cid, tid).length ? `<div class="vids tv" style="margin-bottom:16px">${topicVids(cid, tid).map(vidCard).join('')}</div>` : ''}${furtherVids(cid, tid).length ? `<div style="margin-bottom:16px">${furtherBlock(furtherVids(cid, tid), topicVids(cid, tid).length ? 4 : 0)}</div>` : ''}${topicVids(cid, tid).length || furtherVids(cid, tid).length ? '<h3 style="margin:4px 0 8px;font-size:1rem">Full channels</h3>' : ''}${vidList(cid)}</section>
    <div class="row" style="justify-content:space-between;margin-top:28px">${prev ? `<a class="btn" href="#t-${cid}-${prev[0]}">← ${esc(prev[1])}</a>` : '<span></span>'}${next ? `<a class="btn" href="#t-${cid}-${next[0]}">${esc(next[1])} →</a>` : ''}</div>`;
+  { const th = $('.tp-head', app); if (th) { th.insertAdjacentHTML('afterend', notesHTML(cid, tid)); math(app); } }
   $$('[data-conf]').forEach(b => b.onclick = () => { const k = cid + '/' + tid; S.conf[k] = S.conf[k] === b.dataset.conf ? '' : b.dataset.conf; save(); $$('[data-conf]').forEach(x => x.setAttribute('aria-pressed', S.conf[k] === x.dataset.conf)); });
   $$('[data-jump]').forEach(a => a.onclick = e => { e.preventDefault(); document.getElementById(a.dataset.jump)?.scrollIntoView({behavior: 'smooth'}); });
   bindItems(app);
