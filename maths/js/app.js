@@ -2,6 +2,9 @@
 (function(){
 'use strict';
 const CAT = window.CAT, DR = window.DRILLS || [], VIS = window.VIS || {};
+{ const M = {'pure/diff': ['p1_12', 'p2_9'], 'pure/integ': ['p1_13', 'p2_11'], 'pure/num': ['p2_10'], 'pure/trig': ['p1_9', 'p1_10', 'p2_5', 'p2_7'], 'pure/vec': ['p1_11', 'p2_12'], 'pure/seq': ['p2_3'],
+  'mech/forces': ['m1_10', 'm2_5', 'm2_7'], 'mech/mom': ['m2_4'], 'mech/kin': ['m1_9', 'm1_11', 'm2_6', 'm2_8'], 'stats/data': ['s1_2', 's1_3', 's1_4'], 'stats/hyp': ['s1_7', 's2_1', 's2_3']};
+  Object.values(VIS).forEach(v => { if (v.topics) v.topics = v.topics.flatMap(([c, t]) => (M[c + '/' + t] || [t]).map(x => [c, x])); }); }
 const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const app = $('#app');
@@ -206,7 +209,7 @@ function pageCourse(cid, tab){
       const list = byT[cid + '/' + tid] || [], v = S.conf[cid + '/' + tid] || '';
       const ex = list.filter(x => x.s === 'exam').length, pr = list.filter(x => x.s === 'prac').length, dn = list.filter(x => S.done[x.i]).length;
       const hasVis = visFor(cid, tid).length;
-      return `<a class="tcard" href="#t-${cid}-${tid}"><div class="top"><span class="num">${i + 1}</span><h4>${esc(tn)}</h4><span class="rag ${v}" title="Confidence"></span></div>
+      return `<a class="tcard" href="#t-${cid}-${tid}"><div class="top">${/^Y\d/.test(tn) ? '' : `<span class="num">${i + 1}</span>`}<h4>${esc(tn)}</h4><span class="rag ${v}" title="Confidence"></span></div>
         <div class="row" style="gap:6px">${ex ? `<span class="chip brand">${ex} exam packs</span>` : ''}${pr ? `<span class="chip">${pr} practice</span>` : ''}${hasVis ? `<span class="chip acc">Visualiser</span>` : ''}${!ex && !pr ? '<span class="chip">Use the papers tab</span>' : ''}</div>
         ${list.length ? `<div class="bar"><i style="width:${Math.round(100 * dn / list.length)}%"></i></div>` : ''}</a>`;
     }).join('')}</div>
@@ -258,7 +261,7 @@ function pageTopic(cid, tid){
   const order = g => /2021/.test(g) ? 0 : /2018/.test(g) ? 1 : /Mr Further/.test(g) ? 2 : /chapter/.test(g) ? 0 : /Older/.test(g) ? 4 : 3;
   const examS = exam.slice().sort((a, b) => order(a.g) - order(b.g));
   app.innerHTML = `<div class="crumbs"><a href="#courses">Courses</a>›<a href="#c-${cid}">${esc(c.name)}</a>›<span>${esc(tname(cid, tid))}</span></div>
-   <div class="tp-head"><div><p class="eyebrow">${esc(c.code)} · Topic ${idx + 1}</p><h1>${esc(tname(cid, tid))}</h1></div>
+   <div class="tp-head"><div><p class="eyebrow">${esc(c.code)} · Topic ${idx + 1}</p><h1>${esc(tname(cid, tid))}</h1>${(() => { const e = (TOP[cid] || []).find(x => x[0] === tid); return e && e[2] ? `<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">${e[2].map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''; })()}</div>
      <div><div class="eyebrow" style="margin-bottom:6px">How confident are you?</div><div class="conf" role="group" aria-label="Confidence">${[['r', 'Not yet'], ['a', 'Getting there'], ['g', 'Confident']].map(([k, l]) => `<button class="${k}" data-conf="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div></div></div>
    <div class="jump">${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
    ${pcount(cid, tid) ? `<section><a class="pbanner" href="#px-${cid}-${tid}"><span class="ic">${ic('practice')}</span><span><b>${pcount(cid, tid)} practice questions</b><span>Whole exam questions with their mark schemes – mark yourself</span></span><span class="go">Start →</span></a></section>` : ''}
