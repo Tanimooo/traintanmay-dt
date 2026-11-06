@@ -15,15 +15,20 @@ mount(el){ const S=LK.scope(); const c=LK.ctrl(el);
  const st=LK.stage(el,S,{ratio:0.14,minH:90,maxH:130});
  const p1=LK.plot(el,S,{xlab:'t / s',ylab:'s / m',ratio:0.3}), p2=LK.plot(el,S,{xlab:'t / s',ylab:'v / m s⁻¹',ratio:0.3}), p3=LK.plot(el,S,{xlab:'t / s',ylab:'a / m s⁻²',ratio:0.3});
  LK.note(el,'Gradient of s–t = velocity. Gradient of v–t = acceleration; area under v–t = displacement. Area under a–t = change in velocity.');
- let t,s,v,a,data; const reset=()=>{ t=0; s=0; v=prof.value==='const'?3:prof.value==='bounce'?0:0; data=[]; if(prof.value==='bounce'){ s=10; } }; reset();
+ let t,s,v,a,data,cam=0; const reset=()=>{ t=0; s=0; cam=0; v=prof.value==='const'?3:prof.value==='bounce'?0:0; data=[]; if(prof.value==='bounce'){ s=10; } }; reset();
  S.loop(dt=>{ if(t<12){ const pv=prof.value;
-   if(pv==='manual') a=acc.v; else if(pv==='const') a=0; else if(pv==='uni') a=1.2; else if(pv==='brake') a=t<4?2:t<8?0:-2;
+   if(pv==='manual') a=acc.v; else if(pv==='const') a=0; else if(pv==='uni') a=1.2; else if(pv==='brake') a=t<4?2:t<8?0:-2; if(pv!=='manual'&&pv!=='bounce'&&acc.v!==a) acc.set(a);
    if(pv==='bounce'){ a=-9.81; v+=a*dt; s+=v*dt; if(s<0){ s=0; v=-v*0.8; } } else { v+=a*dt; if(pv==='brake'&&v<0){v=0;a=0;} s+=v*dt; }
    t+=dt; data.push([t,s,v,a]); }
    const P=LK.P(),x=st.ctx; st.clear(); LK.grid(x,st.w,st.h,24);
    if(prof.value==='bounce'){ const Y=st.h-14-(s/10)*(st.h-30); x.fillStyle=P.brand; x.beginPath(); x.arc(st.w/2,Y,9,0,7); x.fill(); x.fillStyle=P.ink2; x.fillRect(0,st.h-6,st.w,6); }
-   else { const smax=Math.max(20,...data.map(d=>d[1])), smin=Math.min(0,...data.map(d=>d[1])); const X=20+((s-smin)/(smax-smin))*(st.w-80); x.fillStyle=P.ink2; x.fillRect(0,st.h-12,st.w,3); x.fillStyle=P.brand; LK.rr(x,X,st.h-40,54,24,6); x.fill(); x.fillStyle=P.deep; x.beginPath(); x.arc(X+12,st.h-14,6,0,7); x.arc(X+42,st.h-14,6,0,7); x.fill(); }
-   if(t>=12) LK.text(x,'12 s recorded: press Restart to go again',st.w-8,16,P.muted,{align:'right',size:11});
+   else { /* fixed scale; the view scrolls with the trolley so it never sticks at the edge */
+     const view=40, ppm=(st.w-60)/view; if(s-cam>view*0.75) cam=s-view*0.75; if(s-cam<view*0.1) cam=s-view*0.1;
+     x.fillStyle=P.ink2; x.fillRect(0,st.h-12,st.w,3);
+     for(let m=Math.floor(cam/5)*5; m<=cam+view+5; m+=5){ const mx=30+(m-cam)*ppm; x.fillRect(mx,st.h-12,1.5,7); if(mx>16&&mx<st.w-16) LK.text(x,m+' m',mx,14,P.muted,{size:10,align:'center'}); x.fillStyle=P.line; x.fillRect(mx,18,1,st.h-32); x.fillStyle=P.ink2; }
+     const X=30+(s-cam)*ppm-27; x.fillStyle=P.brand; LK.rr(x,X,st.h-40,54,24,6); x.fill(); x.fillStyle=P.deep; x.beginPath(); x.arc(X+12,st.h-14,6,0,7); x.arc(X+42,st.h-14,6,0,7); x.fill();
+     if(Math.abs(v)>0.05) LK.arrow(x,X+27,st.h-52,X+27+Math.max(-60,Math.min(60,v*8)),st.h-52,P.teal,2,7); }
+   if(t>=12) LK.text(x,'12 s recorded: press Restart to go again',st.w-8,36,P.brand,{align:'right',size:11,weight:600});
    if(t<12||!data.drawn){ if(t>=12) data.drawn=true; p1.set([{pts:data.map(d=>[d[0],d[1]])}],{xmax:12}); p2.set([{pts:data.map(d=>[d[0],d[2]]),color:LK.P().teal}],{xmax:12}); p3.set([{pts:data.map(d=>[d[0],d[3]]),color:LK.P().accent}],{xmax:12}); }
  });
  return ()=>S.dispose(); }};
