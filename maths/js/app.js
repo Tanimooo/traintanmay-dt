@@ -53,14 +53,15 @@ const IC = {
  check:'<path d="M5 12l5 5 9-10"/>',
  clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/>',
  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
- play:'<path d="M7 4l13 8-13 8z"/>'
+ play:'<path d="M7 4l13 8-13 8z"/>',
+ sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'
 };
 const ic = (k, w = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
 const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills'], ['vis', 'Visualisers'], ['progress', 'Progress']];
 function renderNav(active){
   $('#nav').innerHTML = NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${ic(k)}<span>${l}</span></a>`).join('');
   $('#drawerpanel').innerHTML = `<input type="search" id="dsearch" placeholder="Search everything…" aria-label="Search">` + NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
-    '<hr style="border:0;border-top:1px solid var(--line);width:100%">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') + `<a href="#mycourses" ${active === 'mycourses' ? 'aria-current="page"' : ''}>⚙ My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>`;
+    '<hr style="border:0;border-top:1px solid var(--line);width:100%">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') + `<a href="#mycourses" class="mclink" ${active === 'mycourses' ? 'aria-current="page"' : ''}>${ic('sliders')}My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>`;
   const ds = $('#dsearch'); if (ds) ds.addEventListener('keydown', e => { if (e.key === 'Enter') { Q.q = ds.value; closeDrawer(); location.hash = 'search'; if (location.hash === '#search') route(); } });
 }
 const closeDrawer = () => { $('#drawer').hidden = true; };
