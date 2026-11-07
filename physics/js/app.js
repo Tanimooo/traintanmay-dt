@@ -153,7 +153,8 @@ function viewTopics(v){
 /* ---------- labs woven into the notes ---------- */
 const STOPW=new Set('the and for with from into that this then than are was were has have its their your you can use using used how what when where which while about over under between through each all any not but per of to in on at by as an a or be is it'.split(' '));
 const words=s=>String(s).toLowerCase().replace(/<[^>]+>/g,' ').match(/[a-zα-ω]{3,}/g)||[];
-function weaveLabs(art,t){ if(!art) return null;
+function weaveVids(art){ if(!art) return; const V=(window.MEDIA&&MEDIA.videos)||[]; art.querySelectorAll('.vidrec[data-vid]').forEach(el=>{ const x=V.find(v=>v.id===el.dataset.vid); if(!x){ el.remove(); return; } el.innerHTML=`<button type="button" class="vr-thumb" aria-label="Watch: ${esc(x.title)}"><img alt="" src="thumbs/${x.id}.jpg" onerror="this.remove()"><span class="vplay"><span>${PLAY}</span></span></button><div><span class="eyebrow">Recommended video</span><b>${esc(x.title)}</b><p>${esc(x.rec||'')}</p><button type="button" class="btn btn-sm primary">Watch it</button></div>`; el.querySelectorAll('button').forEach(b=>b.onclick=()=>openVideo(x)); }); }
+function weaveLabs(art,t){ if(!art) return null; weaveVids(art);
   const items=t.labs.map(id=>({kind:'lab',id,title:LABS[id].title,desc:LABS[id].desc})).concat(t.pags.map(id=>{ const p=PG.list.find(x=>x.id===id); return p&&{kind:'pag',id,title:'PAG '+p.pag+': '+p.title,desc:p.aim}; }).filter(Boolean));
   if(!items.length) return null;
   const hs=Array.from(art.querySelectorAll(':scope > h2'));
