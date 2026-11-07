@@ -154,7 +154,7 @@ notes:`
 <p>The force between two point masses is directly proportional to the product of their masses and inversely proportional to the square of their separation: <strong>F = −GMm/r²</strong>. The minus sign shows the force is attractive. Hence <strong>g = −GM/r²</strong> (an inverse square law).</p>
 <h2>Kepler's laws</h2>
 <ol><li>Planets move in elliptical orbits with the Sun at one focus.</li><li>A line joining a planet to the Sun sweeps out equal areas in equal times (planets move faster when closer to the Sun).</li><li>T² ∝ r³: the square of the period is proportional to the cube of the mean distance.</li></ol>
-<p>For a circular orbit, gravitational force provides centripetal force: GMm/r² = mω²r = m(2π/T)²r, so <strong>T² = (4π²/GM) r³</strong> and orbital speed <strong>v = √(GM/r)</strong>.</p>
+<p>For a circular orbit, gravitational force provides centripetal force: GMm/r² = mω²r = m(2π/T)²r, so <strong>T² = (4π²/GM) r³</strong> and orbital speed <strong>v = √(GM/r)</strong>.</p><div class="vidrec" data-vid="HJ1fHPzhkZM"></div>
 <h2>Satellites</h2>
 <p>A <strong>geostationary</strong> satellite orbits above the equator with a period of 24 hours, in the same direction as the Earth's rotation, so it stays above the same point (r ≈ 4.2 × 10<sup>7</sup> m). Used for communications and TV. Low polar orbits are used for imaging, weather and mapping.</p>
 <h2>Gravitational potential</h2>
