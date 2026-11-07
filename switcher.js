@@ -6,7 +6,7 @@
   var APPS = [
     { id: 'dt', name: 'Design & Technology', sub: 'Edexcel 9DT0', tile: '#1f5fbf', ink: '#fff', t: '#bcd4ff', href: base },
     { id: 'physics', name: 'Physics', sub: 'OCR A H556', tile: '#c81e66', ink: '#fff', t: '#ffd0e4', href: base + 'physics/' },
-    { id: 'maths', name: 'Maths (experimental)', sub: 'Edexcel 9MA0 · 9FM0', tile: '#1a7f45', ink: '#fff', t: '#c4f0d4', href: base + 'maths/' },
+    { id: 'maths', name: 'Maths (new)', sub: 'Edexcel 9MA0 · 9FM0', tile: '#1a7f45', ink: '#fff', t: '#c4f0d4', href: base + 'maths/' },
     { id: 'esat', name: 'ESAT', sub: 'ENGAA · NSAA · TMUA', tile: '#ffc917', ink: '#1d1600', t: '#9a6200', href: base + 'esat/' },
     { id: 'help', name: 'How to use TrainTanmay', sub: 'What each app is for · tips', tile: '#3b3f48', ink: '#fff', t: '#c9ccd3', href: base + 'help.html' }
   ];
