@@ -43,6 +43,15 @@ const I={
 const PSWSET=new Set(['ripple','wave','string','superpose','stationary','resonance','absorb','p5-2','p10-2']);
 const PSW=lab=>`<div class="psw" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3zm0 6v6m0 3v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><p><b>Photosensitivity warning.</b> This ${lab?'simulation':'practical'} contains moving patterns and animation that may affect people with photosensitive epilepsy. ${lab?'Use ❚❚ to pause or ×0.25 to slow it down.':'You can read the Method tab without running the animation.'}</p></div>`;
 const NAV=[['home','Home'],['topics','Topics'],['labs','Labs'],['pags','Practicals'],['bank','Practice questions'],['mock','Practice tests'],['flash','Flashcards'],['quiz','Quiz'],['videos','Videos'],['papers','Past papers'],['sheet','Data sheet'],['progress','Progress']];
+const NAVG=[
+ {k:'home',l:'Home'},
+ {l:'Learn',items:[['topics','Topics','Notes, equations, key terms and spec checklist'],['labs','Labs','Interactive simulations to experiment with'],['pags','Practicals','The PAG required practicals, simulated'],['videos','Videos','Video library and real-world examples']]},
+ {l:'Practise',items:[['bank','Practice questions','Browse 3,000 exam questions by topic and mark them'],['mock','Practice tests','A timed mixed test with a score at the end'],['quiz','Quiz','Quick multiple-choice checks'],['flash','Flashcards','Learn definitions and equations with spaced repetition']]},
+ {k:'papers',l:'Past papers'},{k:'sheet',l:'Data sheet'},{k:'progress',l:'Progress'}];
+const THEMES='<option value="system">Auto</option><option value="light">Light</option><option value="dark">Dark</option><option value="blush">Blush</option>';
+const CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const navHTML=()=>NAVG.map((g,gi)=>g.items?`<div class="navg" data-g="${gi}"><button type="button" class="navgb" aria-expanded="false" aria-haspopup="true" data-keys="${g.items.map(x=>x[0]).join(' ')}">${esc(g.l)}${CHEV}</button><div class="navmenu" role="menu">${g.items.map(([k,l,d])=>`<a role="menuitem" href="#${k}" data-k="${k}"><span class="nmi">${navIcon(k)}</span><span><b>${esc(l)}</b><small>${esc(d)}</small></span></a>`).join('')}</div></div>`:`<a href="#${g.k}" data-k="${g.k}">${navIcon(g.k)}<span>${esc(g.l)}</span></a>`).join('');
+
 const NI={
  home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
  topics:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M8 7h7"/>',
@@ -62,19 +71,30 @@ const navIcon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 /* ---------- shell ---------- */
 const app=$('#app');
 app.innerHTML=`<header class="topbar"><div class="wrap"><a class="brand" href="#home">${I.logo}<span><b>TrainTanmay</b><small>OCR A Physics · H556</small></span></a>
-<nav class="nav" aria-label="Main">${NAV.map(([k,l])=>`<a href="#${k}" data-k="${k}" aria-label="${l}" title="${l}">${navIcon(k)}<span class="nl">${l}</span></a>`).join('')}</nav>
-<div class="tb-right"><a class="iconbtn" href="#search" aria-label="Search">${I.search}</a><button class="iconbtn dysbtn" id="dys" aria-pressed="${!!S.settings.dys}" title="Dyslexia-friendly font">Aa</button>
-<select class="theme-select" id="theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="blush">Blush</option></select>
-<button class="iconbtn menubtn" id="menu" aria-label="Menu">${I.menu}</button></div></div></header>
+<nav class="nav" aria-label="Main">${navHTML()}</nav>
+<div class="tb-right"><a class="iconbtn" href="#search" aria-label="Search" title="Search">${I.search}</a><select class="theme-select" id="theme" aria-label="Theme">${THEMES}</select><button class="iconbtn dysbtn" id="dys" aria-pressed="${!!S.settings.dys}" title="Dyslexia-friendly font">Aa</button>
+<button class="iconbtn menubtn" id="menu" aria-label="Menu" aria-expanded="false">${I.menu}</button></div></div></header>
 <main class="wrap"><div id="view"></div></main>
 <footer class="footer"><div class="wrap row" style="justify-content:space-between"><span>TrainTanmay Physics · Made by Tanmay Vashishtha · <i id="fpun"></i> · OCR A Level Physics A (H556) and AS (H156). Progress is saved in this browser.</span><span>Past papers and topic questions link to <a href="https://www.physicsandmathstutor.com/physics-revision/a-level-ocr-a/" target="_blank" rel="noopener">Physics &amp; Maths Tutor</a>.</span></div></footer>`;
 $('#theme').value=S.settings.theme; $('#theme').onchange=e=>{ S.settings.theme=e.target.value; save(); applyTheme(); };
-$('#dys').onclick=e=>{ S.settings.dys=!S.settings.dys; e.currentTarget.setAttribute('aria-pressed',S.settings.dys); applyDys(); save(); window.dispatchEvent(new Event('themechange')); };
+$('#dys').onclick=e=>{ S.settings.dys=!S.settings.dys; $$('.dysbtn').forEach(b=>b.setAttribute('aria-pressed',S.settings.dys)); applyDys(); save(); window.dispatchEvent(new Event('themechange')); };
 const drawer=$('#drawer');
-$('#menu').onclick=()=>{ drawer.innerHTML=`<div class="drawer-panel" role="dialog" aria-label="Menu">${NAV.map(([k,l])=>`<a href="#${k}" data-k="${k}">${l}</a>`).join('')}<a href="#search">Search</a><label class="field" style="margin-top:10px" for="theme2">Theme<select id="theme2" class="theme-select"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="blush">Blush</option></select></label></div>`; drawer.hidden=false; const t2=$('#theme2'); t2.value=S.settings.theme; t2.onchange=e=>{ S.settings.theme=e.target.value; $('#theme').value=e.target.value; save(); applyTheme(); }; markNav(); };
-drawer.addEventListener('click',e=>{ if(e.target===drawer||e.target.closest('a')) drawer.hidden=true; });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') drawer.hidden=true; });
-function markNav(){ const r=(location.hash||'#home').slice(1); const k=r.startsWith('pq-')?'bank':r.startsWith('mockr')?'mock':r.startsWith('t-')?'topics':r.startsWith('lab-')?'labs':r.startsWith('pag-')?'pags':r.startsWith('q-')?'bank':r; $$('[data-k]').forEach(a=>{ if(a.dataset.k===k) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); }
+$('#menu').onclick=()=>{ drawer.innerHTML=`<div class="drawer-panel" role="dialog" aria-modal="true" aria-label="Menu"><div class="dhead"><b>Menu</b><button type="button" class="iconbtn" id="dclose" aria-label="Close menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  ${NAVG.map(g=>g.items?`<div class="dgroup">${esc(g.l)}</div>${g.items.map(([k,l])=>`<a href="#${k}" data-k="${k}">${navIcon(k)}<span>${esc(l)}</span></a>`).join('')}`:`<a href="#${g.k}" data-k="${g.k}">${navIcon(g.k)}<span>${esc(g.l)}</span></a>`).join('')}
+  <a href="#search">${I.search}<span>Search</span></a>
+  <div class="dgroup">Display</div><div class="dopts"><label class="field" for="theme2">Theme<select id="theme2">${THEMES}</select></label><button type="button" class="btn dysbtn" id="dys2" aria-pressed="${!!S.settings.dys}">Aa Dyslexia-friendly font</button></div></div>`;
+  drawer.hidden=false; $('#menu').setAttribute('aria-expanded','true'); const t2=$('#theme2'); t2.value=S.settings.theme; t2.onchange=e=>{ S.settings.theme=e.target.value; $('#theme').value=e.target.value; save(); applyTheme(); };
+  $('#dys2').onclick=()=>$('#dys').click(); $('#dclose').onclick=closeDrawer; markNav(); $('#dclose').focus(); };
+function closeDrawer(){ drawer.hidden=true; $('#menu').setAttribute('aria-expanded','false'); }
+/* desktop group menus */
+const closeMenus=except=>$$('.navg').forEach(g=>{ if(g!==except){ g.classList.remove('open'); g.querySelector('.navgb').setAttribute('aria-expanded','false'); } });
+$$('.navgb').forEach(b=>{ b.onclick=e=>{ e.stopPropagation(); const g=b.parentElement, on=!g.classList.contains('open'); closeMenus(g); g.classList.toggle('open',on); b.setAttribute('aria-expanded',on); if(on) g.querySelector('.navmenu a').focus({preventScroll:true}); }; });
+document.addEventListener('click',e=>{ if(!e.target.closest('.navg')) closeMenus(); });
+$$('.navmenu a').forEach(x=>x.addEventListener('click',()=>closeMenus()));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const open=document.querySelector('.navg.open'); closeMenus(); if(open) open.querySelector('.navgb').focus(); } });
+drawer.addEventListener('click',e=>{ if(e.target===drawer||e.target.closest('a')) closeDrawer(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!drawer.hidden) closeDrawer(); });
+function markNav(){ const r=(location.hash||'#home').slice(1); const k=r.startsWith('pq-')?'bank':r.startsWith('mockr')?'mock':r.startsWith('t-')?'topics':r.startsWith('lab-')?'labs':r.startsWith('pag-')?'pags':r.startsWith('q-')?'bank':r; $$('[data-k]').forEach(a=>{ if(a.dataset.k===k) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); $$('.navgb').forEach(b=>b.classList.toggle('cur',b.dataset.keys.split(' ').includes(k))); }
 
 let cleanup=null;
 const FPUN=['Powered by caffeine and conservation of energy.','No electrons were harmed in the making of this site.','Built with constant acceleration.','Running at the speed of light (in a vacuum).','100% renewable revision.'];
@@ -134,9 +154,9 @@ function viewHome(v){
 </g></svg><span class="sh-cta">Explore lab: Apollo 11, Artemis II, Voyager 2 and more →</span></a>
   </div></section>
   <div class="statrow" style="margin-top:16px"><div class="stat"><b>${overall()}%</b><span>course progress</span></div><div class="stat"><b>${fcDue}</b><span>flashcards due</span></div><div class="stat"><b>${quizBest==null?'–':quizBest+'%'}</b><span>best quiz score</span></div><div class="stat"><b>${streak()}</b><span>day streak</span></div></div>
-  <h2 style="margin:30px 0 12px">Modules</h2><div class="grid g3">${MODS.map(m=>{ const ts=T.filter(t=>t.mod===m.n); const p=Math.round(ts.reduce((a,t)=>a+topicPct(t),0)/ts.length); return `<a class="tcard" href="#topics" data-mod="${m.n}"><span class="id">Module ${m.n} · ${esc(m.papers)}</span><h4>${esc(m.title)}</h4><div class="bar"><i style="width:${p}%"></i></div><div class="meta"><span>${ts.length} topics${m.as?' · in AS':''}</span><span>${p}%</span></div></a>`; }).join('')}</div>
-  <h2 style="margin:30px 0 12px">Jump into a lab</h2><div class="grid g4">${['missions','circuit','collide2d','photoelectric'].filter(id=>LABS[id]).map(labCard).join('')}</div>
-  <h2 style="margin:30px 0 12px">Exam papers at a glance</h2><div class="grid g3">${SP.papers.slice(0,3).map(p=>`<div class="card"><span class="eyebrow">${esc(p.code)} · ${esc(p.time)} · ${p.marks} marks · ${esc(p.weight)}</span><h3 style="margin:4px 0 6px">${esc(p.name)}</h3><p class="muted" style="margin:0 0 8px;font-size:.9rem">${esc(p.mods)}. ${esc(p.fmt)}</p><a class="btn btn-sm" href="#papers">See papers</a></div>`).join('')}</div>`;
+  <h2 style="margin:30px 0 12px">Modules</h2><div class="grid g3">${MODS.map(m=>{ const ts=T.filter(t=>t.mod===m.n); const p=Math.round(ts.reduce((a,t)=>a+topicPct(t),0)/ts.length); return `<a class="tcard" href="#topics" data-mod="${m.n}"><span class="id">Module ${m.n} · ${esc(m.papers)}</span><h4>${esc(m.title)}</h4><div class="bar"><i style="width:${p}%"></i></div><div class="meta"><span>${ts.length} topic${ts.length===1?'':'s'}${m.as?' · in AS':''}</span><span>${p}%</span></div></a>`; }).join('')}</div>
+  <h2 style="margin:30px 0 12px">Jump into a lab</h2><div class="grid fit4">${['missions','circuit','collide2d','photoelectric'].filter(id=>LABS[id]).map(labCard).join('')}</div>
+  <h2 style="margin:30px 0 12px">Exam papers at a glance</h2><div class="grid fit3">${SP.papers.slice(0,3).map(p=>`<div class="card"><span class="eyebrow">${esc(p.code)} · ${esc(p.time)} · ${p.marks} marks · ${esc(p.weight)}</span><h3 style="margin:4px 0 6px">${esc(p.name)}</h3><p class="muted" style="margin:0 0 8px;font-size:.9rem">${esc(p.mods)}. ${esc(p.fmt)}</p><a class="btn btn-sm" href="#papers">See papers</a></div>`).join('')}</div>`;
   $$('[data-mod]',v).forEach(a=>a.addEventListener('click',()=>{ sessionStorage.setItem('tt-mod',a.dataset.mod); }));
   const PP=PUNS.slice().sort(()=>Math.random()-.5); let pi=0; const pun=$('#pun'); pun.title='Click for another pun';
   const red=window.matchMedia('(prefers-reduced-motion: reduce)').matches; let tmr=null, alive=true;
@@ -196,7 +216,8 @@ function viewTopic(v,id){
    <div class="card"><span class="eyebrow">How confident are you?</span><div class="conf">${[['r','Not yet'],['a','Getting there'],['g','Confident']].map(([k,l])=>`<button class="${k}" data-c="${k}" aria-pressed="${S.conf[t.id]===k}">${l}</button>`).join('')}</div>
    <label class="toggle" style="margin-top:12px" for="rev"><input type="checkbox" id="rev" ${S.revised[t.id]?'checked':''}> Notes revised</label></div>
    ${t.labs.length?`<div class="card"><span class="eyebrow">Try it in the lab</span><div class="stack" style="gap:6px;margin-top:6px">${t.labs.map(l=>`<a href="#lab-${l}">${esc(LABS[l].title)}</a>`).join('')}${t.pags.map(p=>{ const q=PG.list.find(x=>x.id===p); return `<a href="#pag-${p}">PAG ${q.pag}: ${esc(q.title)}</a>`; }).join('')}</div></div>`:''}
-  </aside></div>`;
+  </aside></div>
+  <nav class="nexttopic" aria-label="Topic navigation">${prev?`<a class="prevt" href="#t-${prev.id}">← ${prev.id} ${esc(prev.title)}</a>`:'<span></span>'}${next?`<a class="big" href="#t-${next.id}"><small>Next topic</small>${next.id} ${esc(next.title)} →</a>`:`<a class="big" href="#topics"><small>That’s the whole course!</small>All topics →</a>`}</nav>`;
   $$('.conf button',v).forEach(b=>b.onclick=()=>{ S.conf[t.id]=b.dataset.c; save(); $$('.conf button',v).forEach(x=>x.setAttribute('aria-pressed',x===b)); });
   $('#rev').onchange=e=>{ S.revised[t.id]=e.target.checked; save(); };
   const body=$('#tabbody'); let sub=null;
