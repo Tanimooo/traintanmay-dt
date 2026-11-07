@@ -113,7 +113,7 @@ const PUNS=['Revision with real momentum.','Resistance is not futile: it is V/I.
 function viewHome(v){
   const fcDue=dueCards(CARDS).length, quizBest=S.quiz.length?Math.max(...S.quiz.map(q=>Math.round(q.s/q.n*100))):null, examDone=Object.values(S.exam).filter(x=>x.got!=null).length;
   const nextT=T.find(t=>!S.revised[t.id])||T[0];
-  v.innerHTML=`<section class="hero"><div class="hero-text"><span class="eyebrow">OCR A Level Physics A · H556 and AS H156</span><h1>TrainTanmay Physics</h1><p class="pun" id="pun" title="Tap for another">${esc(PUNS[0])}</p>
+  v.innerHTML=`<section class="hero"><div class="hero-text"><span class="eyebrow">OCR A Level Physics A · H556 and AS H156</span><h1>TrainTanmay Physics</h1><p class="pun" id="pun" aria-live="off"></p>
   <p>Every learning outcome across the six modules with diagrams, equations and definitions, ${Object.keys(LABS).length} interactive labs, ${PG.list.length} simulated PAG practicals, ${BK?BK.count.toLocaleString()+' real exam questions with mark schemes and a practice test builder, ':''}and links to every OCR past paper on Physics &amp; Maths Tutor.</p>
   <div class="row"><a class="btn primary" href="#t-${nextT.id}">Continue with ${nextT.id} ${esc(nextT.title)}</a><a class="btn" href="#labs">Open the labs</a></div></div>
   <div class="hero-scopewrap"><a class="hero-scope hero-shuttle" href="#lab-missions" title="Explore the Famous space missions lab"><svg class="shuttle-svg" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Pink space shuttle: explore the famous space missions lab"><defs><radialGradient id="sky" cx=".7" cy=".25" r="1"><stop offset="0" stop-color="#1c3a7a"/><stop offset=".6" stop-color="#0d2050"/><stop offset="1" stop-color="#071234"/></radialGradient><radialGradient id="flm" cx="1" cy=".5" r="1"><stop offset="0" stop-color="#fff0f6"/><stop offset=".35" stop-color="#ff7ab0"/><stop offset="1" stop-color="#d81b60" stop-opacity="0"/></radialGradient><linearGradient id="bod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe6f1"/><stop offset="1" stop-color="#f7bfd8"/></linearGradient></defs>
@@ -138,8 +138,15 @@ function viewHome(v){
   <h2 style="margin:30px 0 12px">Jump into a lab</h2><div class="grid g4">${['missions','circuit','collide2d','photoelectric'].filter(id=>LABS[id]).map(labCard).join('')}</div>
   <h2 style="margin:30px 0 12px">Exam papers at a glance</h2><div class="grid g3">${SP.papers.slice(0,3).map(p=>`<div class="card"><span class="eyebrow">${esc(p.code)} · ${esc(p.time)} · ${p.marks} marks · ${esc(p.weight)}</span><h3 style="margin:4px 0 6px">${esc(p.name)}</h3><p class="muted" style="margin:0 0 8px;font-size:.9rem">${esc(p.mods)}. ${esc(p.fmt)}</p><a class="btn btn-sm" href="#papers">See papers</a></div>`).join('')}</div>`;
   $$('[data-mod]',v).forEach(a=>a.addEventListener('click',()=>{ sessionStorage.setItem('tt-mod',a.dataset.mod); }));
-  let pi=0; const pun=$('#pun'); const next=()=>{ pun.classList.add('out'); setTimeout(()=>{ pi=(pi+1)%PUNS.length; pun.textContent=PUNS[pi]; pun.classList.add('pre'); pun.classList.remove('out'); void pun.offsetWidth; pun.classList.remove('pre'); },450); }; pun.onclick=next; const iv=setInterval(next,5200);
-  cleanup=()=>{ clearInterval(iv); };
+  const PP=PUNS.slice().sort(()=>Math.random()-.5); let pi=0; const pun=$('#pun'); pun.title='Click for another pun';
+  const red=window.matchMedia('(prefers-reduced-motion: reduce)').matches; let tmr=null, alive=true;
+  const later=(f,ms)=>{ tmr=setTimeout(()=>{ if(alive) f(); },ms); };
+  function typeIt(str,i=0){ pun.classList.add('typing'); pun.textContent=str.slice(0,i); if(i<str.length) later(()=>typeIt(str,i+1),38+Math.random()*55); else later(()=>eraseIt(str,str.length),4200); }
+  function eraseIt(str,i){ pun.textContent=str.slice(0,i); if(i>0) later(()=>eraseIt(str,i-1),18); else { pi=(pi+1)%PP.length; later(()=>typeIt(PP[pi]),300); } }
+  let iv=null;
+  if(red){ pun.textContent=PP[0]; iv=setInterval(()=>{ pi=(pi+1)%PP.length; pun.textContent=PP[pi]; },6000); pun.onclick=()=>{ pi=(pi+1)%PP.length; pun.textContent=PP[pi]; }; }
+  else { typeIt(PP[0]); pun.onclick=()=>{ clearTimeout(tmr); eraseIt(pun.textContent,pun.textContent.length); }; }
+  cleanup=()=>{ alive=false; clearTimeout(tmr); if(iv) clearInterval(iv); };
 }
 function scope(cv){ const ctx=cv.getContext('2d'); let run=true, t=0; const red=window.LK?window.LK.reduced():false;
   const tick=()=>{ if(!run) return; const r=cv.getBoundingClientRect(); const d=Math.min(2,devicePixelRatio||1); if(cv.width!==Math.round(r.width*d)){ cv.width=Math.round(r.width*d); cv.height=Math.round(r.height*d); } ctx.setTransform(d,0,0,d,0,0); const W=r.width,H=r.height;
