@@ -67,7 +67,7 @@ app.innerHTML=`<header class="topbar"><div class="wrap"><a class="brand" href="#
 <select class="theme-select" id="theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="blush">Blush</option></select>
 <button class="iconbtn menubtn" id="menu" aria-label="Menu">${I.menu}</button></div></div></header>
 <main class="wrap"><div id="view"></div></main>
-<footer class="footer"><div class="wrap row" style="justify-content:space-between"><span>TrainTanmay Physics · Made by Tanmay Vashishtha · OCR A Level Physics A (H556) and AS (H156). Progress is saved in this browser.</span><span>Past papers and topic questions link to <a href="https://www.physicsandmathstutor.com/physics-revision/a-level-ocr-a/" target="_blank" rel="noopener">Physics &amp; Maths Tutor</a>.</span></div></footer>`;
+<footer class="footer"><div class="wrap row" style="justify-content:space-between"><span>TrainTanmay Physics · Made by Tanmay Vashishtha · <i id="fpun"></i> · OCR A Level Physics A (H556) and AS (H156). Progress is saved in this browser.</span><span>Past papers and topic questions link to <a href="https://www.physicsandmathstutor.com/physics-revision/a-level-ocr-a/" target="_blank" rel="noopener">Physics &amp; Maths Tutor</a>.</span></div></footer>`;
 $('#theme').value=S.settings.theme; $('#theme').onchange=e=>{ S.settings.theme=e.target.value; save(); applyTheme(); };
 $('#dys').onclick=e=>{ S.settings.dys=!S.settings.dys; e.currentTarget.setAttribute('aria-pressed',S.settings.dys); applyDys(); save(); window.dispatchEvent(new Event('themechange')); };
 const drawer=$('#drawer');
@@ -77,13 +77,14 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') drawer.hidden=true
 function markNav(){ const r=(location.hash||'#home').slice(1); const k=r.startsWith('pq-')?'bank':r.startsWith('mockr')?'mock':r.startsWith('t-')?'topics':r.startsWith('lab-')?'labs':r.startsWith('pag-')?'pags':r.startsWith('q-')?'bank':r; $$('[data-k]').forEach(a=>{ if(a.dataset.k===k) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); }
 
 let cleanup=null;
+const FPUN=['Powered by caffeine and conservation of energy.','No electrons were harmed in the making of this site.','Built with constant acceleration.','Running at the speed of light (in a vacuum).','100% renewable revision.'];
 function route(){ if(cleanup){ try{cleanup();}catch(e){} cleanup=null; } const dsp=document.getElementById('dspanel'); if(dsp) dsp.remove();
   const r=(location.hash||'#home').slice(1)||'home'; const v=$('#view'); v.innerHTML=''; v.style.animation='none'; void v.offsetWidth; v.style.animation='';
   touchDay(); markNav();
   if(r==='home') viewHome(v); else if(r==='topics') viewTopics(v); else if(r.startsWith('t-')) viewTopic(v,r.slice(2)); else if(r==='labs') viewLabs(v); else if(r.startsWith('lab-')) viewLab(v,r.slice(4));
   else if(r==='pags') viewPags(v); else if(r.startsWith('pag-')) viewPag(v,r.slice(4)); else if(r==='flash') viewFlash(v); else if(r==='quiz') viewQuiz(v); else if(r==='exam'){ sessionStorage.setItem('tt-bankf',JSON.stringify({src:'tt'})); location.replace('#bank'); return; } else if(r.startsWith('q-')){ location.replace('#pq-w_'+r.slice(2)); return; }
   else if(r==='bank'&&BK) BK.viewBank(v); else if(r.startsWith('pq-')&&BK) BK.viewBankQ(v,r.slice(3)); else if(r==='mock'&&BK) BK.viewMock(v); else if(r.startsWith('mockrun-')&&BK) cleanup=BK.viewMockRun(v,r.slice(8)); else if(r.startsWith('mockres-')&&BK) BK.viewMockRes(v,r.slice(8)); else if(r==='videos'||r.startsWith('videos_')) viewVideos(v,r.split('_')[1]); else if(r==='papers') viewPapers(v); else if(r==='sheet') viewSheet(v); else if(r==='progress') viewProgress(v); else if(r==='search') viewSearch(v); else viewHome(v);
-  if(BK&&!r.startsWith('mockrun-')) BK.resumeBar(v);
+  if(BK&&!r.startsWith('mockrun-')) BK.resumeBar(v); const fp=document.getElementById('fpun'); if(fp) fp.textContent=pick(FPUN);
   window.scrollTo(0,0); }
 window.addEventListener('hashchange',route);
 
@@ -98,7 +99,17 @@ const pagCard=p=>`<a class="tcard" href="#pag-${p.id}"><span class="id">PAG ${p.
 const dueCards=list=>list.filter(c=>{ const f=S.flash[c.id]; return !f||f.due<=Date.now(); });
 
 /* ---------- HOME ---------- */
-const PUNS=['Revision with real momentum.','Resistance is not futile: it is V/I.','Stay positive, like a proton.','No stationary waves here: just progress.','Every topic, fully charged.','Find your natural frequency and resonate.','Keep calm and conserve energy.','Small steps, constant acceleration.'];
+
+/* puns everywhere */
+const pick=l=>l[Math.floor(Math.random()*l.length)];
+const TPUN={'1.1':'Precisely the right place. Accurately, too.','2.1':'SI-ing is believing.','2.2':'Plot twist: it’s a straight line through the origin.','2.3':'Vectors: you’ve got to have direction in life.','3.1':'Accelerate your revision. Uniformly.','3.2':'May the (resultant) force be with you.','3.3':'Work done = energy transferred. Revision done = grades transferred.','3.4':'Under stress? That’s a strain. Take a break before you hit the yield point.','3.5':'Gaining momentum, and conserving it.','4.1':'Current events, explained.','4.2':'Resistance is not futile. It’s ρL/A.','4.3':'Kirchhoff’s first law: what goes in must come out. Like revision.','4.4':'Catch the wave, superpose your knowledge.','4.5':'Quantum physics: you either get it or you don’t. No in-between levels.','5.1':'Things are heating up. Specifically, by mcΔθ.','5.2':'Going round in circles? That’s the point here.','5.3':'Good vibrations, simple harmonic ones.','5.4':'Fall for gravity. Everything else does.','5.5':'Out of this world, by Hubble’s law.','6.1':'Fully charged and ready to discharge some knowledge.','6.2':'Feeling the field? That’s potential.','6.3':'Simply magnetic. Fleming would be proud.','6.4':'This topic is quark-y, but it has its charm.','6.5':'X-ray vision unlocked. Results may be attenuated.'};
+const PUN_EMPTY=['Nothing here: a perfect vacuum.','Zero results. Absolute zero, in fact.','Empty as interstellar space. Try widening the filters.'];
+const PUN_HI=['Electrifying!','Absolutely radiant.','Top marks: you’re on a higher energy level.','You’re in resonance with the spec.'];
+const PUN_MID=['Good momentum. Keep it conserved.','Solid progress, no stress (or strain).','Halfway up the potential well: keep climbing.'];
+const PUN_LO=['Every great physicist started at rest.','Don’t lose your potential: have another go.','Errors are just uncertainties waiting to shrink.'];
+const punFor=p=>pick(p>=80?PUN_HI:p>=50?PUN_MID:PUN_LO);
+window.TTPUN={pick,punFor,PUN_EMPTY};
+const PUNS=['Revision with real momentum.','Resistance is not futile: it is V/I.','Stay positive, like a proton.','No stationary waves here: just progress.','Every topic, fully charged.','Find your natural frequency and resonate.','Keep calm and conserve energy.','Small steps, constant acceleration.','Physics puns? I’ve got loads, and they’re all under tension.','Don’t trust atoms: they make up everything.','Revise now, thank yourself in the potential well later.','A body at rest stays at rest, so get moving.','Watt are you waiting for?','Ohm sweet ohm.','Feeling negative? Take an electron off.','Your grades are about to experience a large upthrust.','Every question has a reaction: equal and opposite.','Light travels fast. Your revision can too.','Gravity: it’s not just a good idea, it’s the law.','Neutrons revise for free: no charge.','We’ve got the best puns. Period.','Don’t be a resistor: let the knowledge flow.','Stay grounded. Earth wire optional.','Results so good they’ll be off the scale.','Turning potential into kinetic since 2026.','Cooler than absolute zero. Well, almost.','Mass-ive progress incoming.','Hertz so good.'];
 function viewHome(v){
   const fcDue=dueCards(CARDS).length, quizBest=S.quiz.length?Math.max(...S.quiz.map(q=>Math.round(q.s/q.n*100))):null, examDone=Object.values(S.exam).filter(x=>x.got!=null).length;
   const nextT=T.find(t=>!S.revised[t.id])||T[0];
@@ -171,7 +182,7 @@ function viewTopic(v,id){
   const t=byId[id]; if(!t){ v.innerHTML='<div class="empty">Topic not found. <a href="#topics">All topics</a></div>'; return; }
   const ix=T.indexOf(t), prev=T[ix-1], next=T[ix+1]; const m=MODS.find(x=>x.n===t.mod);
   const tabs=[['notes','Notes'],['eqs','Equations',t.eqs.length],['terms','Key terms',t.terms.length],['fc','Flashcards'],['mcq','Quick quiz',t.mcq.length],['packs','Past paper packs',t.packs.length],['labs','Labs & practicals',t.labs.length+t.pags.length]].concat(BK&&BK.topicCount(t.id)?[['qb','Practice questions',BK.topicCount(t.id)]]:[]).concat(topicVids(t.id).length||topicCases(t.id).length?[['vids','Videos',topicVids(t.id).length]]:[]);
-  v.innerHTML=`<div class="tp-head"><div><span class="eyebrow"><a href="#topics">Module ${t.mod}: ${esc(m.title)}</a> / ${t.id}</span><h1>${esc(t.title)}</h1><p class="muted" style="margin:6px 0 0">${esc(t.short)}</p></div><div class="row">${prev?`<a class="btn btn-sm" href="#t-${prev.id}">← ${prev.id}</a>`:''}${next?`<a class="btn btn-sm" href="#t-${next.id}">${next.id} →</a>`:''}</div></div>
+  v.innerHTML=`<div class="tp-head"><div><span class="eyebrow"><a href="#topics">Module ${t.mod}: ${esc(m.title)}</a> / ${t.id}</span><h1>${esc(t.title)}</h1><p class="muted" style="margin:6px 0 0">${esc(t.short)}</p>${TPUN[t.id]?`<p class="tpun">${esc(TPUN[t.id])}</p>`:''}</div><div class="row">${prev?`<a class="btn btn-sm" href="#t-${prev.id}">← ${prev.id}</a>`:''}${next?`<a class="btn btn-sm" href="#t-${next.id}">${next.id} →</a>`:''}</div></div>
   <div class="tabs" role="tablist">${tabs.map(([k,l,n],i)=>`<button role="tab" data-tab="${k}" aria-selected="${i===0}">${l}${n!=null?`<span class="n">${n}</span>`:''}</button>`).join('')}</div>
   <div class="tp-layout"><div id="tabbody" style="min-width:0"></div><aside class="side">
    <div class="card specbox"><span class="eyebrow">Specification checklist</span><ol>${t.spec.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>
@@ -227,7 +238,7 @@ function viewFlash(v){
 function runQuiz(el,qs,label){
   qs=qs.sort(()=>Math.random()-0.5); let i=0, score=0, answered=false;
   const render=()=>{ if(i>=qs.length){ const pct=Math.round(score/qs.length*100); S.quiz.push({s:score,n:qs.length,t:Date.now(),l:label}); if(S.quiz.length>200) S.quiz.shift(); save();
-      el.innerHTML=`<div class="qz card" style="text-align:center"><span class="eyebrow">Quiz complete</span><h2 style="margin:8px 0">${score} / ${qs.length} (${pct}%)</h2><p class="muted">${pct>=80?'Excellent: these ideas are secure.':pct>=50?'Good progress. Re-read the notes for the ones you missed.':'Worth another look at the notes and flashcards.'}</p><button class="btn primary" id="again">Try again</button></div>`; $('#again',el).onclick=()=>{ qs.sort(()=>Math.random()-0.5); i=0; score=0; render(); }; return; }
+      el.innerHTML=`<div class="qz card" style="text-align:center"><span class="eyebrow">Quiz complete</span><h2 style="margin:8px 0">${score} / ${qs.length} (${pct}%)</h2><p class="muted"><b class="tpun" style="display:block">${esc(punFor(pct))}</b>${pct>=80?'Excellent: these ideas are secure.':pct>=50?'Good progress. Re-read the notes for the ones you missed.':'Worth another look at the notes and flashcards.'}</p><button class="btn primary" id="again">Try again</button></div>`; $('#again',el).onclick=()=>{ qs.sort(()=>Math.random()-0.5); i=0; score=0; render(); }; return; }
     const q=qs[i]; const order=q.o.map((o,k)=>k).sort(()=>Math.random()-0.5); answered=false;
     el.innerHTML=`<div class="qz"><div class="row" style="justify-content:space-between"><span class="eyebrow">Question ${i+1} of ${qs.length} · ${q.topic} ${esc(byId[q.topic].title)}</span><span class="chip">Score ${score}</span></div><div class="bar" style="margin-top:6px"><i style="width:${i/qs.length*100}%"></i></div>
     <p class="qz-q">${esc(q.q)}</p><div class="qz-opts">${order.map((k,j)=>`<button data-k="${k}"><span class="l">${'ABCD'[j]}</span><span>${esc(q.o[k])}</span></button>`).join('')}</div><div id="exp"></div></div>`;
