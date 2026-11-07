@@ -7,8 +7,8 @@
 <title>How to use TrainTanmay</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f7f6f1;--surface:#fff;--ink:#16181d;--muted:#5d6270;--line:#e1ded3;--navy:#0b2545;--dt:#1f5fbf;--ph:#c81e66;--es:#e0a800;--grid:rgba(11,37,69,.05)}
-@media (prefers-color-scheme:dark){:root{--bg:#101217;--surface:#181b22;--ink:#eef0f4;--muted:#a3a9b6;--line:#2c313b;--navy:#9fc3ff;--dt:#5b9cff;--ph:#ff5c9e;--es:#ffd23f;--grid:rgba(159,195,255,.04)}}
+:root{--bg:#f7f6f1;--surface:#fff;--ink:#16181d;--muted:#5d6270;--line:#e1ded3;--navy:#0b2545;--dt:#1f5fbf;--ph:#c81e66;--es:#e0a800;--ma:#15803d;--grid:rgba(11,37,69,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#101217;--surface:#181b22;--ink:#eef0f4;--muted:#a3a9b6;--line:#2c313b;--navy:#9fc3ff;--dt:#5b9cff;--ph:#ff5c9e;--es:#ffd23f;--ma:#4ade80;--grid:rgba(159,195,255,.04)}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'IBM Plex Sans',system-ui,sans-serif;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5}
@@ -29,6 +29,7 @@ p{margin:.4em 0 .9em}
 .app h2 svg{width:34px;height:34px;flex:none}
 .app a.go{display:inline-block;margin-top:6px;padding:7px 14px;border-radius:8px;background:var(--c);color:#fff;text-decoration:none;font-weight:600}
 .app.es a.go{color:#1d1600}
+@media (prefers-color-scheme:dark){.app.ma a.go{color:#052e14}}
 ul{padding-left:1.2em;margin:.3em 0 .8em}li{margin:.2em 0}
 .tip{border-left:6px solid #2c7a4e;background:color-mix(in srgb,#2c7a4e 8%,var(--surface))}
 kbd{font:500 .85em 'IBM Plex Mono',monospace;border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--bg)}
@@ -58,7 +59,7 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 
   <div class="card">
     <h3 style="margin-top:0">Switching between apps</h3>
-    <p>Click the <b>TrainTanmay logo in the top left</b> of any page. A menu opens with the three apps (Design &amp; Technology, Physics and ESAT) and this help page. The logo colour tells you which app you're in: <b style="color:var(--dt)">blue</b> for D&amp;T, <b style="color:var(--ph)">pink</b> for Physics, <b style="color:var(--es)">yellow</b> for ESAT.</p>
+    <p>Click the <b>TrainTanmay logo in the top left</b> of any page. A menu opens with the four apps (Design &amp; Technology, Physics, ESAT and Maths) and this help page. The logo colour tells you which app you're in: <b style="color:var(--dt)">blue</b> for D&amp;T, <b style="color:var(--ph)">pink</b> for Physics, <b style="color:var(--es)">yellow</b> for ESAT, <b style="color:var(--ma)">green</b> for Maths.</p>
     <p style="margin-bottom:0">To get back to the home page of the app you're in, open the same menu and choose <b>"Go to … home"</b> at the bottom.</p>
   </div>
 
@@ -118,6 +119,22 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
     <a class="go" href="esat/">Open ESAT</a>
   </div>
 
+  <div class="card app ma" style="--c:var(--ma)">
+    <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#1a7f45"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#fff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#c4f0d4"/></svg>Maths</h2>
+    <p>For Edexcel A level Maths (9MA0) and Further Maths (9FM0), including every Further Maths module: Core Pure, Further Pure, Further Statistics, Further Mechanics and Decision. It puts past papers, mark schemes, topic packs and worksheets from Physics &amp; Maths Tutor, Madas Maths and Mr Further Maths in one place, sorted by course and topic.</p>
+    <ul>
+      <li><b>Courses:</b> pick a course, then a topic. Each topic page has short notes, exam questions grouped by topic, practice, any visualisers for it, and a "How confident are you?" rating.</li>
+      <li><b>Papers:</b> full past papers with mark schemes. Sit one with a timer and your scores are logged.</li>
+      <li><b>Practice:</b> whole exam questions with their mark schemes. Answer on paper, then mark yourself.</li>
+      <li><b>Skill drills:</b> quick worked questions that check your answer for you, to build speed on core Pure skills.</li>
+      <li><b>Visualisers:</b> interactive models for the topics that are hard to picture, like 3D matrix transformations, vectors and polar curves. Drag, rotate and change the numbers.</li>
+      <li><b>Videos:</b> links to topic videos from channels like TLMaths, Mr Further Maths, Bicen Maths and ExamSolutions.</li>
+      <li><b>Progress and My courses:</b> see your scores and weak topics. Untick any course you don't take in My courses to hide it everywhere.</li>
+    </ul>
+    <p style="border-left:4px solid var(--ma);padding:.4em .8em;margin:.8em 0;background:color-mix(in srgb,var(--ma) 8%,transparent);border-radius:0 8px 8px 0"><b>About the notes:</b> the topic notes are short summaries to remind you of the main ideas. They don't cover or explain everything on the spec, and they were written with AI, so they may contain mistakes. To learn a topic properly or clear up anything confusing, watch the linked videos on the topic page or check your textbook.</p>
+    <a class="go" href="maths/">Open Maths</a>
+  </div>
+
   <div class="card" style="border-left:6px solid #b23a33">
     <h3 style="margin-top:0">Found a bug or a mistake?</h3>
     <p>Please tell me! Wrong answers, typos, missing pictures, broken buttons: anything helps. Copy the page link from your address bar first, so I can find it.</p>
@@ -126,7 +143,7 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
   </div>
 
 </main>
-<footer>Made by Tanmay V</footer>
+<footer>Made by Tanmay Vashishtha</footer>
 <script>
 (function(){var b=document.getElementById('btnDys'),r=document.documentElement;
 function sync(){b.setAttribute('aria-pressed',r.classList.contains('dys'))}
