@@ -34,7 +34,7 @@ notes:`
 <circle cx="270" cy="118" r="4"/><line x1="270" y1="106" x2="270" y2="130"/>
 <circle cx="350" cy="95" r="4"/><line x1="350" y1="82" x2="350" y2="108"/>
 <circle cx="430" cy="60" r="4"/><line x1="430" y1="46" x2="430" y2="74"/></g>
-<text x="330" y="40" class="lbl1">best fit</text><text x="380" y="92" class="lbl2">worst acceptable</text>
+<text x="440" y="34" class="lbl1" text-anchor="middle">best fit</text><text x="400" y="106" class="lbl2" text-anchor="middle">worst acceptable</text>
 </svg>
 <p>The <strong>uncertainty in a gradient</strong> = |best gradient − worst gradient|. The worst acceptable line goes through all error bars, as steep (or shallow) as possible. % uncertainty in gradient = (difference ÷ best gradient) × 100%.</p>
 <h2>Graphs and linearising</h2>

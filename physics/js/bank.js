@@ -46,7 +46,12 @@ const textOf=(q,kind)=>loadPack(q.c).then(m=>(m._t||{})[q.id+kind]||'');
 
 /* ---------- helpers ---------- */
 const topicChips=q=>q.t.filter(t=>byId[t]).map((t,i)=>`<a class="chip ${i?'':'brand'}" href="#t-${t}">${t} ${esc(byId[t].title)}</a>`).join('');
-const status=q=>{ const r=S.bank[q.id]; if(!r||r.got==null) return ''; const f=r.got/(q.m||1); return `<span class="chip ${f>=0.7?'good':f>=0.4?'warn':'bad'}">${r.got}/${q.m}</span>`; };
+const done=q=>{ const r=S.bank[q.id]; return !!(r&&(r.got!=null||r.ch||r.rev))||!!((S.answers||{})['b:'+q.id]); };
+/* a short, readable preview: drop part labels, figure/table refs, marks, dotted lines and number soup; keep the first real sentence */
+const snip=q=>{ let s=(q.wr?q.wr.stem+' '+q.wr.parts[0].q:q.s)||''; s=s.replace(/\[\s*\d+\s*(marks?)?\s*\]/gi,' ').replace(/\b(Fig(ure)?|Table)\.?\s*\d+(\.\d+)?/gi,' ').replace(/\((?:[a-h]|i{1,3}|iv|vi{0,3}|ix|x)\)/g,' ').replace(/[.…_]{3,}/g,' ').replace(/^\s*(Q|M)?\d{1,2}\s*/,'').replace(/\s+/g,' ').trim();
+  const sents=s.split(/(?<=[.?!])\s+/); const good=sents.find(x=>{ const w=x.split(' '); const words=w.filter(t=>/^[A-Za-z][a-z’'-]{2,}[,.?!:]?$/.test(t)).length; return w.length>=6&&words/w.length>0.6; })||s;
+  return good.length>150?good.slice(0,147).replace(/\s+\S*$/,'')+'…':good; };
+const status=q=>{ const r=S.bank[q.id]; if(q.mcq&&r&&r.ch) return `<span class="chip ${r.ch===q.mcq?'good':'bad'}">${r.ch===q.mcq?'✓ correct':'✗ '+r.ch}</span>`; if(!r||r.got==null) return done(q)?'<span class="chip">started</span>':''; const f=r.got/(q.m||1); return `<span class="chip ${f>=0.7?'good':f>=0.4?'warn':'bad'}">${r.got}/${q.m}</span>`; };
 const mcqKey=(q,ch)=>{ const right=ch===q.mcq; S.bank[q.id]={got:right?q.m||1:0,ts:Date.now(),rev:1,ch}; save(); return right; };
 const topicOpts=sel=>T.map(t=>`<option value="${t.id}" ${sel===t.id?'selected':''}>${t.id} ${esc(t.title)}</option>`).join('');
 const shuffle=a=>{ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
@@ -78,7 +83,7 @@ function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
   v.innerHTML=`<span class="eyebrow">Past paper and exam-style questions</span><h1>Practice questions</h1>
   <p class="muted" style="max-width:78ch">${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H556. Filtering by a topic or module only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
-  <div class="filters"><label class="field">Module<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
+  <div class="filters bkfilters"><label class="field">Module<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
   <label class="field">Topic<select id="bt"><option value="">All topics</option>${topicOpts(pre.t)}</select></label>
   <label class="field">Source<select id="bs"><option value="">All sources</option>${Object.entries(SRCL).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
   <label class="field">Type<select id="by"><option value="">All</option><option value="mcq">Multiple choice</option><option value="str">Structured</option></select></label>
@@ -88,8 +93,8 @@ function viewBank(v){
   <div class="bk-list" id="blist"></div><div style="text-align:center;margin:16px 0"><button class="btn" id="bmore" hidden>Show more</button></div>`;
   if(pre.t) $('#bt').value=pre.t; if(pre.m) $('#bm').value=pre.m; if(pre.src) $('#bs').value=pre.src; if(pre.type) $('#by').value=pre.type; if(pre.st) $('#bst').value=pre.st; if(pre.q) $('#bq').value=pre.q;
   let list=[], shown=0;
-  const item=q=>`<a class="bk-item" href="#pq-${q.id}"><div class="bk-main"><span class="eyebrow">${esc(qLabel(q))} · ${q.mcq?'Multiple choice':'Structured'}</span><span class="bk-snip">${esc(q.s.slice(0,170))}${q.s.length>170?'…':''}</span><span class="bk-tags">${q.t.filter(t=>byId[t]).map(t=>`<span class="chip">${t}</span>`).join('')}</span></div><div class="bk-side"><b>${q.m||'?'}</b><small>marks</small>${status(q)}</div></a>`;
-  const more=()=>{ const next=list.slice(shown,shown+40); $('#blist').insertAdjacentHTML('beforeend',next.map(item).join('')); shown+=next.length; $('#bmore').hidden=shown>=list.length; };
+  const item=q=>`<a class="bk-item${done(q)?' done':''}" href="#pq-${q.id}"><div class="bk-main"><span class="eyebrow">${esc(qLabel(q))} · ${q.mcq?'Multiple choice':'Structured'}</span><span class="bk-snip">${esc(snip(q))}</span><span class="bk-tags">${q.t.filter(t=>byId[t]).map(t=>`<span class="chip" title="${esc(byId[t].title)}">${t} ${esc(byId[t].title)}</span>`).join('')}</span></div><div class="bk-side"><b>${q.m||'?'}</b><small>marks</small>${status(q)}</div></a>`;
+  const more=()=>{ const next=list.slice(shown,shown+20); $('#blist').insertAdjacentHTML('beforeend',next.map(item).join('')); shown+=next.length; $('#bmore').hidden=shown>=list.length; };
   const draw=()=>{ const f={m:$('#bm').value,t:$('#bt').value,src:$('#bs').value,type:$('#by').value,st:$('#bst').value,q:$('#bq').value.trim().toLowerCase()};
     sessionStorage.setItem('tt-bankf',JSON.stringify(f)); list=filterQs(f); sessionStorage.setItem('tt-banklist',JSON.stringify(list.map(q=>q.id)));
     $('#bcount').textContent=`${list.length.toLocaleString()} question${list.length===1?'':'s'} · ${list.reduce((a,q)=>a+(q.m||0),0).toLocaleString()} marks`;
@@ -102,7 +107,7 @@ function viewBank(v){
 /* ---------- single question ---------- */
 function viewBankQ(v,id){
   const q=QI[id]; if(!q){ v.innerHTML='<div class="empty">Question not found. <a href="#bank">Practice questions</a></div>'; return; }
-  const list=JSON.parse(sessionStorage.getItem('tt-banklist')||'[]'); const ix=list.indexOf(id); const prev=ix>0?list[ix-1]:null, next=ix>=0&&ix<list.length-1?list[ix+1]:null;
+  let list=JSON.parse(sessionStorage.getItem('tt-banklist')||'[]'); if(!list.includes(id)) list=Q.filter(x=>x.t[0]===q.t[0]).map(x=>x.id); const ix=list.indexOf(id); const prev=ix>0?list[ix-1]:null, next=ix>=0&&ix<list.length-1?list[ix+1]:null;
   const r=S.bank[q.id]||{}; const ak='b:'+q.id;
   v.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><span class="eyebrow"><a href="#bank">Practice questions</a> / ${esc(qLabel(q))}</span><div class="row">${prev?`<a class="btn btn-sm" href="#pq-${prev}">← Previous</a>`:''}${next?`<a class="btn btn-sm" href="#pq-${next}">Next →</a>`:''}</div></div>
   <div class="bk-q"><section class="stack">
@@ -112,6 +117,7 @@ function viewBankQ(v,id){
    ${q.mcq?`<div class="mcq-row" id="mcq">${'ABCD'.split('').map(c=>`<button class="btn mcq ${r.ch===c?(c===q.mcq?'right':'wrong'):''}" data-c="${c}">${c}</button>`).join('')}<span class="muted" id="mcqmsg">${r.ch?(r.ch===q.mcq?'Correct!':'The answer is '+q.mcq):'Pick an answer'}</span></div>`
      :`<label class="muted" for="ans" style="font-size:.8rem">Your answer and working (saved on this device)</label><textarea id="ans" placeholder="Write your answer, part by part…">${esc((S.answers||{})[ak]||'')}</textarea>`}
    ${q.wr?'':`<div class="row pmt-links"><a class="btn btn-sm ghost" href="${esc(pmtQ(q))}" target="_blank" rel="noopener">Question paper on PMT${q.qp?' (p. '+q.qp+')':''} ↗</a><a class="btn btn-sm ghost" href="${esc(pmtM(q))}" target="_blank" rel="noopener">Mark scheme on PMT${q.mp?' (p. '+q.mp+')':''} ↗</a></div>`}
+   <nav class="qnav" aria-label="Question navigation">${prev?`<a class="btn" href="#pq-${prev}">← Previous</a>`:'<span></span>'}<span class="muted">${ix>=0?`${ix+1} of ${list.length}`:''}</span>${next?`<a class="btn primary" href="#pq-${next}">Next question →</a>`:`<a class="btn" href="#bank">Back to the list</a>`}</nav>
   </section>
   <section class="stack">
    <div class="veil ${r.rev?'':'hidden'}" id="veil"><div class="vin"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m||'?'} marks</span></div>
