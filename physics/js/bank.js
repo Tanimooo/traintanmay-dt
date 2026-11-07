@@ -93,7 +93,7 @@ function viewBank(v){
   const draw=()=>{ const f={m:$('#bm').value,t:$('#bt').value,src:$('#bs').value,type:$('#by').value,st:$('#bst').value,q:$('#bq').value.trim().toLowerCase()};
     sessionStorage.setItem('tt-bankf',JSON.stringify(f)); list=filterQs(f); sessionStorage.setItem('tt-banklist',JSON.stringify(list.map(q=>q.id)));
     $('#bcount').textContent=`${list.length.toLocaleString()} question${list.length===1?'':'s'} · ${list.reduce((a,q)=>a+(q.m||0),0).toLocaleString()} marks`;
-    $('#blist').innerHTML=list.length?'':'<div class="empty">No questions match these filters.</div>'; shown=0; more(); };
+    $('#blist').innerHTML=list.length?'':'<div class="empty">No questions match these filters. '+(window.TTPUN?TTPUN.pick(TTPUN.PUN_EMPTY):'')+'</div>'; shown=0; more(); };
   ['bm','bt','bs','by','bst'].forEach(id=>$('#'+id).onchange=draw); let tq; $('#bq').oninput=()=>{ clearTimeout(tq); tq=setTimeout(draw,200); };
   $('#bmore').onclick=more; $('#tomock').onclick=()=>{ const f=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}'); sessionStorage.setItem('tt-mockpre',JSON.stringify({topics:f.t?[f.t]:f.m?T.filter(t=>t.mod===+f.m).map(t=>t.id):[],src:f.src?[f.src]:null,type:f.type||''})); };
   draw();
@@ -182,7 +182,7 @@ function viewMock(v){
   const setMarks=m=>{ cfg.marks=m; $('#mmarks').value=m; $('#mmv').textContent=m; store(); avail(); };
   $('#mmarks').oninput=e=>setMarks(+e.target.value); $$('[data-mk]',v).forEach(b=>b.onclick=()=>setMarks(+b.dataset.mk));
   $('#mtimed').onchange=e=>{ cfg.timed=e.target.checked; store(); avail(); };
-  $('#mstart').onclick=()=>{ const qs=pickQs(cfg); if(!qs.length){ toast('No questions match: widen the filters'); return; }
+  $('#mstart').onclick=()=>{ const qs=pickQs(cfg); if(!qs.length){ toast('No questions match: widen the filters. '+(window.TTPUN?TTPUN.pick(TTPUN.PUN_EMPTY):'')); return; }
     const total=qs.reduce((a,q)=>a+q.m,0); const id='m'+Date.now().toString(36);
     const title=cfg.topics.length===0||cfg.topics.length===T.length?'Whole course':cfg.topics.length<=3?cfg.topics.map(t=>t+' '+byId[t].title).join(', '):cfg.topics.length+' topics';
     S.mocks.push({id,ts:Date.now(),title,cfg:Object.assign({},cfg),qs:qs.map(q=>q.id),total,limit:cfg.timed?minsFor(total)*60:0,used:0,cur:0,a:{},done:false}); if(S.mocks.length>40) S.mocks=S.mocks.slice(-40); save(); location.hash='mockrun-'+id; };
@@ -245,7 +245,7 @@ function viewMockRes(v,id){
   const qs=m.qs.map(i=>QI[i]).filter(Boolean); const LB=labelsFor(qs);
   const draw=()=>{ const s=mockScore(m); const pct=m.total?Math.round(s.g/m.total*100):0; const g=(GR.find(x=>pct>=x[0])||[0,'U'])[1];
     const tp={}; qs.forEach(q=>{ const a=m.a[q.id]||{}; if(a.got==null) return; const t=q.t[0]; const x=tp[t]||(tp[t]={g:0,m:0}); x.g+=a.got; x.m+=q.m; });
-    v.innerHTML=`<span class="eyebrow"><a href="#mock">Practice tests</a> / ${esc(m.title)}</span><h1>Results</h1>
+    v.innerHTML=`<span class="eyebrow"><a href="#mock">Practice tests</a> / ${esc(m.title)}</span><h1>Results</h1><p class="tpun">${esc(window.TTPUN?TTPUN.punFor(pct):'')}</p>
     <div class="grid g3" style="margin:12px 0 18px"><div class="card stat"><b>${s.g}<small>/${m.total}</small></b><span>marks${s.marked<m.total?` (${m.total-s.marked} still to mark)`:''}</span></div><div class="card stat"><b>${pct}%</b><span>rough grade ${g} · grade boundaries change every year</span></div><div class="card stat"><b>${fmtT(m.used)}</b><span>time used${m.limit?' of '+fmtT(m.limit):''}</span></div></div>
     ${Object.keys(tp).length?`<div class="card"><span class="eyebrow">By topic</span>${Object.entries(tp).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,x])=>`<div class="tbar"><span>${t} ${esc((byId[t]||{}).title||'')}</span><div class="bar"><i style="width:${x.g/x.m*100}%"></i></div><b>${x.g}/${x.m}</b></div>`).join('')}</div>`:''}
     <div class="row" style="margin:18px 0 8px;justify-content:space-between"><h2 style="margin:0">Review and mark</h2><div class="row"><button class="btn btn-sm" id="openall">Show all mark schemes</button><a class="btn btn-sm primary" href="#mock">New practice test</a></div></div>
