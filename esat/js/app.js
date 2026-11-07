@@ -196,6 +196,49 @@ if (fsBtn && FullScreen.supported) {
   });
 }
 
+/* ---------------- repeated questions ----------------
+   ENGAA and NSAA reused some questions in the same year. Only the ENGAA copy is kept;
+   META.aliases maps each removed NSAA id to it, so older history and backups still
+   point at a real question. */
+function migrateIds() {
+  const AL = (META && META.aliases) || {};
+  if (!Object.keys(AL).length) return;
+  const st = Store.state;
+  let changed = false;
+  const fix = (id) => {
+    if (AL[id]) {
+      changed = true;
+      return AL[id];
+    }
+    return id;
+  };
+  (st.attempts || []).forEach((a) => (a.qid = fix(a.qid)));
+  const fixSet = (s) => {
+    if (!s || !Array.isArray(s.order)) return;
+    if (!s.order.some((q) => AL[q])) return;
+    const here = typeof s.cursor === 'number' ? fix(s.order[s.cursor]) : null;
+    const order = [];
+    const answers = {};
+    s.order.forEach((q) => {
+      const n = fix(q);
+      const a = (s.answers && s.answers[q]) || { chosen: null, ms: 0, flagged: false, revealed: false };
+      if (answers[n]) {
+        // both copies were in the same set: keep the answered one
+        if (!answers[n].chosen && a.chosen) answers[n] = a;
+        return;
+      }
+      order.push(n);
+      answers[n] = a;
+    });
+    s.order = order;
+    if (s.answers) s.answers = answers;
+    if (here !== null) s.cursor = Math.max(0, order.indexOf(here));
+  };
+  (st.sessions || []).forEach(fixSet);
+  fixSet(st.active);
+  if (changed) Store.flushActive();
+}
+
 /* ---------------- pool + analytics ---------------- */
 function pool() {
   return QS.filter((q) => q.onSpec);
@@ -1690,8 +1733,8 @@ function viewData() {
             Physics sections.</li>
           <li>NSAA Chemistry and Biology were dropped, and only TMUA Paper 1 multiple-choice
             questions were kept.</li>
-          <li>ENGAA and NSAA reused many questions in the same year. Those duplicates were
-            detected by text comparison and only one copy of each was kept.</li>
+          <li>ENGAA and NSAA reused many questions in the same year. Those repeats were
+            found by comparing the question text and images, and only the ENGAA copy of each was kept.</li>
           <li>What remained was checked against the April 2025 ESAT content specification, tagged
             with a specification code and topic, and given a worked solution.</li>
         </ol>
@@ -1724,6 +1767,7 @@ function viewData() {
     r.onload = () => {
       try {
         Store.importJSON(r.result);
+        migrateIds();
         Toast('Backup restored.');
         applyTheme();
         if (typeof applyDys === "function") applyDys();
@@ -1826,6 +1870,8 @@ function render() {
     META = m;
     QS = q;
     BYID = new Map(q.map((x) => [x.id, x]));
+    Object.entries(META.aliases || {}).forEach(([o, n]) => BYID.has(n) && !BYID.has(o) && BYID.set(o, BYID.get(n)));
+    migrateIds();
   } catch (e) {
     view.innerHTML = `<div class="empty"><h2>Could not load the question bank</h2>
       <p>${esc(e.message)}</p></div>`;
