@@ -3,9 +3,12 @@
 'use strict';
 const HIDE = (() => { try { const h = JSON.parse(localStorage.getItem('tt-maths-v1') || '{}').settings?.hide; return Array.isArray(h) ? h : []; } catch(e) { return []; } })();
 const hid = c => HIDE.includes(c);
-const CAT = window.CAT, DR = hid('pure') ? [] : (window.DRILLS || []), VIS = window.VIS || {};
+const CAT = window.CAT, VIS = window.VIS || {};
+let DR = [];
+function buildDrills(){ DR = hid('pure') ? [] : (window.DRILLS || []); }
 { const M = {'pure/diff': ['p1_12', 'p2_9'], 'pure/integ': ['p1_13', 'p2_11'], 'pure/num': ['p2_10'], 'pure/trig': ['p1_9', 'p1_10', 'p2_5', 'p2_7'], 'pure/vec': ['p1_11', 'p2_12'], 'pure/seq': ['p2_3'],
-  'mech/forces': ['m1_10', 'm2_5', 'm2_7'], 'mech/mom': ['m2_4'], 'mech/kin': ['m1_9', 'm1_11', 'm2_6', 'm2_8'], 'stats/data': ['s1_2', 's1_3', 's1_4'], 'stats/hyp': ['s1_7', 's2_1', 's2_3']};
+  'mech/forces': ['m1_10', 'm2_5', 'm2_7'], 'mech/mom': ['m2_4'], 'mech/kin': ['m1_9', 'm1_11', 'm2_6', 'm2_8'], 'stats/data': ['s1_2', 's1_3', 's1_4'], 'stats/hyp': ['s1_7', 's2_1', 's2_3'],
+  'pure/alg': ['p1_4', 'p2_2'], 'pure/exp': ['p1_14'], 'stats/dist': ['s1_6', 's2_3'], 'stats/prob': ['s1_5', 's2_2']};
   Object.values(VIS).forEach(v => { if (v.topics) v.topics = v.topics.flatMap(([c, t]) => (M[c + '/' + t] || [t]).map(x => [c, x])); });
   Object.keys(VIS).forEach(k => { const t = VIS[k].topics; if (t && t.length) { VIS[k].topics = t.filter(([c]) => !hid(c)); if (!VIS[k].topics.length) delete VIS[k]; } }); }
 const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -20,7 +23,11 @@ const ITEMS = CAT.items.filter(it => !hid(it.c)), IBY = Object.fromEntries(ITEMS
 const byC = {}, byT = {};
 ITEMS.forEach(it => { (byC[it.c] = byC[it.c] || []).push(it); if (it.t) (byT[it.c + '/' + it.t] = byT[it.c + '/' + it.t] || []).push(it); });
 const tname = (c, t) => (TOP[c] || []).find(x => x[0] === t)?.[1] || t;
-const DRILL_TOPIC = {chain:'diff', product:'diff', quotient:'diff', implicit:'diff', parametric:'diff', revchain:'integ', parts:'integ', subst:'integ', pfint:'integ', pf:'alg', binomial:'seq', harmonic:'trig', trigeq:'trig', explog:'exp'};
+/* current-spec chapter for each drill (these were still on the pre-reorganisation
+   topic ids, so no drill ever showed up on a topic page) */
+const DRILL_TOPIC = {chain:'p2_9', product:'p2_9', quotient:'p2_9', implicit:'p2_9', parametric:'p2_9',
+  revchain:'p2_11', parts:'p2_11', subst:'p2_11', pfint:'p2_11', pf:'p2_1',
+  binomial:'p2_4', harmonic:'p2_7', trigeq:'p1_10', explog:'p1_14'};
 const DBY = Object.fromEntries(DR.map(d => [d.key, d]));
 
 /* ---------------- storage ---------------- */
@@ -33,10 +40,12 @@ let st = null;
 const save = () => { clearTimeout(st); st = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem(DKEY, JSON.stringify(D)); } catch(e) {} }, 120); };
 const touchDay = () => { const d = new Date().toISOString().slice(0, 10); if (!S.days.includes(d)) { S.days.push(d); if (S.days.length > 500) S.days = S.days.slice(-500); } };
 const toast = m => { const el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = m; document.body.appendChild(el); setTimeout(() => el.remove(), 2400); };
-function applyTheme(){ const t = S.settings.theme; if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); $('#theme').value = t; window.dispatchEvent(new Event('themechange')); }
-function applyDys(){ document.documentElement.classList.toggle('dys', !!S.settings.dys); $('#dys').setAttribute('aria-pressed', S.settings.dys ? 'true' : 'false'); }
+function applyTheme(){ const t = S.settings.theme; if (t === 'system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t); $('#theme').value = t; const d = $('#dtheme'); if (d) d.value = t; window.dispatchEvent(new Event('themechange')); }
+function applyDys(){ document.documentElement.classList.toggle('dys', !!S.settings.dys); $('#dys').setAttribute('aria-pressed', S.settings.dys ? 'true' : 'false');
+  const d = $('#ddys'); if (d) { d.setAttribute('aria-checked', S.settings.dys ? 'true' : 'false'); d.textContent = S.settings.dys ? 'On' : 'Off'; } }
+function setDys(v){ S.settings.dys = !!v; save(); applyDys(); }
 $('#theme').onchange = e => { S.settings.theme = e.target.value; save(); applyTheme(); };
-$('#dys').onclick = () => { S.settings.dys = !S.settings.dys; save(); applyDys(); };
+$('#dys').onclick = () => setDys(!S.settings.dys);
 applyTheme(); applyDys();
 const math = el => { try { renderMathInElement(el, {delimiters:[{left:'$', right:'$', display:false}], throwOnError:false}); } catch(e) {} };
 
@@ -57,11 +66,25 @@ const IC = {
  sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'
 };
 const ic = (k, w = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
-const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills'], ['vis', 'Visualisers'], ['progress', 'Progress']];
+/* third entry is the short label used in the top bar; the drawer always spells it out */
+const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills', 'Drills'], ['vis', 'Visualisers', 'Visuals'], ['videos', 'Videos'], ['progress', 'Progress']];
 function renderNav(active){
-  $('#nav').innerHTML = NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${ic(k)}<span>${l}</span></a>`).join('');
-  $('#drawerpanel').innerHTML = `<input type="search" id="dsearch" placeholder="Search everything…" aria-label="Search">` + NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
-    '<hr style="border:0;border-top:1px solid var(--line);width:100%">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') + `<a href="#mycourses" class="mclink" ${active === 'mycourses' ? 'aria-current="page"' : ''}>${ic('sliders')}My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>`;
+  $('#nav').innerHTML = NAV.map(([k, l, short]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''} title="${esc(l)}">${ic(k)}<span>${esc(short || l)}</span></a>`).join('');
+  $('#drawerpanel').innerHTML =
+    `<div class="dw-head"><b>Menu</b><button class="iconbtn" id="dclose" aria-label="Close menu">\u00d7</button></div>` +
+    `<input type="search" id="dsearch" placeholder="Search everything\u2026" aria-label="Search">` +
+    NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
+    '<hr class="dw-rule">' +
+    `<div class="dw-set"><label for="dtheme">Theme</label><select class="sel" id="dtheme"><option value="system">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>` +
+    `<div class="dw-set"><label for="ddys">Dyslexia-friendly font</label><button class="iconbtn" id="ddys" role="switch" aria-checked="${S.settings.dys ? 'true' : 'false'}">${S.settings.dys ? 'On' : 'Off'}</button></div>` +
+    '<hr class="dw-rule">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') +
+    `<a href="#mycourses" class="mclink" ${active === 'mycourses' ? 'aria-current="page"' : ''}>${ic('sliders')}My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>` +
+    `<button class="dw-switch" id="dswitch">Switch app <small>Design &amp; Technology \u00b7 Physics \u00b7 ESAT</small></button>`;
+  $('#dclose').onclick = closeDrawer;
+  const dt = $('#dtheme'); dt.value = S.settings.theme;
+  dt.onchange = e => { S.settings.theme = e.target.value; save(); applyTheme(); };
+  $('#ddys').onclick = () => { setDys(!S.settings.dys); };
+  $('#dswitch').onclick = () => { closeDrawer(); const b = document.querySelector('.brand'); if (b) setTimeout(() => b.click(), 0); };
   const ds = $('#dsearch'); if (ds) ds.addEventListener('keydown', e => { if (e.key === 'Enter') { Q.q = ds.value; closeDrawer(); location.hash = 'search'; if (location.hash === '#search') route(); } });
 }
 const closeDrawer = () => { $('#drawer').hidden = true; };
@@ -72,6 +95,25 @@ $('#drawer').addEventListener('click', e => { if (e.target.id === 'drawer' || e.
 const DOCN = {QP:'Questions', QPMS:'Questions + MS', MS:'Mark scheme', MA:'Model answers', SOL:'Solutions', AB:'Answer book', WS:'Worksheet', ANS:'Answers', PDF:'Open PDF'};
 const DOCC = {QP:'qp', QPMS:'qp', WS:'qp', PDF:'qp', MS:'ms', ANS:'ms', MA:'ma', SOL:'ma', AB:''};
 const best = id => { const h = S.scores[id]; if (!h || !h.length) return null; return h.reduce((a, b) => (b.s / b.m > a.s / a.m ? b : a)); };
+/* Several worksheets in a section can share a title (four "Mixed exam-style questions
+   on algebra" in one list). Pull the sheet number out of the file name so they can be
+   told apart, and fall back to numbering them. */
+function sheetTag(it){
+  const u = (it.d && it.d[0] && it.d[0][1]) || '';
+  const m = decodeURIComponent(u).match(/\/(\d{1,2}[a-z]?)[.\s]/i);
+  return m ? 'Sheet ' + m[1] : '';
+}
+function disambiguate(arr){
+  const byName = new Map();
+  arr.forEach(it => { const k = (it.n || '').toLowerCase(); byName.set(k, (byName.get(k) || 0) + 1); });
+  const seen = new Map();
+  return arr.map(it => {
+    const k = (it.n || '').toLowerCase();
+    if ((byName.get(k) || 0) < 2) return it;
+    const i = (seen.get(k) || 0) + 1; seen.set(k, i);
+    return Object.assign({}, it, {n: it.n + ' \u00b7 ' + (sheetTag(it) || '#' + i)});
+  });
+}
 function itemRow(it, opts = {}){
   const done = !!S.done[it.i];
   const b = best(it.i);
@@ -89,8 +131,9 @@ function groupBlocks(list, opts = {}){
   list.forEach(it => { const g = opts.groupBy ? opts.groupBy(it) : it.g; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(it); });
   let out = '', k = 0;
   for (const [g, arr] of groups) {
+    const items = disambiguate(arr);
     const done = arr.filter(it => S.done[it.i]).length;
-    out += `<details class="group" ${opts.open === 'all' || (opts.open !== 'none' && k < (opts.openN ?? 2)) ? 'open' : ''}><summary>${esc(g)}<span class="cnt">${done}/${arr.length} done</span></summary><div class="items">${arr.map(it => itemRow(it, {sub: opts.sub ? opts.sub(it) : ''})).join('')}</div></details>`;
+    out += `<details class="group" ${opts.open === 'all' || (opts.open !== 'none' && k < (opts.openN ?? 2)) ? 'open' : ''}><summary>${esc(g)}<span class="cnt">${done}/${arr.length} done</span></summary><div class="items">${items.map(it => itemRow(it, {sub: opts.sub ? opts.sub(it) : ''})).join('')}</div></details>`;
     k++;
   }
   return out || '<div class="empty">Nothing here yet.</div>';
@@ -145,7 +188,7 @@ function pageHome(){
   ${rec.length ? `<section><div class="sec-head"><h2>Pick up where you left off</h2></div><div class="group"><div class="items" style="border:0">${rec.map(it => itemRow(it, {sub: esc((CBY[it.c]?.name || 'Extension') + ' · ' + it.g)})).join('')}</div></div></section>` : ''}
   <section><div class="quick">
     <a class="qtile" href="#papers"><span class="ic">${ic('papers')}</span><span><b>Past papers</b><span>Timed, with score log</span></span></a>
-    <a class="qtile" href="#practice"><span class="ic">${ic('practice')}</span><span><b>Practice questions</b><span>${PQ.length.toLocaleString()} exam Qs, self-marked</span></span></a>
+    <a class="qtile" href="#practice"><span class="ic">${ic('practice')}</span><span><b>Practice questions</b><span>${(PR ? PQ.length : (window.PCOUNT || {}).t || 0).toLocaleString()} exam Qs, self-marked</span></span></a>
     <a class="qtile" href="#drills"><span class="ic">${ic('drills')}</span><span><b>Skill drills</b><span>700 worked questions</span></span></a>
     <a class="qtile" href="#vis"><span class="ic">${ic('vis')}</span><span><b>Visualisers</b><span>Matrices, 3D vectors, polar…</span></span></a>
     <a class="qtile" href="#videos"><span class="ic">${ic('videos')}</span><span><b>Videos</b><span>Topic videos & revision</span></span></a>
@@ -211,12 +254,13 @@ function pageCourse(cid, tab){
   let body = '';
   if (tab === 'topics') {
     const vis = visFor(cid);
-    body = `<div class="grid g3">${(TOP[cid] || []).map(([tid, tn], i) => {
+    body = `<p class="ragkey">The dot on each card is how confident you said you were: <span class="rag r"></span> not yet \u00b7 <span class="rag a"></span> getting there \u00b7 <span class="rag g"></span> confident \u00b7 <span class="rag"></span> not set. Set it on the topic page.</p>
+    <div class="grid g3">${(TOP[cid] || []).map(([tid, tn], i) => {
       const list = byT[cid + '/' + tid] || [], v = S.conf[cid + '/' + tid] || '';
       const ex = list.filter(x => x.s === 'exam').length, pr = list.filter(x => x.s === 'prac').length, dn = list.filter(x => S.done[x.i]).length;
       const hasVis = visFor(cid, tid).length;
       return `<a class="tcard" href="#t-${cid}-${tid}"><div class="top">${/^Y\d/.test(tn) ? '' : `<span class="num">${i + 1}</span>`}<h4>${esc(tn)}</h4><span class="rag ${v}" title="Confidence"></span></div>
-        <div class="row" style="gap:6px">${ex ? `<span class="chip brand">${ex} exam packs</span>` : ''}${pr ? `<span class="chip">${pr} practice</span>` : ''}${hasVis ? `<span class="chip acc">Visualiser</span>` : ''}${!ex && !pr ? '<span class="chip">Use the papers tab</span>' : ''}</div>
+        <div class="row" style="gap:6px">${ex ? `<span class="chip brand">${ex} exam packs</span>` : ''}${pr ? `<span class="chip">${pr} practice</span>` : ''}${hasVis ? `<span class="chip acc">Visualiser</span>` : ''}${!ex && !pr ? `<span class="muted" style="font-size:.78rem">No topic packs \u2014 see <b>Papers</b></span>` : ''}</div>
         ${list.length ? `<div class="bar"><i style="width:${Math.round(100 * dn / list.length)}%"></i></div>` : ''}</a>`;
     }).join('')}</div>
     ${vis.length ? `<section><h2>Visualisers for this course</h2><div class="grid g2">${vis.map(visCard).join('')}</div></section>` : ''}
@@ -273,10 +317,10 @@ function notesHTML(cid, tid){
   const N = (window.NOTES || {})[cid] || {}, L = N[tid]; if (!L) return '';
   const body = Array.isArray(L) ? `<ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : mdNotes(L);
   const vids = (VID.by[cid] || []).filter(v => v.t === tid).slice(0, 4);
-  return `<section class="notes card"><div class="sec-head"><h2>Topic notes</h2><span class="chip">AI generated</span></div>
+  return `<section class="notes card" id="snotes"><div class="sec-head"><h2>Topic notes</h2><span class="chip">AI generated</span></div>
   <p class="note" style="margin:6px 0 12px">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
   <details><summary>Show notes</summary><div class="nbody">${body}</div></details>
-  ${vids.length ? `<p style="margin:14px 0 6px"><b>Need more help? Watch:</b></p><div class="vids">${vids.map(vidCard).join('')}</div>` : `<p class="muted" style="font-size:.85rem;margin-top:10px">For more help, see the <a href="#videos">videos page</a>.</p>`}</section>`;
+  <p class="muted" style="font-size:.85rem;margin-top:10px">Need more help? ${vids.length ? `<a href="#" data-jump="sw">${vids.length} video${vids.length > 1 ? 's' : ''} for this topic</a> are further down the page.` : `See the <a href="#videos">videos page</a>.`}</p></section>`;
 }
 function pageTopic(cid, tid){
   const c = CBY[cid]; if (!c) return pageHome();
@@ -292,7 +336,7 @@ function pageTopic(cid, tid){
   app.innerHTML = `<div class="crumbs"><a href="#courses">Courses</a>›<a href="#c-${cid}">${esc(c.name)}</a>›<span>${esc(tname(cid, tid))}</span></div>
    <div class="tp-head"><div><p class="eyebrow">${esc(c.code)} · Topic ${idx + 1}</p><h1>${esc(tname(cid, tid))}</h1>${(() => { const e = (TOP[cid] || []).find(x => x[0] === tid); return e && e[2] ? `<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">${e[2].map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''; })()}</div>
      <div><div class="eyebrow" style="margin-bottom:6px">How confident are you?</div><div class="conf" role="group" aria-label="Confidence">${[['r', 'Not yet'], ['a', 'Getting there'], ['g', 'Confident']].map(([k, l]) => `<button class="${k}" data-conf="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div></div></div>
-   <div class="jump">${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
+   <div class="jump">${(window.NOTES || {})[cid]?.[tid] ? '<a class="btn sm" href="#" data-jump="snotes">Notes</a>' : ''}${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
    ${pcount(cid, tid) ? `<section><a class="pbanner" href="#px-${cid}-${tid}"><span class="ic">${ic('practice')}</span><span><b>${pcount(cid, tid)} practice questions</b><span>Whole exam questions with their mark schemes – mark yourself</span></span><span class="go">Start →</span></a></section>` : ''}
    ${vis.length ? `<section id="sv"><h2>Visualise it</h2><div class="grid g2">${vis.map(visCard).join('')}</div></section>` : ''}
    ${examS.length ? `<section id="sx"><div class="sec-head"><h2>Exam questions</h2><span class="muted">Real past-paper questions grouped by topic</span></div>${groupBlocks(examS, {openN: 2, sub: it => it.x?.yr ? esc(it.x.yr) : (it.x?.cat ? esc(it.x.cat) : '')})}</section>` : ''}
@@ -490,12 +534,15 @@ function pageProgress(){
 
 /* ---------------- practice questions (whole exam questions + mark schemes, self-marked) ---------------- */
 const QBASE = 'img/q/', QALT = 'https://tanimooo.github.io/trainTanmay-maths/q/';
-const PR = window.PRACTICE || {packs: [], q: []};
-const PQC = {};
-const PQ = PR.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = PR.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; }).filter(q => !hid(q.c));
 const CIDX = Object.fromEntries(COURSES.map((c, i) => [c.id, i])), PTIDX = q => (TOP[q.c] || []).findIndex(x => x[0] === q.t);
-PQ.sort((a, b) => (CIDX[a.c] - CIDX[b.c]) || (PTIDX(a) - PTIDX(b)));
-const PQBY = Object.fromEntries(PQ.map(q => [q.id, q]));
+let PR = null, PQ = [], PQBY = {};
+function buildPractice(){
+  const D = window.PRACTICE; if (!D) return;
+  PR = D; const PQC = {};
+  PQ = D.q.map(([p, n, mk, qi, mi, qt, qc]) => { const pk = D.packs[p]; PQC[p] = (PQC[p] || 0) + 1; return {id: pk[0] + '-' + PQC[p], pk: pk[0], c: qc || pk[1], t: qt || pk[2], pn: pk[3], src: pk[4], yr: pk[5], n, mk, qi, mi}; }).filter(q => !hid(q.c));
+  PQ.sort((a, b) => (CIDX[a.c] - CIDX[b.c]) || (PTIDX(a) - PTIDX(b)));
+  PQBY = Object.fromEntries(PQ.map(q => [q.id, q]));
+}
 S.prac = S.prac || {};
 const PF = () => { const f = S.settings.prac = Object.assign({cs: [], ts: [], srcs: [], st: 'all', n: 10, ord: 'rand'}, S.settings.prac || {}); ['cs', 'ts', 'srcs'].forEach(k => { if (!Array.isArray(f[k])) f[k] = []; }); return f; };
 const pscore = q => { const r = S.prac[q.id]; return r && r.of ? r.m / r.of : null; };
@@ -504,7 +551,10 @@ function pfilter(f = PF()){
     f.st === 'all' || (f.st === 'new' && !S.prac[q.id]) || (f.st === 'weak' && pscore(q) != null && pscore(q) < .6) || (f.st === 'flag' && S.prac[q.id]?.f)));
 }
 const qimg = (p, cls = '') => p ? `<div class="qimg ${cls}" style="aspect-ratio:${p[3]}/${p[2]};max-width:${Math.round(p[3] / 1.6 * 1.3)}px"><img src="${QBASE}${esc(p[0])}" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${QALT}${esc(p[0])}'}" alt="" decoding="async" style="width:${(p[4] / p[3] * 100).toFixed(3)}%;margin-top:-${(p[1] / p[3] * 100).toFixed(4)}%"></div>` : '';
-const pcount = (c, t) => PQ.filter(q => q.c === c && (!t || q.t === t)).length;
+/* counts come from the 2 KB index so ordinary pages never need the 860 KB practice file;
+   once that file is loaded we count it directly, which also respects hidden courses */
+const pcount = (c, t) => PR ? PQ.filter(q => q.c === c && (!t || q.t === t)).length
+                            : ((window.PCOUNT || {n: {}}).n[t ? c + '/' + t : c] || 0);
 function pstatus(q){ const r = S.prac[q.id]; if (!r || r.m == null) return r?.f ? '<span class="chip acc">Flagged</span>' : '';
   const s = r.of ? r.m / r.of : 0; return `<span class="chip ${s >= .8 ? 'g' : s >= .5 ? 'a' : 'r'}">${r.m}/${r.of}</span>${r.f ? ' <span class="chip acc">Flagged</span>' : ''}`; }
 let PSET = null; try { PSET = JSON.parse(sessionStorage.getItem('tt-pset') || 'null'); } catch(e) {}
@@ -614,10 +664,49 @@ function pageMyCourses(){
 }
 
 /* ---------------- router ---------------- */
+
+/* ---------------- on-demand data ----------------
+   catalog.js is needed everywhere, but practice (860 KB), drills (460 KB) and notes
+   (330 KB) are only needed on some pages, so they are fetched the first time a page
+   actually needs them instead of on every visit. */
+const LOADED = {}, LOADING = {};
+function loadData(name){
+  if (LOADED[name]) return Promise.resolve();
+  if (LOADING[name]) return LOADING[name];
+  return LOADING[name] = new Promise(res => {
+    const s = document.createElement('script');
+    s.src = 'data/' + name + '.js';
+    s.onload = s.onerror = () => { LOADED[name] = true; res(); };
+    document.head.appendChild(s);
+  });
+}
+function needsOf(h){
+  const n = [];
+  if (/^(practice|pset-done)$/.test(h) || /^(px|q)-/.test(h) || h === 'progress') n.push('practice');
+  if (/^drills?$/.test(h) || /^drill-/.test(h)) n.push('drills');
+  const t = h.match(/^t-(\w+?)-/);
+  if (t) { n.push('notes'); if (t[1] === 'pure') n.push('drills'); }  // only Pure has skill drills
+  return n;
+}
+function afterLoad(name){
+  if (name === 'practice') buildPractice();
+  if (name === 'drills') buildDrills();
+}
 function route(){
+  const h0 = location.hash.slice(1) || 'home';
+  const need = needsOf(h0).filter(n => !LOADED[n]);
+  if (need.length) {
+    app.innerHTML = '<div class="empty" style="margin-top:40px">Loading\u2026</div>';
+    Promise.all(need.map(n => loadData(n).then(() => afterLoad(n)))).then(() => {
+      if ((location.hash.slice(1) || 'home') === h0) draw(h0);
+    });
+    return;
+  }
+  draw(h0);
+}
+function draw(h){
   if (unmount) { try { unmount(); } catch(e) {} unmount = null; }
   clearInterval(TIMER);
-  const h = location.hash.slice(1) || 'home';
   let m, nav = 'home';
   if (h === 'home') pageHome();
   else if (h === 'courses') { nav = 'courses'; pageCourses(); }
