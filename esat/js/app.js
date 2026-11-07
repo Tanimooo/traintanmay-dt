@@ -349,7 +349,7 @@ function startSession(cfg) {
     reveal: cfg.reveal, // 'instant' | 'end'
     timed: !!cfg.timed,
     limitMs: cfg.timed ? cfg.limitMin * 60000 : 0,
-    pausable: !!(cfg.timed && cfg.pausable),
+    pausable: !!cfg.pausable,
     startedAt: Date.now(),
     finishedAt: null,
     elapsedMs: 0,
@@ -801,14 +801,14 @@ function viewBuild() {
           <label class="switch" style="margin-bottom:var(--space-4)">
             <input type="checkbox" id="b-timed" ${builder.timed ? 'checked' : ''} />
             <span>Timed — countdown with auto-submit</span></label>
+          <label class="switch" style="margin-bottom:var(--space-2)">
+            <input type="checkbox" id="b-pause" ${builder.pausable ? 'checked' : ''} />
+            <span>Allow pausing — adds a pause button that stops the clock during the test</span></label>
+          <p class="muted" style="font-size:var(--text-xs);margin:0 0 var(--space-4)">
+            Best left off: without it you complete the set in one go, under realistic exam conditions.</p>
           <div id="b-limitwrap" style="${builder.timed ? '' : 'display:none'}">
             <label class="field" for="b-limit">Time limit (minutes)</label>
             <input type="number" id="b-limit" min="1" max="180" value="${builder.limitMin}" />
-            <label class="switch" style="margin-top:var(--space-4)">
-              <input type="checkbox" id="b-pause" ${builder.pausable ? 'checked' : ''} />
-              <span>Allow pausing — adds a pause button that stops the clock during the test</span></label>
-            <p class="muted" style="font-size:var(--text-xs);margin:var(--space-2) 0 0">
-              Best left off: without it you complete the set in one go, under realistic exam conditions.</p>
           </div>
           <label class="field" style="margin-top:var(--space-5)">Show answers</label>
           <div class="chips" id="b-reveal">
@@ -1804,13 +1804,13 @@ function styleTag(qid) {
 async function loadExp(subject) {
   if (!ESTYLE) {
     try {
-      ESTYLE = await (await fetch('data/esatstyle.json')).json();
+      ESTYLE = await (await fetch('data/esatstyle.json', { cache: 'no-cache' })).json();
     } catch (e) {
       ESTYLE = {};
     }
   }
   if (EXP[subject]) return EXP[subject];
-  const r = await fetch(`data/exp_${subject}.json`);
+  const r = await fetch(`data/exp_${subject}.json`, { cache: 'no-cache' });
   EXP[subject] = await r.json();
   return EXP[subject];
 }
@@ -1864,8 +1864,8 @@ function render() {
   });
   try {
     const [m, q] = await Promise.all([
-      fetch('data/meta.json').then((r) => r.json()),
-      fetch('data/questions.json').then((r) => r.json()),
+      fetch('data/meta.json', { cache: 'no-cache' }).then((r) => r.json()),
+      fetch('data/questions.json', { cache: 'no-cache' }).then((r) => r.json()),
     ]);
     META = m;
     QS = q;
