@@ -306,6 +306,7 @@ function startSession(cfg) {
     reveal: cfg.reveal, // 'instant' | 'end'
     timed: !!cfg.timed,
     limitMs: cfg.timed ? cfg.limitMin * 60000 : 0,
+    pausable: !!(cfg.timed && cfg.pausable),
     startedAt: Date.now(),
     finishedAt: null,
     elapsedMs: 0,
@@ -678,6 +679,7 @@ const builder = {
   count: 20,
   timed: false,
   limitMin: 30,
+  pausable: false,
   reveal: 'end',
 };
 function viewBuild() {
@@ -759,6 +761,11 @@ function viewBuild() {
           <div id="b-limitwrap" style="${builder.timed ? '' : 'display:none'}">
             <label class="field" for="b-limit">Time limit (minutes)</label>
             <input type="number" id="b-limit" min="1" max="180" value="${builder.limitMin}" />
+            <label class="switch" style="margin-top:var(--space-4)">
+              <input type="checkbox" id="b-pause" ${builder.pausable ? 'checked' : ''} />
+              <span>Allow pausing — adds a pause button that stops the clock during the test</span></label>
+            <p class="muted" style="font-size:var(--text-xs);margin:var(--space-2) 0 0">
+              Best left off: without it you complete the set in one go, under realistic exam conditions.</p>
           </div>
           <label class="field" style="margin-top:var(--space-5)">Show answers</label>
           <div class="chips" id="b-reveal">
@@ -835,6 +842,8 @@ function viewBuild() {
     if (builder.timed) builder.limitMin = Math.max(1, Math.round(builder.count * 1.48));
     viewBuild();
   };
+  const pz = document.getElementById('b-pause');
+  if (pz) pz.onchange = (e) => (builder.pausable = e.target.checked);
   const lim = document.getElementById('b-limit');
   if (lim) lim.onchange = () => (builder.limitMin = Math.max(1, +lim.value || 1));
   document.getElementById('b-go').onclick = () =>
@@ -859,6 +868,7 @@ const Player = (() => {
   let tick = null,
     qStart = 0,
     paused = false,
+    userPaused = false,
     live = false;
 
   function activeQ() {
@@ -942,10 +952,23 @@ const Player = (() => {
     };
   }
 
+  function pause() {
+    if (userPaused) return;
+    commit();
+    paused = userPaused = true;
+    draw();
+  }
+  function resume() {
+    if (!userPaused) return;
+    paused = userPaused = false;
+    qStart = performance.now();
+    draw();
+  }
+
   function start() {
     stop();
     qStart = performance.now();
-    paused = false;
+    paused = userPaused = false;
     live = true;
     tick = setInterval(paint, 250);
     paint();
@@ -983,6 +1006,22 @@ const Player = (() => {
     const revealed = s.reveal === 'instant' && a.revealed;
     const answered = s.order.filter((x) => s.answers[x].chosen).length;
 
+    if (userPaused) {
+      view.innerHTML = `
+      <div class="page-head" style="margin-bottom:var(--space-5)">
+        <div><h1>${esc(s.title)}</h1>
+          <p>Paused · ${answered} of ${s.order.length} answered</p></div>
+      </div>
+      <div class="card" style="max-width:520px;margin:var(--space-8) auto;text-align:center">
+        <h2 style="margin-top:0">Test paused</h2>
+        <p class="muted">The clock has stopped and the question is hidden until you resume.</p>
+        <button class="btn btn-primary" id="p-resume">Resume test</button>
+      </div>`;
+      document.getElementById('p-resume').onclick = resume;
+      paint();
+      return;
+    }
+
     view.innerHTML = `
       <div class="page-head" style="margin-bottom:var(--space-5)">
         <div><h1>${esc(s.title)}</h1>
@@ -990,6 +1029,7 @@ const Player = (() => {
             s.timed ? ` · ${s.limitMin || Math.round(s.limitMs / 60000)} minute limit` : ' · untimed'
           }</p></div>
         <div class="row">
+          ${s.pausable ? '<button class="btn" id="p-pause">Pause</button>' : ''}
           <button class="btn btn-ghost" id="p-quit">Abandon</button>
           <button class="btn btn-primary" id="p-finish">Finish &amp; review</button>
         </div>
@@ -1098,6 +1138,8 @@ const Player = (() => {
       if (un && !confirm(`${un} question${un === 1 ? ' is' : 's are'} unanswered. Finish anyway?`)) return;
       finishSession();
     };
+    const pb = document.getElementById('p-pause');
+    if (pb) pb.onclick = pause;
     document.getElementById('p-quit').onclick = () => {
       if (!confirm('Abandon this set? Nothing will be saved.')) return;
       Player.stop();
@@ -1123,7 +1165,7 @@ const Player = (() => {
 
   function keys(e) {
     const s = Store.state.active;
-    if (!s || !location.hash.startsWith('#/run')) return;
+    if (!s || !location.hash.startsWith('#/run') || userPaused) return;
     if (e.target.matches('input,textarea,select')) return;
     // modified keys belong to the browser and to Shift+F for full screen
     if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1147,7 +1189,7 @@ const Player = (() => {
     if (document.hidden) {
       commit();
       paused = true;
-    } else {
+    } else if (!userPaused) {
       paused = false;
       qStart = performance.now();
     }
