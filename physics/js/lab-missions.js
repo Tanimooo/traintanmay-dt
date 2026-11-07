@@ -46,6 +46,10 @@ const MISSIONS={
   info:`<b>The Martian</b> (book 2011, film 2015) is fiction. The Hermes crew, and later Mark Watney’s rescuers, travel between Earth and Mars. This shows the real physics any Mars mission has to follow: the most fuel-efficient route, a <b>Hohmann transfer orbit</b>.`,
   physics:['A Hohmann transfer is half of an ellipse that touches Earth’s orbit (1.00 AU) and Mars’s orbit (1.52 AU) about the Sun.','By Kepler’s third law, the transfer ellipse (semi-major axis 1.26 AU) takes 0.5 × 1.26^1.5 years ≈ 259 days.','You can only launch when Mars is about 44° ahead of Earth, so that Mars arrives at the meeting point at the same time. These launch windows come round every 26 months.','In the story Hermes uses ion engines that thrust continuously, so it can be faster than a pure coasting transfer. The “Rich Purnell manoeuvre” uses a gravity assist from Earth to swing straight back to Mars.'],
   events:[[0,'Launch window','Mars is 44° ahead of Earth. The spacecraft speeds up by about 2.9 km/s, from Earth’s 29.8 km/s to 32.7 km/s, which puts it on the transfer ellipse.'],[24*60,'Coasting outward','The spacecraft slows as it climbs away from the Sun: its kinetic energy turns into gravitational potential energy.'],[24*259,'Arrival at Mars','At the far end of the ellipse it is moving at 21.5 km/s, but Mars moves at 24.1 km/s, so it must speed up or be captured by Mars.']]},
+ halley:{name:'Halley’s Comet: one orbit (1986 to 2061)',rate:2*8766,unit:'h',
+  info:`<b>Halley’s Comet</b> (1P/Halley) · the best-known periodic comet, seen at every return since at least 240 BC · last closest to the Sun on 9 February 1986, when the probe Giotto flew 596 km from its nucleus · it reached its farthest point beyond Neptune’s orbit in December 2023 and is now on its way back · next closest to the Sun on 28 July 2061.`,
+  physics:['Halley moves on a long thin <b>ellipse</b> (eccentricity 0.967). At its closest it is 0.59 AU from the Sun, inside Venus’s orbit. At its farthest it is about 35 AU away, beyond Neptune.','<b>Kepler’s second law</b>: the line from the Sun sweeps out equal areas in equal times. The dots on the orbit are 5 years apart. They bunch up far from the Sun, where Halley crawls at under 1 km/s, and spread out near the Sun, where it races past at about 55 km/s.','<b>Kepler’s third law</b>: T² ∝ a³. With a semi-major axis of 17.8 AU, T = 17.8^1.5 ≈ 75 years.','Energy is conserved: as Halley falls towards the Sun, gravitational potential energy turns into kinetic energy. Near the Sun the ice evaporates and the tail always points away from the Sun, pushed by sunlight and the solar wind.','Halley’s orbit is retrograde: it goes round the Sun the opposite way to the planets.'],
+  events:[[0,'Perihelion 1986','9 February 1986: Halley is closest to the Sun, 0.59 AU away, and moving at about 55 km/s.'],['giotto','Giotto flyby','13 March 1986: ESA’s Giotto probe photographs the dark nucleus from 596 km away.'],['nep','Past Neptune’s orbit','The comet keeps slowing down as it climbs away from the Sun.'],['aph','Aphelion 2023','December 2023: about 35 AU from the Sun, moving at under 1 km/s. It turns back towards the Sun.'],['now','Today','Halley is falling back towards the inner solar system, speeding up all the way.'],['end','Perihelion 2061','28 July 2061: Halley returns to the inner solar system.']]},
  voyager:{name:'Voyager 2: the Grand Tour',rate:24*365,unit:'h',
   info:`<b>Voyager 2</b> · launched 20 August 1977 · flew past Jupiter (1979), Saturn (1981), Uranus (1986) and Neptune (1989). It is still the only spacecraft to visit Uranus and Neptune. It crossed into interstellar space in November 2018 at about 119 AU and is still sending data, now about 140 AU away.`,
   physics:['A rare line-up of the outer planets let each flyby use a <b>gravity assist</b>: the planet’s gravity bends the path and, in the Sun’s frame, the spacecraft gains kinetic energy taken from the planet’s orbital motion.','Without these assists the trip to Neptune would have taken about 30 years instead of 12.','The light-travel time readout shows how long its radio signals take to reach Earth, at c = 3.00 × 10⁸ m/s. At Neptune it was about 4 hours.','Distances here are drawn on a square-root scale so the inner and outer planets fit on one screen. Planet positions are calculated for each date.'],
@@ -81,6 +85,10 @@ const MQ={
  martian:[
   {q:'A Hohmann transfer orbit to Mars has a semi-major axis of 1.26 AU. Use Kepler’s third law to find the travel time (half an orbit) in days.',data:['For Earth: T = 1 year = 365 days, r = 1.00 AU','Kepler’s third law: T² ∝ r³'],ans:258,unit:'days',tol:0.02,work:['T² ∝ a³, so T = 1.26^1.5 years = 1.414 years','Half an orbit: 0.707 years × 365 = 258 days ≈ 259 days']},
   {q:'Calculate Earth’s orbital speed around the Sun, assuming a circular orbit.',data:['Earth–Sun distance = 1.50 × 10¹¹ m','1 year = 3.16 × 10⁷ s'],ans:29.8,unit:'km/s',tol:0.02,work:['v = 2πr/T = 2π × 1.50 × 10¹¹ / 3.16 × 10⁷','v = 2.98 × 10⁴ m/s ≈ 29.8 km/s','To get onto the transfer orbit the spacecraft must leave at about 32.7 km/s in the same direction, about 2.9 km/s faster.']}],
+ halley:[
+  {q:'Halley’s Comet has a semi-major axis of 17.8 AU. Use Kepler’s third law to find its orbital period in years.',data:['For Earth: T = 1.00 year, a = 1.00 AU','T² ∝ a³'],ans:75.1,unit:'years',tol:0.02,work:['T² / a³ is the same for everything orbiting the Sun, so T² = a³ in years and AU','T = 17.8^1.5 = 75.1 years']},
+  {q:'Halley’s closest distance to the Sun is 0.59 AU and its semi-major axis is 17.8 AU. How far from the Sun is it at its farthest point?',data:['The long axis of an ellipse = closest distance + farthest distance = 2a'],ans:35.0,unit:'AU',tol:0.02,work:['r(far) = 2a − r(near)','r(far) = 2 × 17.8 − 0.59 = 35.0 AU, which is beyond Neptune’s orbit (30 AU)']},
+  {q:'At its closest point Halley moves at 54.5 km/s, 0.586 AU from the Sun. At its farthest it is 35.1 AU away. Find its speed there.',data:['At the closest and farthest points the velocity is perpendicular to the Sun–comet line, so v × r is the same at both (angular momentum is conserved).'],ans:0.91,unit:'km/s',tol:0.03,work:['v(far) × r(far) = v(near) × r(near)','v(far) = 54.5 × 0.586 / 35.1 = 0.91 km/s','About 60 times slower: this is Kepler’s second law in action.']}],
  voyager:[
   {q:'In 2026 Voyager 2 is about 140 AU from the Sun. How long do its radio signals take to reach Earth? Give your answer in hours.',data:['1 AU = 1.50 × 10¹¹ m','c = 3.00 × 10⁸ m/s'],ans:19.4,unit:'h',tol:0.03,work:['d = 140 × 1.50 × 10¹¹ = 2.10 × 10¹³ m','t = d/c = 2.10 × 10¹³ / 3.00 × 10⁸ = 7.0 × 10⁴ s','t = 7.0 × 10⁴ / 3600 ≈ 19.4 hours']},
   {q:'Voyager 2 now moves away from the Sun at about 15.4 km/s. How many AU does it travel in one year?',data:['1 AU = 1.50 × 10¹¹ m','1 year = 3.16 × 10⁷ s'],ans:3.24,unit:'AU',tol:0.03,work:['distance = 1.54 × 10⁴ × 3.16 × 10⁷ = 4.87 × 10¹¹ m','4.87 × 10¹¹ / 1.50 × 10¹¹ = 3.24 AU per year']}]
@@ -92,6 +100,10 @@ const MLINKS={
 const num=s=>{ const t=String(s).trim().replace(/\s/g,'').replace(/×10\^?/,'e').replace(/,/g,''); const v=parseFloat(t); return isFinite(v)?v:NaN; };
 function quizHTML(k){ const Q=MQ[k]||[]; if(!Q.length) return ''; return `<div class="mq"><h3 style="margin:18px 0 8px">Try the calculations</h3>${Q.map((q,i)=>`<div class="card mqc" data-i="${i}"><p style="margin:0 0 6px"><b>Q${i+1}.</b> ${q.q}</p><ul class="muted" style="margin:0 0 8px;padding-left:18px;font-size:.9rem">${q.data.map(d=>`<li>${d}</li>`).join('')}</ul><div class="row"><label class="sr" for="mqa${i}">Your answer</label><input id="mqa${i}" type="text" inputmode="decimal" placeholder="Your answer" style="width:150px"><span>${q.unit}</span><button type="button" class="btn btn-sm primary" data-chk="${i}">Check</button><span class="mqr" aria-live="polite"></span></div><details style="margin-top:8px"><summary>Show the working</summary><ol style="margin:6px 0 0;padding-left:20px">${q.work.map(w=>`<li>${w}</li>`).join('')}</ol></details></div>`).join('')}</div>`; }
 function linksHTML(k){ const Lk=MLINKS[k]; return Lk?`<p style="margin:10px 0 0;font-size:.9rem"><b>Read more:</b> ${Lk.map(([t,u])=>`<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join(' · ')}</p>`:''; }
+
+/* Halley's Comet: Kepler orbit, a = 17.83 AU, e = 0.967, retrograde (drawn clockwise) */
+const HL={a:17.834,e:0.96714,t0:1986.108,varpi:170*Math.PI/180}; HL.T=Math.pow(HL.a,1.5); HL.rp=HL.a*(1-HL.e);
+function hlAt(yrs){ const Mm=2*Math.PI*(((yrs/HL.T)%1)+1)%(2*Math.PI); let E=Mm<Math.PI?Mm+HL.e/2:Mm-HL.e/2; for(let i=0;i<40;i++) E-= (E-HL.e*Math.sin(E)-Mm)/(1-HL.e*Math.cos(E)); const th=2*Math.atan2(Math.sqrt(1+HL.e)*Math.sin(E/2),Math.sqrt(1-HL.e)*Math.cos(E/2)); const r=HL.a*(1-HL.e*Math.cos(E)); return {r,th,ang:HL.varpi-th}; }
 L.missions={title:'Famous space missions',cat:'Newtonian world',topic:'5.4',
 desc:'Follow Apollo 11, Artemis II, Hubble, the Roman telescope at L2, a Mars transfer from The Martian and Voyager 2’s Grand Tour, with the gravity physics behind each.',
 howto:'pick a mission, then press play (❚❚ pauses). Drag the <b>Mission time</b> slider to jump around, or tap an event below the picture. For Apollo 11 and Artemis II try the rotating frame to see the figure-of-8.',
@@ -108,15 +120,16 @@ mount(el){ const S=LK.scope(); const c=LK.ctrl(el);
  const ro=LK.readout(el,[['a','mission time'],['b',''],['c',''],['d','']]);
  const info=LK.el('<div class="minfo lab-after"></div>'); el.appendChild(info);
  const roLab=(k,l)=>{ const b=el.querySelector(`.readout [data-k="${k}"]`); if(b) b.nextElementSibling.textContent=l; };
- function tLabel(){ if(!M) return ''; if(key==='voyager') return (VY.t0+tm/8766).toFixed(1); if(M.unit==='h'&&Tend>24*20) return 'day '+(tm/24).toFixed(0); return fmtDH(tm); }
+ function tLabel(){ if(!M) return ''; if(key==='voyager') return (VY.t0+tm/8766).toFixed(1); if(key==='halley') return (HL.t0+tm/8766).toFixed(1); if(M.unit==='h'&&Tend>24*20) return 'day '+(tm/24).toFixed(0); return fmtDH(tm); }
  function setup(){ key=mis.value; M=MISSIONS[key]; tm=0; fin=false; curEv=-1; trail=[];
    frame.closest('label').hidden=!(key==='apollo'||key==='artemis');
    if(key==='apollo'||key==='artemis'){ LM=lunarMission(key); Tend=LM.Tend; }
-   else if(key==='hubble') Tend=24; else if(key==='roman') Tend=24*365; else if(key==='martian') Tend=24*300; else Tend=(2026.9-VY.t0)*8766;
+   else if(key==='hubble') Tend=24; else if(key==='roman') Tend=24*365; else if(key==='martian') Tend=24*300; else if(key==='halley') Tend=HL.T*8766; else Tend=(2026.9-VY.t0)*8766;
    // resolve named event times
    const named={};
    if(key==='apollo'){ named.loi=D.apollo.loi/60; named.tei=D.apollo.tei/60; named.land=named.loi+26.9; named.end=Tend; }
    if(key==='artemis'){ let best=1e18,bt=0,far=0,ft=0; for(let h=0;h<Tend;h+=0.25){ const p=LM.pos(h*60), m=LM.moonAt(h*60); const d=Math.hypot(p[0]-m[0],p[1]-m[1]); if(d<best){best=d;bt=h;} const r=Math.hypot(p[0],p[1]); if(r>far){far=r;ft=h;} } named.flyby=bt; named.far=ft; named.end=Tend; }
+   if(key==='halley'){ const y=yr=>(yr-HL.t0)*8766; named.giotto=y(1986.195); named.aph=HL.T*8766/2; named.now=y(2026.85); named.end=HL.T*8766; let k=0; for(let h=0;h<Tend;h+=200){ if(hlAt(h/8766).r>30.07){ k=h; break; } } named.nep=k; }
    if(key==='voyager'){ const y=yr=>(yr-VY.t0)*8766; named.jup=y(1979.52); named.sat=y(1981.65); named.ura=y(1986.07); named.nep=y(1989.65); named.helio=y(2018.85); named.now=y(2026.8); }
    EV=M.events.map(e=>[typeof e[0]==='string'?named[e[0]]:e[0],e[1],e[2]]).sort((a,b)=>a[0]-b[0]);
    evs.innerHTML=EV.map((e,i)=>`<button type="button" class="chip" data-e="${i}">${LK.esc(e[1])}</button>`).join('');
@@ -124,7 +137,7 @@ mount(el){ const S=LK.scope(); const c=LK.ctrl(el);
    info.innerHTML=`<p style="margin:0 0 8px">${M.info}</p><b>The physics</b><ul>${M.physics.map(p=>`<li>${p}</li>`).join('')}</ul>${linksHTML(key)}${quizHTML(key)}`;
    info.querySelectorAll('[data-chk]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.chk, q=MQ[key][i], box=b.closest('.mqc'), v=num(box.querySelector('input').value), r=box.querySelector('.mqr'); if(isNaN(v)){ r.textContent='Enter a number (e.g. 7.8 or 3.6e4)'; r.className='mqr muted'; return; } const ok=Math.abs(v-q.ans)<=Math.abs(q.ans)*q.tol; r.textContent=ok?'✓ Correct':'✗ Not quite: check your working'; r.className='mqr '+(ok?'good':'bad'); if(!ok) box.querySelector('details').open=false; });
    info.querySelectorAll('.mqc input').forEach(inp=>inp.onkeydown=e=>{ if(e.key==='Enter') inp.closest('.mqc').querySelector('[data-chk]').click(); });
-   const labs={apollo:['distance from Earth','distance from Moon','speed (Earth frame)'],artemis:['distance from Earth','distance from Moon','speed (Earth frame)'],hubble:['Hubble speed','Hubble period','g at Hubble’s height'],roman:['distance from Earth','Roman’s status','g at L2 (Sun + Earth)'],martian:['distance from Sun','speed (Sun frame)','Mars ahead of Earth by'],voyager:['distance from Sun','light travel time to Earth','last planet passed']}[key];
+   const labs={apollo:['distance from Earth','distance from Moon','speed (Earth frame)'],artemis:['distance from Earth','distance from Moon','speed (Earth frame)'],hubble:['Hubble speed','Hubble period','g at Hubble’s height'],halley:['distance from Sun','speed (Sun frame)','next perihelion in'],roman:['distance from Earth','Roman’s status','g at L2 (Sun + Earth)'],martian:['distance from Sun','speed (Sun frame)','Mars ahead of Earth by'],voyager:['distance from Sun','light travel time to Earth','last planet passed']}[key];
    roLab('b',labs[0]); roLab('c',labs[1]); roLab('d',labs[2]);
  }
  setup();
@@ -205,6 +218,22 @@ mount(el){ const S=LK.scope(); const c=LK.ctrl(el);
    const GMs=1.327e11; const rk=r*AU; const v=day>Tt?24.1:Math.sqrt(GMs*(2/rk-1/(a*AU))); let lead=((aM-aE)*180/Math.PI)%360; if(lead<0) lead+=360;
    ro.set('b',r.toFixed(3)+' AU'); ro.set('c',v.toFixed(1)+' km/s'); ro.set('d',Math.round(lead)+'°');
  }
+
+ function drawHalley(x){ const P=P0(); st.clear(); stars(x); const yrs=tm/8766, yr=HL.t0+yrs; const ox=st.w*0.5, oy=st.h*0.5; const R=Math.min(st.w,st.h)*0.46; const f=r=>R*Math.sqrt(r)/Math.sqrt(36);
+   const sun=x.createRadialGradient(ox,oy,1,ox,oy,9); sun.addColorStop(0,'#fff3b0'); sun.addColorStop(1,'#f5a623'); x.fillStyle=sun; x.beginPath(); x.arc(ox,oy,7,0,7); x.fill();
+   const cols={earth:'#2f7fd1',mars:'#c4573a',jupiter:'#c99a62',saturn:'#d8b26a',uranus:'#6fc3c9',neptune:'#4a6fd6'};
+   Object.keys(cols).forEach(k=>{ const r=PL[k][0], an=plAng(k,yr); x.strokeStyle=P.line2; x.globalAlpha=0.55; x.beginPath(); x.arc(ox,oy,f(r),0,7); x.stroke(); x.globalAlpha=1; const X=ox+f(r)*Math.cos(an), Y=oy-f(r)*Math.sin(an); disc(x,X,Y,k==='earth'||k==='mars'?3:4.5,cols[k]); if(k!=='mars') label(x,k[0].toUpperCase()+k.slice(1),X+6,Y-5,cols[k],{size:10}); });
+   const pt=o=>[ox+f(o.r)*Math.cos(o.ang),oy-f(o.r)*Math.sin(o.ang)];
+   x.strokeStyle=P.line2; x.lineWidth=1.2; x.setLineDash([4,4]); x.beginPath(); for(let i=0;i<=400;i++){ const q=pt(hlAt(HL.T*i/400)); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); } x.closePath(); x.stroke(); x.setLineDash([]);
+   for(let y5=0;y5<HL.T;y5+=5){ const q=pt(hlAt(y5)); disc(x,q[0],q[1],2.2,P.muted); }
+   x.strokeStyle=P.brand; x.lineWidth=2.2; x.beginPath(); const n=Math.max(2,Math.ceil(yrs/0.05)); for(let i=0;i<=n;i++){ const q=pt(hlAt(yrs*i/n)); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]); } x.stroke();
+   const o=hlAt(yrs), q=pt(o); const away=Math.atan2(q[1]-oy,q[0]-ox); const tl=Math.min(70,22/Math.max(0.35,o.r));
+   if(o.r<6){ const g=x.createLinearGradient(q[0],q[1],q[0]+Math.cos(away)*tl*3,q[1]+Math.sin(away)*tl*3); g.addColorStop(0,'rgba(190,225,255,.9)'); g.addColorStop(1,'rgba(190,225,255,0)'); x.strokeStyle=g; x.lineWidth=5; x.beginPath(); x.moveTo(q[0],q[1]); x.lineTo(q[0]+Math.cos(away)*tl*3,q[1]+Math.sin(away)*tl*3); x.stroke(); }
+   x.fillStyle=P.surface; x.strokeStyle=P.brand; x.lineWidth=2.5; x.beginPath(); x.arc(q[0],q[1],5,0,7); x.fill(); x.stroke(); label(x,'Halley',q[0]+8,q[1]+16,P.brand);
+   label(x,'Square-root distance scale · grey dots are 5 years apart',10,st.h-10,P.muted,{weight:500,size:10});
+   const GMs=1.327e11, v=Math.sqrt(GMs*(2/(o.r*AU)-1/(HL.a*AU))); const left=HL.T-(yrs%HL.T);
+   ro.set('b',o.r.toFixed(2)+' AU'); ro.set('c',v.toFixed(v<10?2:1)+' km/s'); ro.set('d',left<0.05?'now':left.toFixed(1)+' years');
+ }
  function drawVoyager(x){ const P=P0(); st.clear(); stars(x); const yr=VY.t0+tm/8766; const ox=st.w*0.5, oy=st.h*0.5; const R=Math.min(st.w,st.h)*0.47; const f=r=>R*Math.sqrt(r)/Math.sqrt(150);
    const sun=x.createRadialGradient(ox,oy,1,ox,oy,8); sun.addColorStop(0,'#fff3b0'); sun.addColorStop(1,'#f5a623'); x.fillStyle=sun; x.beginPath(); x.arc(ox,oy,6,0,7); x.fill();
    x.strokeStyle=P.line2; x.globalAlpha=0.6; x.setLineDash([2,6]); x.beginPath(); x.arc(ox,oy,f(119),0,7); x.stroke(); x.setLineDash([]); x.globalAlpha=1; label(x,'heliopause ≈ 120 AU',ox+f(119)*0.72,oy-f(119)*0.72,P.muted,{weight:500,size:10});
@@ -219,9 +248,9 @@ mount(el){ const S=LK.scope(); const c=LK.ctrl(el);
  let fl=0;
  S.loop(dt=>{ if(!M) return; if(!fin){ tm+=dt*M.rate; if(tm>=Tend){ tm=Tend; fin=true; } }
    if((fl++)%3===0){ tsl.set(Math.round(tm/Tend*1000)); }
-   ro.set('a',key==='voyager'?'year '+(VY.t0+tm/8766).toFixed(1):tLabel());
+   ro.set('a',key==='voyager'?'year '+(VY.t0+tm/8766).toFixed(1):key==='halley'?'year '+(HL.t0+tm/8766).toFixed(1):tLabel());
    const x=st.ctx;
-   if(key==='apollo'||key==='artemis') drawLunar(x); else if(key==='hubble') drawHubble(x); else if(key==='roman') drawRoman(x); else if(key==='martian') drawMartian(x); else drawVoyager(x);
+   if(key==='apollo'||key==='artemis') drawLunar(x); else if(key==='hubble') drawHubble(x); else if(key==='roman') drawRoman(x); else if(key==='martian') drawMartian(x); else if(key==='halley') drawHalley(x); else drawVoyager(x);
    if(fin){ const P=P0(); LK.text(x,'Mission complete. Press Restart to watch again.',st.w-12,22,P.brand,{align:'right',size:12,weight:700}); }
    caption();
  });
