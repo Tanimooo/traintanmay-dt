@@ -108,6 +108,18 @@ main{padding:24px 0 70px;min-height:70vh}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn svg{width:16px;height:16px}
 
+.srcnote{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);margin:14px 0 0;font-size:.9rem}
+.srcnote>summary{cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:8px;color:var(--ink-2);list-style:none}
+.srcnote>summary::-webkit-details-marker{display:none}
+.srcnote>summary::after{content:'\203A';margin-left:auto;transform:rotate(90deg);transition:transform .15s;font-size:1.2rem;line-height:1}
+.srcnote[open]>summary::after{transform:rotate(-90deg)}
+.srcnote>summary:hover{color:var(--ink)}
+.srcnote>div{padding:0 16px 14px;color:var(--ink-2);line-height:1.55}
+.srcnote p{margin:0 0 10px}
+.srcnote ul{margin:0;padding-left:20px}
+.srcnote li{margin:0 0 7px}
+.srcnote b{color:var(--ink)}
+.builder .srcnote{max-width:640px}
 .ragkey{font-size:.82rem;color:var(--ink-2);margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ragkey .rag{display:inline-block;vertical-align:middle}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:.74rem;font-weight:600;white-space:nowrap;background:var(--surface-2);color:var(--ink-2);max-width:100%;min-width:0}

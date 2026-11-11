@@ -551,6 +551,32 @@ function pfilter(f = PF()){
     f.st === 'all' || (f.st === 'new' && !S.prac[q.id]) || (f.st === 'weak' && pscore(q) != null && pscore(q) < .6) || (f.st === 'flag' && S.prac[q.id]?.f)));
 }
 const qimg = (p, cls = '') => p ? `<div class="qimg ${cls}" style="aspect-ratio:${p[3]}/${p[2]};max-width:${Math.round(p[3] / 1.6 * 1.3)}px"><img src="${QBASE}${esc(p[0])}" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${QALT}${esc(p[0])}'}" alt="" decoding="async" style="width:${(p[4] / p[3] * 100).toFixed(3)}%;margin-top:-${(p[1] / p[3] * 100).toFixed(4)}%"></div>` : '';
+/* Where a question came from, and anything about that source worth knowing before
+   you trust it. Shown on the question page and under the source filter. */
+const SRCINFO = {
+  'Edexcel legacy': {
+    tag: 'Old spec',
+    sum: 'Old specification (before 2017) – what’s different',
+    body: `<p>These are module papers from the old modular A level: <b>C1–C4</b> (Core), <b>M1–M3</b>, <b>S1–S3</b>, <b>D1–D2</b> and <b>FP1–FP3</b>. You sat six short papers instead of two or three long ones. Every module paper was 1 hour 30 minutes and marked out of <b>75</b>.</p>
+      <ul>
+        <li><b>The maths is nearly all still on your spec</b>, but it is split up differently. Roughly: C1 and C2 → AS Pure, C3 and C4 → Year 2 Pure, M1–M3 → Mechanics and Further Mechanics, S1–S3 → Statistics and Further Statistics, FP1–FP3 → Core Pure and Further Pure, D1 and D2 → Decision 1 and 2.</li>
+        <li><b>Some topics changed year.</b> Arithmetic and geometric series moved up into Year 2, and e<sup>x</sup> and ln x moved down from C3 into AS. So a C2 question can be Year 2 content and a C3 question can be AS content.</li>
+        <li><b>C1 was a non-calculator paper.</b> C1 questions expect exact answers – surds and fractions, not decimals. Your papers allow a calculator throughout.</li>
+        <li><b>A few things were added and dropped in 2017</b>, so the occasional question is off your spec – the large data set, for instance, only exists on the new one. If a question looks unfamiliar rather than hard, check the spec before worrying.</li>
+        <li><b>The mark schemes look different.</b> Older layout: <i>Question Number · Scheme · Marks</i>, with no AO column and the notes often collected at the end rather than beside each line. M, A and B marks mean the same as they do now.</li>
+        <li><b>Topic labels are my own mapping</b> to the closest current chapter, so a few questions sit under a heading you would not have picked.</li>
+      </ul>`
+  },
+  'Madas Maths (IYGB)': {
+    tag: 'Practice paper',
+    sum: 'Not a real past paper',
+    body: `<p>IYGB papers are practice papers written by Madas Maths, not Edexcel. They follow the current spec but are generally harder than the real thing, and the grade boundaries on them mean nothing. Good for stretch, bad for judging where you stand.</p>`
+  }
+};
+function srcnote(src, open){
+  const n = SRCINFO[src]; if (!n) return '';
+  return `<details class="srcnote"${open ? ' open' : ''}><summary><span class="chip acc">${esc(n.tag)}</span>${esc(n.sum)}</summary><div>${n.body}</div></details>`;
+}
 /* counts come from the 2 KB index so ordinary pages never need the 860 KB practice file;
    once that file is loaded we count it directly, which also respects hidden courses */
 const pcount = (c, t) => PR ? PQ.filter(q => q.c === c && (!t || q.t === t)).length
@@ -577,7 +603,7 @@ function pagePractice(pc, pt){
         <p class="muted hint">${f.cs.length ? '' : 'None picked = everything.'}</p></div>
       ${f.cs.length ? `<div class="bstep"><h3>2 · Topics <span class="muted">(leave a course empty for all its topics)</span></h3>${f.cs.map(c => `<div class="tgrp"><b>${esc(CBY[c].name)}</b><div class="chips">${(TOP[c] || []).filter(([t]) => pcount(c, t)).map(([t, n]) => `<button class="fchip sm" data-t="${c}/${t}" aria-pressed="${f.ts.includes(c + '/' + t)}">${esc(n)} <span>${done(c, t)}/${pcount(c, t)}</span></button>`).join('')}</div></div>`).join('')}</div>` : ''}
       <div class="bstep brow">
-        <div><h3>Source</h3><div class="chips">${srcs.map(s => `<button class="fchip sm" data-s="${esc(s)}" aria-pressed="${f.srcs.includes(s)}">${esc(s)}</button>`).join('')}</div></div>
+        <div><h3>Source</h3><div class="chips">${srcs.map(s => `<button class="fchip sm" data-s="${esc(s)}" aria-pressed="${f.srcs.includes(s)}">${esc(s)}</button>`).join('')}</div>${srcs.filter(s => SRCINFO[s]).map(s => srcnote(s)).join('')}</div>
         <div><h3>Questions</h3><div class="seg">${[['all', 'All'], ['new', 'Not tried'], ['weak', 'Under 60%'], ['flag', 'Flagged']].map(([k, l]) => `<button data-st="${k}" aria-pressed="${f.st === k}">${l}</button>`).join('')}</div></div>
         <div><h3>Set size</h3><div class="seg">${[5, 10, 20, 'all'].map(k => `<button data-n="${k}" aria-pressed="${String(f.n) === String(k)}">${k === 'all' ? 'All' : k}</button>`).join('')}</div></div>
         <div><h3>Order</h3><div class="seg">${[['rand', 'Shuffled'], ['seq', 'In order']].map(([k, l]) => `<button data-o="${k}" aria-pressed="${f.ord === k}">${l}</button>`).join('')}</div></div>
@@ -612,16 +638,20 @@ function pageQ(id){
   const inSet = PSET && PSET.ids.includes(q.id); if (inSet) { PSET.i = PSET.ids.indexOf(q.id); savePset(); }
   let L = inSet ? PSET.ids.map(x => PQBY[x]) : pfilter(); if (!L.includes(q)) L = PQ.filter(x => x.pk === q.pk);
   const i = L.indexOf(q), prev = L[i - 1], next = L[i + 1], r = S.prac[q.id] || null, it = IBY[q.pk];
-  const pdf = it ? (it.d.find(d => /QP/.test(d[0])) || it.d[0]) : null, mspdf = it ? it.d.find(d => d[0] === 'MS') : null;
+  /* legacy module papers aren't in the papers catalogue, so their PDFs come from plinks.js */
+  const lk = (window.PLINKS || {})[q.pk];
+  const pdf = it ? (it.d.find(d => /QP/.test(d[0])) || it.d[0]) : lk && lk[0] ? ['QP', lk[0]] : null,
+        mspdf = it ? it.d.find(d => d[0] === 'MS') : lk && lk[1] ? ['MS', lk[1]] : null;
   const max = q.mk || (r && r.of) || 0;
   app.innerHTML = `<div class="crumbs"><a href="#practice">Practice</a>›<a href="#px-${q.c}">${esc(CBY[q.c]?.name || q.c)}</a>›<a href="#px-${q.c}-${q.t}">${esc(tname(q.c, q.t))}</a>›<span>Q${q.n}</span></div>
     <div class="qhead"><div><p class="eyebrow">${inSet ? `Set · question ${i + 1} of ${L.length}` : `${esc(q.src)} · ${i + 1} of ${L.length}`}</p>${inSet ? `<div class="bar" style="margin:6px 0 10px;max-width:320px"><i style="width:${Math.round(100 * (i + 1) / L.length)}%"></i></div>` : ''}<h1>${esc(q.pn)} – Q${q.n}</h1></div>
       <div class="row"><span class="chip brand">${max ? max + ' marks' : 'marks not listed'}</span>${pstatus(q)}</div></div>
+    ${srcnote(q.src)}
     <div class="qcard card">${qimg(q.qi)}</div>
     <div class="qbar">
-      ${q.mi ? `<button class="btn primary" id="showms" aria-expanded="false">Show mark scheme <kbd>M</kbd></button>` : `<span class="muted">No mark scheme could be cut for this one${mspdf || pdf ? ` – <a href="${esc(url((mspdf || pdf)[1]))}" target="_blank" rel="noopener">open the full PDF</a>` : ''}.</span>`}
+      ${q.mi ? `<button class="btn primary" id="showms" aria-expanded="false">Show mark scheme <kbd>M</kbd></button>` : `<span class="muted">No mark scheme could be cut for this one${mspdf || pdf ? ` – <a href="${esc(url((mspdf || pdf)[1]))}" target="_blank" rel="noopener">open the mark scheme PDF</a>` : ''}.</span>`}
       <button class="btn" id="flag" aria-pressed="${!!r?.f}">${r?.f ? '★ Flagged' : '☆ Flag for later'}</button>
-      ${pdf ? `<a class="btn" href="${esc(url(pdf[1]))}" target="_blank" rel="noopener">Full pack PDF ${ic('ext')}</a>` : ''}
+      ${pdf ? `<a class="btn" href="${esc(url(pdf[1]))}" target="_blank" rel="noopener">${it ? 'Full pack PDF' : 'Full paper PDF'} ${ic('ext')}</a>` : ''}
     </div>
     <div id="msbox" hidden>
       <h2 style="margin:22px 0 10px">Mark scheme</h2><div class="qcard card ms">${qimg(q.mi)}</div>
@@ -683,6 +713,7 @@ function loadData(name){
 function needsOf(h){
   const n = [];
   if (/^(practice|pset-done)$/.test(h) || /^(px|q)-/.test(h) || h === 'progress') n.push('practice');
+  if (/^q-/.test(h)) n.push('plinks');   // PDF fallbacks for packs that aren't in the papers catalogue
   if (/^drills?$/.test(h) || /^drill-/.test(h)) n.push('drills');
   const t = h.match(/^t-(\w+?)-/);
   if (t) { n.push('notes'); if (t[1] === 'pure') n.push('drills'); }  // only Pure has skill drills
