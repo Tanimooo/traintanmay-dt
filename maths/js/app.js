@@ -5,7 +5,7 @@ const HIDE = (() => { try { const h = JSON.parse(localStorage.getItem('tt-maths-
 const hid = c => HIDE.includes(c);
 const CAT = window.CAT, VIS = window.VIS || {};
 let DR = [];
-function buildDrills(){ DR = hid('pure') ? [] : (window.DRILLS || []); }
+function buildDrills(){ DR = hid('pure') ? [] : (window.DRILLS || []); DBY = Object.fromEntries(DR.map(d => [d.key, d])); }
 { const M = {'pure/diff': ['p1_12', 'p2_9'], 'pure/integ': ['p1_13', 'p2_11'], 'pure/num': ['p2_10'], 'pure/trig': ['p1_9', 'p1_10', 'p2_5', 'p2_7'], 'pure/vec': ['p1_11', 'p2_12'], 'pure/seq': ['p2_3'],
   'mech/forces': ['m1_10', 'm2_5', 'm2_7'], 'mech/mom': ['m2_4'], 'mech/kin': ['m1_9', 'm1_11', 'm2_6', 'm2_8'], 'stats/data': ['s1_2', 's1_3', 's1_4'], 'stats/hyp': ['s1_7', 's2_1', 's2_3'],
   'pure/alg': ['p1_4', 'p2_2'], 'pure/exp': ['p1_14'], 'stats/dist': ['s1_6', 's2_3'], 'stats/prob': ['s1_5', 's2_2']};
@@ -28,7 +28,7 @@ const tname = (c, t) => (TOP[c] || []).find(x => x[0] === t)?.[1] || t;
 const DRILL_TOPIC = {chain:'p2_9', product:'p2_9', quotient:'p2_9', implicit:'p2_9', parametric:'p2_9',
   revchain:'p2_11', parts:'p2_11', subst:'p2_11', pfint:'p2_11', pf:'p2_1',
   binomial:'p2_4', harmonic:'p2_7', trigeq:'p1_10', explog:'p1_14'};
-const DBY = Object.fromEntries(DR.map(d => [d.key, d]));
+let DBY = {};   // rebuilt by buildDrills() once drills.js has loaded
 
 /* ---------------- storage ---------------- */
 const KEY = 'tt-maths-v1', DKEY = 'tt-maths-drills-v1';
