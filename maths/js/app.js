@@ -63,17 +63,18 @@ const IC = {
  clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/>',
  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
  play:'<path d="M7 4l13 8-13 8z"/>',
- sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'
+ sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+ game:'<path d="M3 19c4-1 5-13 9-13s4 7 9 6"/><circle cx="20" cy="5" r="1.7"/>'
 };
 const ic = (k, w = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
 /* third entry is the short label used in the top bar; the drawer always spells it out */
-const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills', 'Drills'], ['vis', 'Visualisers', 'Visuals'], ['videos', 'Videos'], ['progress', 'Progress']];
+const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills', 'Drills'], ['vis', 'Visualisers', 'Visuals'], ['videos', 'Videos'], ['game', 'Sketch game', 'Game', 'game.html'], ['progress', 'Progress']];
 function renderNav(active){
-  $('#nav').innerHTML = NAV.map(([k, l, short]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''} title="${esc(l)}">${ic(k)}<span>${esc(short || l)}</span></a>`).join('');
+  $('#nav').innerHTML = NAV.map(([k, l, short, page]) => `<a href="${page || '#' + k}" ${!page && k === active ? 'aria-current="page"' : ''} title="${esc(l)}">${ic(k)}<span>${esc(short || l)}</span></a>`).join('');
   $('#drawerpanel').innerHTML =
     `<div class="dw-head"><b>Menu</b><button class="iconbtn" id="dclose" aria-label="Close menu">\u00d7</button></div>` +
     `<input type="search" id="dsearch" placeholder="Search everything\u2026" aria-label="Search">` +
-    NAV.map(([k, l]) => `<a href="#${k}" ${k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
+    NAV.map(([k, l, , page]) => `<a href="${page || '#' + k}" ${!page && k === active ? 'aria-current="page"' : ''}>${l}</a>`).join('') +
     '<hr class="dw-rule">' +
     `<div class="dw-set"><label for="dtheme">Theme</label><select class="sel" id="dtheme"><option value="system">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>` +
     `<div class="dw-set"><label for="ddys">Dyslexia-friendly font</label><button class="iconbtn" id="ddys" role="switch" aria-checked="${S.settings.dys ? 'true' : 'false'}">${S.settings.dys ? 'On' : 'Off'}</button></div>` +
@@ -192,6 +193,7 @@ function pageHome(){
     <a class="qtile" href="#drills"><span class="ic">${ic('drills')}</span><span><b>Skill drills</b><span>700 worked questions</span></span></a>
     <a class="qtile" href="#vis"><span class="ic">${ic('vis')}</span><span><b>Visualisers</b><span>Matrices, 3D vectors, polar…</span></span></a>
     <a class="qtile" href="#videos"><span class="ic">${ic('videos')}</span><span><b>Videos</b><span>Topic videos & revision</span></span></a>
+    <a class="qtile" href="game.html"><span class="ic">${ic('game')}</span><span><b>Sketch game</b><span>Draw the curve, get scored</span></span></a>
     <a class="qtile" href="#progress"><span class="ic">${ic('progress')}</span><span><b>Progress</b><span>Scores & weak topics</span></span></a>
   </div></section>
   ${maths.length ? `<section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>` : ''}

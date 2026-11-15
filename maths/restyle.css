@@ -35,7 +35,7 @@ section>h2::before,.sec-head h2::before{content:"";display:inline-block;width:.5
 main{padding-top:30px}
 
 /* top bar: a floating control strip */
-.topbar{top:10px;margin:10px max(12px,calc((100% - 1400px)/2)) 0;border:1.5px solid var(--ol);border-radius:20px;box-shadow:0 4px 0 var(--ledge);background:color-mix(in srgb,var(--surface) 86%,transparent)}
+.topbar{top:10px;margin:10px max(12px,calc((100% - 1440px)/2)) 0;border:1.5px solid var(--ol);border-radius:20px;box-shadow:0 4px 0 var(--ledge);background:color-mix(in srgb,var(--surface) 86%,transparent)}
 .topbar::after{display:none}
 .topbar .wrap{height:60px;padding-left:14px;padding-right:12px}
 .brand b{font-size:1.25rem;letter-spacing:-.02em}
