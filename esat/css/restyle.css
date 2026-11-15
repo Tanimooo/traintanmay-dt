@@ -1,0 +1,83 @@
+/* TrainTanmay ESAT restyle, in the same style as the other apps:
+   flat colour, ink outlines, a solid ledge under everything you can press, and a night-sky hero.
+   Only looks change: tests, timing and analytics work exactly as before, in every colour theme. */
+:root{
+  --ol:var(--color-text); --ledge:var(--color-text); --paper:#f6f1e7;
+  --night:#1b1604; --night-2:#5a4500; --pop:#ffc917; --pop-ink:#1d1600;
+  --font-display:"Bricolage Grotesque","Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --m-ease:cubic-bezier(.2,.8,.2,1); --m-spring:cubic-bezier(.2,.9,.25,1.4);
+}
+[data-theme='dark']{--ol:var(--color-border);--ledge:#000}
+html.dys{--font-display:"OpenDyslexic",sans-serif}
+
+body{background-image:radial-gradient(var(--grid-line) 1.3px,transparent 1.5px);background-size:22px 22px}
+h1,h2,h3{letter-spacing:-.02em}
+html.dys h1,html.dys h2,html.dys h3{letter-spacing:0}
+
+/* top bar: a floating control strip */
+.topbar{top:10px;margin:10px max(12px,calc((100% - 1400px)/2)) 0;border:1.5px solid var(--ol);border-radius:20px;box-shadow:0 4px 0 var(--ledge);background:color-mix(in srgb,var(--color-surface) 88%,transparent)}
+.topbar::after{display:none}
+.nav a{border-radius:99px}
+.nav a[aria-current='page']{background:var(--brand-fill);color:var(--brand-ink);box-shadow:0 2px 0 var(--ledge)}
+.icon-btn,.theme-select{border:1.5px solid var(--color-border);border-radius:12px}
+@media (max-width:620px){.topbar{margin:8px 8px 0;top:8px;border-radius:16px}}
+
+/* buttons: press them and they go down */
+body .btn{border:1.5px solid var(--ol);border-radius:12px;box-shadow:0 3px 0 var(--ledge);background-image:none;transition:transform .16s var(--m-ease),box-shadow .16s var(--m-ease),background-color .2s,color .2s,border-color .2s}
+body .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 0 var(--ledge);border-color:var(--ol)}
+body .btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 var(--ledge);transition-duration:.06s}
+body .btn-primary{background-image:none}
+body .btn-ghost{border-color:transparent;box-shadow:none}
+body .btn-ghost:hover:not(:disabled){box-shadow:none;border-color:var(--ol)}
+body .btn-sm{border-radius:10px;box-shadow:0 2px 0 var(--ledge)}
+body .btn-sm:hover:not(:disabled){box-shadow:0 4px 0 var(--ledge)}
+body .btn:disabled{box-shadow:none}
+
+/* surfaces */
+body .card,body .stat,.qcard,.banner{border:1.5px solid var(--ol);border-radius:18px;box-shadow:0 3px 0 var(--ledge)}
+body a.card:hover,body button.card:hover,body .stat:hover{transform:translateY(-4px);box-shadow:0 7px 0 var(--ledge)}
+body a.card:active,body button.card:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ledge)}
+#view>.grid>.stat:nth-child(1){background:var(--color-primary-soft)}
+#view>.grid>.stat:nth-child(2){background:var(--color-violet-soft)}
+#view>.grid>.stat:nth-child(3){background:var(--color-success-soft)}
+#view>.grid>.stat:nth-child(4){background:var(--color-warning-soft)}
+
+/* answer options and chips */
+.opt{border-width:1.5px;border-radius:14px;transition:transform .15s var(--m-ease),box-shadow .15s var(--m-ease),border-color .2s,background-color .2s}
+.opt:hover{transform:translateY(-1px);border-color:var(--ol);box-shadow:0 3px 0 var(--ledge)}
+.opt:active{transform:translateY(1px);box-shadow:none}
+.opt[aria-pressed='true']{border-color:var(--ol);box-shadow:0 3px 0 var(--ledge)}
+.chip{border-width:1.5px;transition:transform .16s var(--m-ease),box-shadow .16s var(--m-ease),background-color .2s,border-color .2s,color .2s}
+button.chip:hover,a.chip:hover{transform:translateY(-1px);border-color:var(--ol)}
+.chip[aria-pressed='true']{border-color:var(--ol);box-shadow:0 2px 0 var(--ledge)}
+.trow{transition:background-color .18s,transform .2s var(--m-ease)}
+.trow:hover{transform:translateX(3px)}
+.meter{border:1.5px solid var(--ol);background:var(--color-surface)}
+
+/* home: night-sky hero, with the launch game kept on a light panel so it stays readable */
+.hero{border:1.5px solid var(--ol);border-radius:28px;box-shadow:0 6px 0 var(--ledge);
+  background:
+    radial-gradient(1.5px 1.5px at 6% 20%,rgba(246,241,231,.8) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 22% 86%,rgba(246,241,231,.6) 50%,transparent 51%),
+    radial-gradient(2px 2px at 38% 9%,rgba(246,241,231,.7) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 30% 55%,rgba(246,241,231,.45) 50%,transparent 51%),
+    radial-gradient(70% 120% at 0% 115%,var(--night-2),transparent 62%),
+    var(--night)}
+.hero::before{display:none}
+.hero-text{padding:38px 36px;color:var(--paper)}
+.hero .eyebrow{color:var(--pop)}
+.hero .pun{color:var(--paper);font-size:clamp(2rem,4.2vw,3.2rem);line-height:1.02;letter-spacing:-.03em}
+html.dys .hero .pun{font-size:clamp(1.4rem,3vw,2rem);line-height:1.2;letter-spacing:0}
+.hero-text p{color:#e6dcc0}
+body .hero-text .btn{background:transparent;color:var(--paper);border-color:rgba(246,241,231,.65);box-shadow:0 3px 0 rgba(0,0,0,.6)}
+body .hero-text .btn:hover:not(:disabled){color:var(--paper);border-color:var(--paper);box-shadow:0 5px 0 rgba(0,0,0,.6)}
+body .hero-text .btn-primary{background:var(--pop);color:var(--pop-ink);border-color:#000}
+body .hero-text .btn-primary:hover:not(:disabled){color:var(--pop-ink);border-color:#000}
+body .hero-text .btn-ghost{border-color:transparent;box-shadow:none}
+.hero-play{background-color:var(--color-surface);border-left:1.5px solid var(--ol);
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);background-size:24px 24px}
+@media (max-width:620px){.hero{border-radius:22px}.hero-text{padding:24px 18px}}
+
+/* footer */
+.site-foot{background:var(--night);color:#e6dcc0;border-top:1.5px solid var(--ol)}
+.site-foot a{color:var(--pop)}

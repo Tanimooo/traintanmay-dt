@@ -107,8 +107,11 @@
       var a = lastTok.split('?')[0], b = location.hash.split('?')[0]; lastTok = location.hash;
       if (a === b) return;
       var el = document.getElementById('app'); if (!el) return;
-      el.classList.remove('tt-enter'); void el.offsetWidth; el.classList.add('tt-enter');
+      enter(el);
     });
+    var enterT = null;
+    var enter = function (el) { clearTimeout(enterT); el.classList.remove('tt-enter'); void el.offsetWidth; el.classList.add('tt-enter'); enterT = setTimeout(function () { el.classList.remove('tt-enter'); }, 1100); };
+    var el0 = document.getElementById('app'); if (el0) enter(el0);
   }
 
   /* ---- keep your place through a reload: scroll position + anything half-typed ---- */
