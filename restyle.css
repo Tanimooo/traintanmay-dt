@@ -1,0 +1,140 @@
+/* TrainTanmay restyle for D&T and Physics (Maths and ESAT have their own file in the same style).
+   Flat colour, ink outlines and a solid ledge under everything you can press, with a night-sky
+   hero in the app's colour. Each app sets --night, --night-2 and --pop in its own page.
+   Only looks change: every class, control and page works as before, in every colour theme. */
+:root{
+  --ol:var(--ink); --ledge:var(--ink); --paper:#f6f1e7;
+  --night:#0b2545; --night-2:#16407a; --pop:#ffc46b; --pop-ink:#1b1206;
+  --f-display:"Bricolage Grotesque","Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --r:18px; --r-sm:10px;
+  --m-ease:cubic-bezier(.2,.8,.2,1); --m-spring:cubic-bezier(.2,.9,.25,1.4);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]):not([data-theme="salmon"]):not([data-theme="blush"]){--ol:var(--line-strong);--ledge:#000}}
+:root[data-theme="dark"]{--ol:var(--line-strong);--ledge:#000}
+
+/* page */
+body{background-image:radial-gradient(var(--grid) 1.3px,transparent 1.5px);background-size:22px 22px;background-attachment:fixed}
+h1,h2,h3{letter-spacing:-.02em}
+html.dys h1,html.dys h2,html.dys h3{letter-spacing:0}
+.eyebrow{letter-spacing:.16em}
+main{padding-top:30px}
+
+/* top bar: a floating control strip */
+.topbar{top:calc(env(safe-area-inset-top,0px) + 10px);margin:10px max(12px,calc((100% - 1290px)/2)) 0;border:1.5px solid var(--ol);border-radius:20px;box-shadow:0 4px 0 var(--ledge);background:color-mix(in srgb,var(--surface) 88%,transparent)}
+.topbar::after{display:none}
+.topbar .wrap{padding-left:14px;padding-right:12px}
+.brand b{letter-spacing:-.02em}
+.nav a,.navgb{border-radius:99px}
+.nav a[aria-current="page"]{background:var(--brand);color:var(--brand-ink);box-shadow:0 2px 0 var(--ledge)}
+.iconbtn,.theme-select,.dysbtn{border:1.5px solid var(--line-strong);border-radius:12px}
+.navmenu{border:1.5px solid var(--ol);border-radius:16px;box-shadow:0 5px 0 var(--ledge)}
+.navmenu .nmi{background:var(--brand);color:var(--brand-ink);border-radius:50%}
+.side{top:96px}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 96px)}
+@media (max-width:620px){.topbar{margin:8px 8px 0;top:calc(env(safe-area-inset-top,0px) + 8px);border-radius:16px}}
+.drawer-panel{border-left:1.5px solid var(--ol)}
+.drawer-panel a{border-radius:12px}
+.drawer-panel a[aria-current="page"]{background:var(--brand);color:var(--brand-ink)}
+
+/* buttons: press them and they go down */
+body .btn{border:1.5px solid var(--ol);border-radius:12px;box-shadow:0 3px 0 var(--ledge);background-image:none;transition:transform .16s var(--m-ease),box-shadow .16s var(--m-ease),background-color .2s,color .2s,border-color .2s}
+body .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 0 var(--ledge);border-color:var(--ol)}
+body .btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 var(--ledge);transition-duration:.06s}
+body .btn.primary{background:var(--brand);color:var(--brand-ink)}
+body .btn.primary:hover:not(:disabled){filter:brightness(1.06);box-shadow:0 5px 0 var(--ledge)}
+body .btn.ghost{border-color:transparent;box-shadow:none}
+body .btn.ghost:hover:not(:disabled){box-shadow:none;border-color:var(--ol)}
+body .btn-sm{border-radius:10px;box-shadow:0 2px 0 var(--ledge)}
+body .btn-sm:hover:not(:disabled){box-shadow:0 4px 0 var(--ledge)}
+body .btn:disabled{box-shadow:none}
+
+/* surfaces */
+body .card,.stat,.term,.paper,.ms,.modal-panel,.fc-face{border:1.5px solid var(--ol);border-radius:var(--r);box-shadow:0 3px 0 var(--ledge)}
+.fc-face{box-shadow:0 6px 0 var(--ledge);border-radius:22px}
+.empty{border-radius:var(--r)}
+
+/* things you click: lift on hover, sink on press */
+body .tcard,body .labcard,body .casecard,body .qitem,body .bk-item,body .pack,body .vtile,body .featlab{border:1.5px solid var(--ol);border-radius:16px;box-shadow:0 3px 0 var(--ledge);
+  transition:transform .22s var(--m-ease),box-shadow .22s var(--m-ease),background-color .2s,border-color .2s}
+body .tcard:hover,body .labcard:hover,body .casecard:hover,body .featlab:hover{transform:translateY(-4px);box-shadow:0 7px 0 var(--ledge);border-color:var(--ol)}
+body .qitem:hover,body .bk-item:hover,body .pack:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--ledge);border-color:var(--ol)}
+body .tcard:active,body .labcard:active,body .qitem:active,body .bk-item:active,body .pack:active,body .featlab:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ledge);transition-duration:.07s}
+body .pack{border-radius:12px;box-shadow:0 2px 0 var(--ledge)}
+.tcard .id{color:var(--brand);font-weight:600}
+.tcard h4{font-size:1.04rem}
+
+/* home: night-sky hero in the app's colour */
+.hero{--grid:rgba(246,241,231,.07);border:1.5px solid var(--ol);border-radius:28px;box-shadow:0 6px 0 var(--ledge);color:var(--paper);
+  background:
+    radial-gradient(1.5px 1.5px at 9% 18%,rgba(246,241,231,.8) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 27% 84%,rgba(246,241,231,.6) 50%,transparent 51%),
+    radial-gradient(2px 2px at 46% 10%,rgba(246,241,231,.7) 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 52%,rgba(246,241,231,.45) 50%,transparent 51%),
+    radial-gradient(2px 2px at 3% 62%,rgba(246,241,231,.6) 50%,transparent 51%),
+    radial-gradient(90% 130% at 90% 115%,var(--night-2),transparent 62%),
+    var(--night)}
+.hero-text{padding:38px 36px}
+.hero .eyebrow{color:var(--pop)}
+.hero h1{color:var(--paper);font-size:clamp(2.1rem,4.6vw,3.5rem);line-height:1;letter-spacing:-.03em}
+html.dys .hero h1{font-size:clamp(1.5rem,3.2vw,2.2rem);line-height:1.2}
+.hero-text p{color:color-mix(in srgb,var(--paper) 82%,var(--night-2))}
+.hero .pun{color:var(--paper)}
+body .hero .btn{background:transparent;color:var(--paper);border-color:rgba(246,241,231,.65);box-shadow:0 3px 0 rgba(0,0,0,.55)}
+body .hero .btn:hover:not(:disabled){color:var(--paper);border-color:var(--paper);box-shadow:0 5px 0 rgba(0,0,0,.55)}
+body .hero .btn.primary{background:var(--pop);color:var(--pop-ink);border-color:#05070d}
+body .hero .btn.primary:hover:not(:disabled){color:var(--pop-ink);border-color:#05070d}
+body .hero .btn.ghost{border-color:transparent;box-shadow:none}
+.titleblock{background:rgba(5,7,13,.5);color:rgba(246,241,231,.8);border-color:rgba(246,241,231,.4)}
+.titleblock span{border-color:rgba(246,241,231,.25)!important}
+.hero-scope{border:1.5px solid #05070d;border-radius:20px;box-shadow:0 6px 0 rgba(0,0,0,.55);rotate:1.5deg;transition:rotate .5s var(--m-spring),scale .5s var(--m-spring)}
+.hero-scope:hover{rotate:-.5deg;scale:1.02}
+@media (max-width:620px){.hero{border-radius:22px}.hero-text{padding:24px 18px}}
+
+.statrow{gap:14px}
+.stat{padding:14px 18px}
+.stat b{font-size:2.3rem;letter-spacing:-.03em}
+.stat span{color:var(--ink-2);font-weight:500}
+.statrow>.stat:nth-child(1){background:var(--brand-soft)}.statrow>.stat:nth-child(2){background:var(--accent-soft)}
+.statrow>.stat:nth-child(3){background:var(--good-soft)}.statrow>.stat:nth-child(4){background:var(--warn-soft)}
+
+/* tabs and switches as pills */
+.tabs{border-bottom:0;gap:6px;padding:4px 2px 8px}
+.tabs button{border:1.5px solid var(--line-strong);border-radius:99px;padding:8px 15px;background:var(--surface);transition:background-color .2s,color .2s,border-color .2s,transform .2s var(--m-ease)}
+.tabs button:hover{border-color:var(--ol);color:var(--ink);transform:translateY(-1px)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button[aria-selected="true"] .n{color:inherit;opacity:.75}
+.subtabs button{border-width:1.5px;border-color:var(--line-strong);transition:transform .18s var(--m-ease),box-shadow .18s var(--m-ease),background-color .2s,border-color .2s,color .2s}
+.subtabs button:hover{border-color:var(--ol);transform:translateY(-1px)}
+.subtabs button[aria-pressed="true"]{border-color:var(--ol);box-shadow:0 2px 0 var(--ledge)}
+.conf button,.selfmark button,.levels button{transition:transform .15s var(--m-ease),background-color .2s,border-color .2s,color .2s}
+.chip{border:1px solid color-mix(in srgb,currentColor 22%,transparent)}
+.rag{border:1.5px solid var(--ol)}
+
+/* forms and small parts */
+input[type=search],input[type=text],input[type=number],textarea,.field select,.field input{border-width:1.5px;border-color:var(--line-strong);border-radius:10px}
+.bar{height:10px;border:1.5px solid var(--ol);background:var(--surface)}
+.toggle input{border:1.5px solid var(--ol)}
+.toggle input::after{top:1.5px;left:2px}
+.toast{border:1.5px solid var(--ol);border-radius:99px;padding:10px 20px}
+.qz-opts button,.qz-opts label{transition:transform .15s var(--m-ease),border-color .2s,background-color .2s}
+
+/* footer: back to the night sky */
+.footer{background:var(--night);color:color-mix(in srgb,var(--paper) 75%,var(--night-2));border-top:1.5px solid var(--ol);margin-top:20px}
+.footer a{color:var(--pop)}
+
+@media (prefers-reduced-motion:reduce){.hero-scope{transition:none!important;rotate:none}}
+
+/* phones: keep every top-bar control on screen */
+@media (max-width:520px){
+  .topbar .wrap{gap:8px;padding-left:10px;padding-right:8px}
+  .tb-right{gap:6px}
+  .brand small{display:none}
+  .brand b{font-size:1.1rem}
+  .brand svg{width:34px;height:34px}
+  .theme-select{padding:0 2px;max-width:68px;font-size:.8rem}
+}
+@media (max-width:380px){
+  .iconbtn,.dysbtn{width:34px;min-width:34px;height:36px;padding:0}
+  .theme-select{max-width:58px;height:36px}
+  .tb-right{gap:4px}
+}
