@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SketchGuessr · TrainTanmay Maths</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script>
+<style>
+:root{
+  --paper:#fbf8f1; --ink:#23232b; --muted:#6b6a72; --line:#e3dccb; --panel:#fffdf8;
+  --accent:#15803d; --accent2:#0b3d1f; --good:#2b8a3e; --bad:#e03131; --truth:#e8590c; --guide:#1c7ed6;
+  --shadow:0 6px 24px rgba(40,30,10,.12), 0 1px 3px rgba(40,30,10,.1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:#efe9dc;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button{font-family:inherit;cursor:pointer}
+header{height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;background:#0b3d1f;color:#fff}
+.logo{font-weight:800;font-size:19px;letter-spacing:-.3px;display:flex;align-items:center;gap:9px;white-space:nowrap;color:#fff;text-decoration:none}
+.logo svg{width:28px;height:28px;flex:none}
+.logo span{color:#4ade80}
+#roundDots{display:flex;gap:6px;flex:1;justify-content:center;min-width:0;overflow:hidden}
+.dot{min-width:40px;height:24px;border-radius:12px;background:rgba(255,255,255,.12);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 8px;color:rgba(255,255,255,.55)}
+.dot.cur{background:#4ade80;color:#0b3d1f}
+.dot.done{background:rgba(255,255,255,.22);color:#fff}
+.hstat{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.hstat small{font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6}
+.hstat b{font-size:18px;font-variant-numeric:tabular-nums}
+#timerBox.warn b{color:#ff8787}
+.hbtn{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;font-size:13px;text-decoration:none;display:inline-flex;align-items:center}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--paper)}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#side{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h3{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+#qCard{background:linear-gradient(180deg,#fff,#f4faf6)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.6px}
+.b1{background:#d3f9d8;color:#2b8a3e}.b2{background:#fff3bf;color:#b07b00}.b3{background:#ffe3e3;color:#c92a2a}
+#qEq{font-size:20px;min-height:54px;display:flex;align-items:center;justify-content:center;padding:8px 0;overflow-x:auto}
+#qEq .katex-display{margin:0!important}
+#qNote{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px}
+#hintBtn{width:100%;border:1px dashed #c5bfae;background:transparent;border-radius:8px;padding:7px;font-size:13px;color:var(--muted)}
+#hintBtn:hover{background:#f4faf6}
+#hintText{display:none;margin-top:8px;font-size:13px;background:#fff9db;border-radius:8px;padding:8px 10px;line-height:1.4}
+.row{display:flex;gap:6px;align-items:center}
+.row+.row{margin-top:6px}
+input[type=text],textarea{font-family:inherit;font-size:14px;border:1px solid #d9d2c0;border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);min-width:0}
+input[type=text]:focus,textarea:focus{outline:2px solid #b7e2c5;border-color:var(--accent)}
+.lbl{font-size:12px;color:var(--muted);width:20px;text-align:right;flex:none}
+.sbtn{border:0;background:var(--accent);color:#fff;border-radius:8px;padding:7px 11px;font-weight:600;font-size:13px;flex:none}
+.sbtn:hover{background:var(--accent2)}
+.sbtn.ghost{background:#e8f3eb;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{font-size:12px;background:#e7f0ff;color:#1864ab;border-radius:14px;padding:3px 4px 3px 9px;display:flex;align-items:center;gap:4px}
+.chip.pt{background:#f1ebe0;color:#5c4a2a}
+.chip button{border:0;background:transparent;color:inherit;opacity:.6;font-size:14px;line-height:1;padding:0 4px}
+.chip button:hover{opacity:1}
+#calcHist{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;max-height:120px;overflow-y:auto;margin-top:6px;display:flex;flex-direction:column-reverse}
+#calcHist div{padding:3px 0;border-bottom:1px dotted #eee;display:flex;justify-content:space-between;gap:8px}
+#calcHist div b{color:var(--accent)}
+#calcHist .err{color:var(--bad)}
+#notes{width:100%;min-height:150px;resize:vertical;font-family:Kalam,cursive;font-size:17px;line-height:26px;background:#fff repeating-linear-gradient(transparent 0 25px,#dde6f5 25px 26px);padding:4px 10px;border-radius:8px}
+.tiny{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+/* canvas overlays */
+#tools{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:4px;background:#fff;border-radius:12px;padding:5px;box-shadow:var(--shadow)}
+.tb{width:42px;height:42px;border:0;border-radius:9px;background:transparent;display:flex;align-items:center;justify-content:center;color:#444;position:relative}
+.tb:hover{background:#f1f0ec}
+.tb.on{background:#0b3d1f;color:#fff}
+.tb svg{width:21px;height:21px}
+.tb[data-k]::after{content:attr(data-k);position:absolute;right:3px;bottom:2px;font-size:8.5px;opacity:.45;font-weight:700}
+.sep{height:1px;background:#eee;margin:2px 4px}
+#zoomBox{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px;background:#fff;border-radius:12px;padding:5px;box-shadow:var(--shadow)}
+#qFloat{display:none;position:absolute;top:10px;right:10px;max-width:calc(100% - 90px);background:rgba(255,255,255,.94);border-radius:10px;padding:2px 10px;box-shadow:var(--shadow);font-size:15px;overflow-x:auto;pointer-events:none}
+#qFloat .katex-display{margin:4px 0!important}
+#coords{position:absolute;left:12px;bottom:12px;font-family:ui-monospace,Menlo,monospace;font-size:12px;background:rgba(255,255,255,.88);padding:5px 9px;border-radius:7px;color:#555;pointer-events:none}
+#submitBtn{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#15803d;color:#fff;border:0;border-radius:30px;padding:14px 34px;font-weight:800;font-size:16px;box-shadow:0 6px 18px rgba(21,128,61,.35);letter-spacing:.3px}
+#submitBtn:hover{background:#0f6730}
+#submitBtn:disabled{opacity:.5}
+#toast{position:absolute;left:50%;top:16px;transform:translateX(-50%) translateY(-80px);background:#0b3d1f;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;transition:transform .25s;pointer-events:none;z-index:5}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#result{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(140%);width:min(560px,calc(100% - 24px));background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:16px 18px;transition:transform .45s cubic-bezier(.2,.9,.3,1.2);max-height:calc(100% - 28px);overflow-y:auto;z-index:4}
+#result.show{transform:translateX(-50%) translateY(0)}
+.rtop{display:flex;align-items:center;gap:16px}
+.bigScore{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-1px}
+.bigScore small{font-size:16px;color:var(--muted);font-weight:600;letter-spacing:0}
+.verdict{font-size:18px;font-weight:700}
+.vsub{font-size:13px;color:var(--muted)}
+.sbar{height:10px;border-radius:5px;background:#eee;overflow:hidden;margin:12px 0}
+.sbar div{height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#fa5252,#fab005,#40c057);background-size:560px 100%;transition:width .9s ease-out}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f8f7f3;border-radius:10px;padding:8px 10px}
+.stat small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.stat b{font-size:16px}
+.feat{margin-top:12px;font-size:13px;line-height:1.55}
+.feat h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.feat ul{margin:0;padding-left:18px}
+.ok{color:var(--good);font-weight:600}.no{color:var(--bad);font-weight:600}
+.ractions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+.bigbtn{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:12px 22px;font-weight:700;font-size:15px}
+.bigbtn:hover{background:var(--accent2)}
+.bigbtn.alt{background:#e8f3eb;color:var(--accent)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,25,15,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal.show{display:flex}
+.mbox{background:var(--panel);border-radius:18px;max-width:640px;width:100%;max-height:100%;overflow-y:auto;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.mbox h1{margin:0;font-size:30px;letter-spacing:-.6px}
+.mbox h1 span{color:var(--accent)}
+.mbox p.lead{color:var(--muted);margin:6px 0 18px;line-height:1.5}
+.opt-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:16px 0 8px}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.opts.three{grid-template-columns:repeat(3,1fr)}
+.opt{border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px 8px;text-align:center;font-weight:700;font-size:15px;color:var(--ink)}
+.opt small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);margin-top:3px}
+.opt.on{border-color:var(--accent);background:#e8f3eb}
+.how{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:18px;font-size:13.5px;line-height:1.6}
+.how ul{margin:4px 0;padding-left:18px}
+kbd{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#eee;border-radius:4px;padding:1px 5px;border-bottom:2px solid #ccc}
+.startRow{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
+#bestLine{font-size:13px;color:var(--muted)}
+.credit{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.credit a{color:var(--accent)}
+#endTable{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+#endTable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+#endTable td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+#endTable .eq{font-size:15px;overflow-x:auto;max-width:330px}
+#endTable .katex-display{margin:0!important}
+
+@media (max-width: 860px){
+  body{height:auto;min-height:100dvh;overflow:auto}
+  main{grid-template-columns:1fr;grid-template-rows:68dvh auto}
+  #side{border-left:0;border-top:1px solid var(--line)}
+  #roundDots .dot{min-width:26px;padding:0 4px}
+  .hide-sm{display:none}
+  #qFloat{display:block}
+  .opts{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .bigScore{font-size:34px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html" aria-label="Back to TrainTanmay Maths">
+    <svg viewBox="0 0 48 48" role="img" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#15803d"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#ffffff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#c8f2d5"/></svg>
+    Sketch<span>Guessr</span></a>
+  <div id="roundDots"></div>
+  <div class="hstat" id="timerBox" style="display:none"><small>Time</small><b id="timerVal">2:00</b></div>
+  <div class="hstat"><small>Total</small><b id="totalVal">0</b></div>
+  <a class="hbtn hide-sm" href="index.html">← Maths</a>
+  <button class="hbtn" id="newGameBtn">New game</button>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="tools">
+      <button class="tb on" data-tool="pencil" data-k="P" title="Pencil (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4L8 20H4v-4L17 3z"/><path d="M14 6l4 4"/></svg></button>
+      <button class="tb" data-tool="eraser" data-k="E" title="Eraser (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H8l-5-5a2 2 0 010-2.8L12.2 3a2 2 0 012.8 0l5 5a2 2 0 010 2.8L11 20"/><path d="M7 10l7 7"/></svg></button>
+      <button class="tb" data-tool="point" data-k="O" title="Plot a point (O)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+      <button class="tb" data-tool="pan" data-k="H" title="Pan (H, or hold Space / right-drag)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></button>
+      <div class="sep"></div>
+      <button class="tb" id="undoBtn" title="Undo (Ctrl/Cmd+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+      <button class="tb" id="clearBtn" title="Clear drawing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+    </div>
+    <div id="zoomBox">
+      <button class="tb" id="zinBtn" title="Zoom in (+)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="tb" id="zoutBtn" title="Zoom out (−)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+      <button class="tb" id="fitBtn" title="Reset view (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <div id="qFloat"></div>
+    <div id="coords">x = 0, y = 0</div>
+    <button id="submitBtn">Submit sketch ⏎</button>
+    <div id="toast"></div>
+    <div id="result"></div>
+  </div>
+  <aside id="side">
+    <div class="card" id="qCard">
+      <h3><span id="qRound">Round 1</span><span id="qBadge" class="badge b1">Easy</span></h3>
+      <div id="qEq"></div>
+      <div id="qNote"></div>
+      <button id="hintBtn">💡 Show a hint (−20% this round)</button>
+      <div id="hintText"></div>
+    </div>
+    <div class="card">
+      <h3>Guides <span style="text-transform:none;letter-spacing:0;font-weight:500">not scored · checked</span></h3>
+      <div class="row"><span class="lbl">x</span><input type="text" id="ptX" placeholder="1" style="flex:1"><span class="lbl">y</span><input type="text" id="ptY" placeholder="e" style="flex:1"><button class="sbtn" id="ptAdd">Plot</button></div>
+      <div class="row"><input type="text" id="asyIn" placeholder="Asymptote, e.g. x = 2 or y = x + 1" style="flex:1"><button class="sbtn" id="asyAdd">Add</button></div>
+      <div class="chips" id="chips"></div>
+      <div class="tiny">Plot key points and asymptotes to help your sketch. Asymptotes you add are checked when you submit.</div>
+    </div>
+    <div class="card">
+      <h3>Calculator</h3>
+      <div class="row"><input type="text" id="calcIn" placeholder="e.g. ln(3), e^2, 2sin(pi/3)" style="flex:1"><button class="sbtn ghost" id="calcGo">=</button></div>
+      <div id="calcHist"></div>
+      <div class="tiny">Functions: sin cos tan sec cosec cot, arcsin…, sinh cosh tanh, arsinh…, ln, log, exp, sqrt, abs · constants pi, e · <code>ans</code></div>
+    </div>
+    <div class="card">
+      <h3>Notepad <button class="sbtn ghost" id="notesClear" style="padding:3px 8px;font-size:11px">Clear</button></h3>
+      <textarea id="notes" placeholder="Working… e.g.&#10;x = 0 → y = 3&#10;roots: x = 1, 3&#10;as x → ∞, y → ∞"></textarea>
+    </div>
+  </aside>
+</main>
+
+<div class="modal show" id="startModal">
+  <div class="mbox">
+    <h1>Sketch<span>Guessr</span></h1>
+    <p class="lead">You get an equation. Sketch the graph by hand. The closer your pencil line is to the real curve, the more points you score — up to <b>1000 per round</b>.</p>
+    <div class="opt-title">Difficulty</div>
+    <div class="opts" id="diffOpts">
+      <button class="opt on" data-v="1">Easy<small>polynomials, eˣ, ln, 1/x, trig</small></button>
+      <button class="opt" data-v="2">Medium<small>transformations, modulus, parametric</small></button>
+      <button class="opt" data-v="3">Hard<small>rational, hyperbolic, polar, curves with loops</small></button>
+      <button class="opt" data-v="0">Mixed<small>gets harder each round</small></button>
+    </div>
+    <div class="opt-title">Rounds</div>
+    <div class="opts three" id="roundOpts">
+      <button class="opt" data-v="3">3</button>
+      <button class="opt on" data-v="5">5</button>
+      <button class="opt" data-v="10">10</button>
+    </div>
+    <div class="opt-title">Timer</div>
+    <div class="opts three" id="timerOpts">
+      <button class="opt on" data-v="0">Off<small>take your time</small></button>
+      <button class="opt" data-v="120">2 min<small>per round</small></button>
+      <button class="opt" data-v="60">1 min<small>per round</small></button>
+    </div>
+    <div class="how">
+      <b>How to play</b>
+      <ul>
+        <li>Draw with the <b>pencil</b>: mouse, trackpad, touchscreen or stylus (pressure-sensitive).</li>
+        <li><b>Zoom</b>: scroll wheel, pinch, or the +/− buttons. <b>Pan</b>: right-drag, hold <kbd>Space</kbd>, two fingers, or the move tool.</li>
+        <li>Only the part inside the <b>scored region</b> (the dashed square) counts. Draw every branch.</li>
+        <li>Use the calculator, notepad, plotted points and asymptotes to work it out like you would in an exam.</li>
+        <li>Shortcuts: <kbd>P</kbd> pencil, <kbd>E</kbd> eraser, <kbd>O</kbd> point, <kbd>H</kbd> pan, <kbd>F</kbd> reset view, <kbd>⌘/Ctrl Z</kbd> undo, <kbd>Enter</kbd> submit.</li>
+      </ul>
+    </div>
+    <div class="startRow"><span id="bestLine"></span><button class="bigbtn" id="startBtn">Start game →</button></div>
+    <div class="credit"><span>Made by Tanmay Vashishtha</span><span><a href="index.html">TrainTanmay Maths</a> · <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">Report a bug or mistake</a></span></div>
+  </div>
+</div>
+
+<div class="modal" id="endModal">
+  <div class="mbox">
+    <h1>Game over</h1>
+    <div class="endTotal" id="endTotal" style="font-size:56px;font-weight:800;letter-spacing:-2px;margin:8px 0 0">0 <small style="font-size:20px;color:var(--muted);letter-spacing:0">/ 5000</small></div>
+    <div id="endMsg" style="color:var(--muted)"></div>
+    <table id="endTable"></table>
+    <div class="startRow"><span id="endBest"></span><span><button class="bigbtn alt" id="endSettings">Change settings</button> <button class="bigbtn" id="againBtn">Play again</button></span></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const PI = Math.PI;
+const $ = id => document.getElementById(id);
+
+/* ------------------------------------------------------------------ */
+/*  Question bank                                                      */
+/*  lvl: 1 easy, 2 medium, 3 hard. c = centre of scored square, r = half-width */
+/* ------------------------------------------------------------------ */
+const sech = x => 1 / Math.cosh(x);
+const inDom = (a, b, f) => x => (x >= a - 1e-9 && x <= b + 1e-9) ? f(x) : NaN;
+const Q = [
+  // ---------- EASY ----------
+  {lvl:1, tex:'y = x^2 - 4x + 3', f:x=>x*x-4*x+3, c:[2,1], r:5, hint:'Factorise: y = (x − 1)(x − 3). Symmetric about x = 2, minimum at (2, −1).'},
+  {lvl:1, tex:'y = (x+2)(x-1)(x-3)', f:x=>(x+2)*(x-1)*(x-3), c:[0.5,2], r:6, hint:'Positive cubic with roots −2, 1 and 3. Put x = 0: y-intercept is 6.'},
+  {lvl:1, tex:'y = 3 - \\tfrac{1}{2}x', f:x=>3-x/2, c:[2,1], r:5, hint:'Straight line, gradient −½, y-intercept 3, x-intercept 6.'},
+  {lvl:1, tex:'y = \\dfrac{1}{x}', f:x=>1/x, c:[0,0], r:5, asym:{v:[0],h:[0]}, hint:'Both axes are asymptotes. Branches in the 1st and 3rd quadrants through (1, 1) and (−1, −1).'},
+  {lvl:1, tex:'y = e^{x}', f:Math.exp, c:[0,2], r:5, asym:{h:[0]}, hint:'Passes through (0, 1) and (1, e ≈ 2.72). y → 0 as x → −∞.'},
+  {lvl:1, tex:'y = \\ln x', f:Math.log, c:[2,0], r:5, asym:{v:[0]}, note:'x > 0', hint:'Passes through (1, 0) and (e, 1). Vertical asymptote x = 0.'},
+  {lvl:1, tex:'y = |2x - 3|', f:x=>Math.abs(2*x-3), c:[1.5,2], r:5, hint:'V-shape with its vertex on the x-axis at (1.5, 0). y-intercept 3.'},
+  {lvl:1, tex:'y = \\sin x', f:Math.sin, c:[0,0], r:6.5, note:'x in radians', hint:'Period 2π ≈ 6.28. Roots at 0, ±π, ±2π. Max 1 at x = π/2.'},
+  {lvl:1, tex:'y = \\cos x + 1', f:x=>Math.cos(x)+1, c:[0,1], r:6.5, note:'x in radians', hint:'cos x translated up 1: oscillates between 0 and 2. Max (0, 2), touches the x-axis at x = ±π.'},
+  {lvl:1, tex:'y = \\sqrt{x}', f:Math.sqrt, c:[3,1], r:4, note:'x ≥ 0', hint:'Starts at the origin, through (1, 1) and (4, 2).'},
+  {lvl:1, tex:'y = x^3', f:x=>x*x*x, c:[0,0], r:4, hint:'Point of inflection at the origin; through (1, 1), (−1, −1), (1.5, 3.375).'},
+  {lvl:1, tex:'y = 8 + 2x - x^2', f:x=>8+2*x-x*x, c:[1,3], r:6.5, hint:'= (4 − x)(2 + x). Roots −2 and 4, maximum at (1, 9).'},
+  {lvl:1, tex:'y = 2^{x}', f:x=>2**x, c:[0,2], r:5, asym:{h:[0]}, hint:'Through (0, 1), (1, 2), (2, 4), (−1, ½).'},
+  {lvl:1, tex:'y = \\dfrac{1}{x^2}', f:x=>1/(x*x), c:[0,2], r:5, asym:{v:[0],h:[0]}, hint:'Always positive, symmetric about the y-axis. Through (±1, 1).'},
+  {lvl:1, type:'param', tex:'x^2 + y^2 = 9', pieces:[{x:t=>3*Math.cos(t), y:t=>3*Math.sin(t), t0:0, t1:2*PI}], c:[0,0], r:5, hint:'Circle, centre the origin, radius 3.'},
+  {lvl:1, tex:'y = \\sin 2x', note:'0 ≤ x ≤ 2π', f:inDom(0, 2*PI, x=>Math.sin(2*x)), c:[PI,0], r:3.6, hint:'Period π, so two full waves in 0 ≤ x ≤ 2π. Max 1 at x = π/4 and 5π/4; roots every π/2.'},
+  {lvl:1, tex:'y = 1 + 2\\sin x', note:'0 ≤ x ≤ 2π', f:inDom(0, 2*PI, x=>1+2*Math.sin(x)), c:[PI,1], r:3.6, hint:'Stretch sin x by 2 vertically, then up 1: max (π/2, 3), min (3π/2, −1). Roots where sin x = −½: x = 7π/6, 11π/6.'},
+  {lvl:1, tex:'y = (x-2)^2 - 1', f:x=>(x-2)**2-1, c:[2,2], r:5, hint:'Completed square form: vertex (2, −1). Roots at x = 1 and 3.'},
+
+  // ---------- MEDIUM ----------
+  {lvl:2, tex:'y = \\dfrac{1}{x-2} + 1', f:x=>1/(x-2)+1, c:[2,1], r:5, asym:{v:[2],h:[1]}, hint:'1/x translated by (2, 1). Crosses x-axis at x = 1; y-intercept ½.'},
+  {lvl:2, tex:'y = \\dfrac{2x+1}{x-1}', f:x=>(2*x+1)/(x-1), c:[1,2], r:6, asym:{v:[1],h:[2]}, hint:'Asymptotes x = 1 and y = 2. Crosses axes at (−½, 0) and (0, −1).'},
+  {lvl:2, tex:'y = x^2(x-3)', f:x=>x*x*(x-3), c:[1.5,-1], r:5, hint:'Repeated root at 0 (touches the axis), crosses at x = 3. Minimum at (2, −4).'},
+  {lvl:2, tex:'y = (x+1)^2(2-x)', f:x=>(x+1)**2*(2-x), c:[0.5,1.5], r:5, hint:'Negative cubic: touches at x = −1, crosses at x = 2, y-intercept 2. Max at (1, 4).'},
+  {lvl:2, tex:'y = e^{-x} - 2', f:x=>Math.exp(-x)-2, c:[0,0], r:5, asym:{h:[-2]}, hint:'eˣ reflected in the y-axis, shifted down 2. y-intercept −1, root at x = −ln 2 ≈ −0.69.'},
+  {lvl:2, tex:'y = \\ln(x+3)', f:x=>Math.log(x+3), c:[0,0], r:5, asym:{v:[-3]}, hint:'ln x shifted left 3: root at x = −2, y-intercept ln 3 ≈ 1.10.'},
+  {lvl:2, tex:'y = |x^2 - 4|', f:x=>Math.abs(x*x-4), c:[0,2.5], r:5, hint:'Reflect the part of y = x² − 4 that is below the x-axis. Local max (0, 4), cusps at (±2, 0).'},
+  {lvl:2, tex:'y = 2\\sin\\left(x + \\tfrac{\\pi}{4}\\right)', f:x=>2*Math.sin(x+PI/4), c:[0,0], r:6.5, note:'x in radians', hint:'Amplitude 2, sin x shifted left π/4. y-intercept √2 ≈ 1.41, max at x = π/4.'},
+  {lvl:2, tex:'y = \\tan x', f:Math.tan, c:[0,0], r:5, asym:{v:[-3*PI/2,-PI/2,PI/2,3*PI/2]}, note:'x in radians', hint:'Period π; vertical asymptotes at x = ±π/2 ≈ ±1.57 and ±3π/2 ≈ ±4.71.'},
+  {lvl:2, tex:'y = x e^{-x}', f:x=>x*Math.exp(-x), c:[1.5,0], r:3.5, asym:{h:[0]}, hint:'Through the origin. Max at (1, 1/e ≈ 0.37). y → 0 as x → ∞, plunges as x → −∞.'},
+  {lvl:2, tex:'y = 2|x+1| - 3', f:x=>2*Math.abs(x+1)-3, c:[-1,1], r:5, hint:'V-shape, vertex (−1, −3), gradients ±2. Roots at x = 0.5 and −2.5.'},
+  {lvl:2, tex:'y = \\dfrac{4}{x^2+1}', f:x=>4/(x*x+1), c:[0,2], r:5, asym:{h:[0]}, hint:'Always positive, max at (0, 4), symmetric; y → 0 as x → ±∞.'},
+  {lvl:2, type:'param', tex:'x = t^2,\\quad y = 2t', note:'t ∈ ℝ', pieces:[{x:t=>t*t, y:t=>2*t, t0:-4, t1:4}], c:[3,0], r:5, hint:'Eliminate t: y² = 4x — a parabola opening to the right.'},
+  {lvl:2, type:'param', tex:'x = 3\\cos t,\\quad y = 2\\sin t', note:'0 ≤ t < 2π', pieces:[{x:t=>3*Math.cos(t), y:t=>2*Math.sin(t), t0:0, t1:2*PI}], c:[0,0], r:4, hint:'Ellipse x²/9 + y²/4 = 1: crosses at (±3, 0) and (0, ±2).'},
+  {lvl:2, tex:'y = \\cosh x', f:Math.cosh, c:[0,3], r:5, hint:'Even function, minimum at (0, 1). Grows like ½eˣ for large |x|.'},
+  {lvl:2, tex:'y = 2 - \\sqrt{x+4}', f:x=>2-Math.sqrt(x+4), c:[0,0], r:5, hint:'√x reflected in the x-axis, moved left 4 and up 2. Starts at (−4, 2), root at x = 0.'},
+  {lvl:2, tex:'y = |\\ln x|', f:x=>Math.abs(Math.log(x)), c:[2,1.5], r:3.5, asym:{v:[0]}, note:'x > 0', hint:'Reflect the negative part of ln x (for 0 < x < 1). Cusp at (1, 0).'},
+  {lvl:2, tex:'y = \\cos 2x', f:x=>Math.cos(2*x), c:[0,0], r:5, note:'x in radians', hint:'Period π. Max at x = 0, ±π; roots at ±π/4, ±3π/4.'},
+  {lvl:2, tex:'y = 3\\cos\\left(x - \\tfrac{\\pi}{3}\\right)', note:'−π ≤ x ≤ 2π', f:inDom(-PI, 2*PI, x=>3*Math.cos(x-PI/3)), c:[PI/2,0], r:4.9, hint:'cos x shifted right π/3, amplitude 3. Max (π/3, 3), min (4π/3, −3), roots at −π/6, 5π/6, 11π/6. y-intercept 1.5.'},
+  {lvl:2, tex:'y = |\\sin x|', note:'−2π ≤ x ≤ 2π', f:inDom(-2*PI, 2*PI, x=>Math.abs(Math.sin(x))), c:[0,0.5], r:6.5, hint:'Reflect the negative halves of sin x upward: a row of arches of height 1 with cusps at multiples of π.'},
+  {lvl:2, tex:'y = 3 - e^{x}', f:x=>3-Math.exp(x), c:[0,0], r:5, asym:{h:[3]}, hint:'Reflect eˣ in the x-axis, then up 3. y-intercept 2, root at ln 3 ≈ 1.10.'},
+
+  // ---------- HARD ----------
+  {lvl:3, tex:'y = \\dfrac{x^2-1}{x^2-4}', f:x=>(x*x-1)/(x*x-4), c:[0,1], r:5, asym:{v:[-2,2],h:[1]}, hint:'Roots ±1, y-intercept ¼ (a local max), asymptotes x = ±2 and y = 1.'},
+  {lvl:3, tex:'y = \\dfrac{x^2+1}{x-1}', f:x=>(x*x+1)/(x-1), c:[1,2], r:7, asym:{v:[1],o:[[1,1]]}, hint:'Divide: y = x + 1 + 2/(x − 1). Oblique asymptote y = x + 1. Turning points at x = 1 ± √2.'},
+  {lvl:3, tex:'y = \\sinh x', f:Math.sinh, c:[0,0], r:4, hint:'Odd function through the origin with gradient 1 there. Behaves like ±½e^{|x|}.'},
+  {lvl:3, tex:'y = \\tanh x', f:Math.tanh, c:[0,0], r:3, asym:{h:[-1,1]}, hint:'Odd, through origin with gradient 1, asymptotes y = ±1.'},
+  {lvl:3, tex:'y = x^2 e^{-x}', f:x=>x*x*Math.exp(-x), c:[2,1], r:3.5, asym:{h:[0]}, hint:'Minimum (0, 0), maximum at (2, 4/e² ≈ 0.54). y → 0 as x → ∞.'},
+  {lvl:3, tex:'y = \\ln(x^2-1)', f:x=>Math.log(x*x-1), c:[0,0], r:5, asym:{v:[-1,1]}, note:'|x| > 1', hint:'Even function, defined for |x| > 1. Roots at x = ±√2 ≈ ±1.41.'},
+  {lvl:3, tex:'y = x\\ln x', f:x=>x>0?x*Math.log(x):NaN, c:[1.25,0.5], r:2, note:'x > 0', hint:'Tends to 0 as x → 0⁺. Minimum at (1/e, −1/e) ≈ (0.37, −0.37). Root at x = 1.'},
+  {lvl:3, tex:'y = \\sec x', f:x=>1/Math.cos(x), c:[0,0], r:6, asym:{v:[-3*PI/2,-PI/2,PI/2,3*PI/2]}, note:'x in radians', hint:'U-shapes with minimum (0, 1) and ∩-shapes with max (±π, −1). Asymptotes where cos x = 0.'},
+  {lvl:3, piAxis:true, tex:'y = \\operatorname{cosec} x', note:'0 < x < 2π', f:inDom(0, 2*PI, x=>1/Math.sin(x)), c:[PI,0], r:3.6, asym:{v:[0,PI,2*PI]}, hint:'1/sin x: asymptotes at x = 0, π, 2π. ∪-shape with min (π/2, 1), ∩-shape with max (3π/2, −1).'},
+  {lvl:3, tex:'y = \\sin x + \\cos x', note:'0 ≤ x ≤ 2π', f:inDom(0, 2*PI, x=>Math.sin(x)+Math.cos(x)), c:[PI,0], r:3.6, hint:'= √2 sin(x + π/4). Max (π/4, √2), min (5π/4, −√2), roots 3π/4 and 7π/4, y-intercept 1.'},
+  {lvl:3, tex:'y = 2\\cos 2x - 1', note:'0 ≤ x ≤ π', f:inDom(0, PI, x=>2*Math.cos(2*x)-1), c:[PI/2,-0.5], r:2.6, hint:'Period π, amplitude 2, shifted down 1: from (0, 1) down to (π/2, −3) and back to (π, 1). Roots at π/6 and 5π/6.'},
+  {lvl:3, tex:'y = \\arctan x', f:Math.atan, c:[0,0], r:4, asym:{h:[-PI/2,PI/2]}, hint:'Odd, gradient 1 at the origin, horizontal asymptotes y = ±π/2 ≈ ±1.57.'},
+  {lvl:3, tex:'y = \\arcsin x', f:Math.asin, c:[0,0], r:2, note:'−1 ≤ x ≤ 1', hint:'Domain [−1, 1], range [−π/2, π/2]. Endpoints (1, π/2) and (−1, −π/2); vertical tangents there.'},
+  {lvl:3, tex:'y = \\dfrac{1}{x^2 - x - 2}', f:x=>1/(x*x-x-2), c:[0.5,0], r:4, asym:{v:[-1,2],h:[0]}, hint:'Denominator (x − 2)(x + 1). Middle branch is an ∩ with max (½, −4/9). y-intercept −½.'},
+  {lvl:3, tex:'y = \\dfrac{1}{|x-1|}', f:x=>1/Math.abs(x-1), c:[1,2], r:4, asym:{v:[1],h:[0]}, hint:'Always positive, symmetric about x = 1. y-intercept 1.'},
+  {lvl:3, tex:'y = e^{\\sin x}', f:x=>Math.exp(Math.sin(x)), c:[0,1.5], r:6.5, note:'x in radians', hint:'Period 2π. Oscillates between 1/e ≈ 0.37 and e ≈ 2.72, y-intercept 1.'},
+  {lvl:3, tex:'y = \\dfrac{x}{x^2+1}', f:x=>x/(x*x+1), c:[0,0], r:3, asym:{h:[0]}, hint:'Odd. Max (1, ½), min (−1, −½). y → 0 as x → ±∞.'},
+  {lvl:3, tex:'y = \\operatorname{sech} x', f:sech, c:[0,0.5], r:3, asym:{h:[0]}, hint:'= 1/cosh x. Bell-shaped, max (0, 1), y → 0 as x → ±∞.'},
+  {lvl:3, tex:'y = \\operatorname{arsinh} x', f:Math.asinh, c:[0,0], r:5, hint:'Inverse of sinh: reflect sinh x in y = x. Grows like ln(2x).'},
+  {lvl:3, tex:'y = \\dfrac{x-1}{(x+1)(x-3)}', f:x=>(x-1)/((x+1)*(x-3)), c:[1,0], r:5, asym:{v:[-1,3],h:[0]}, hint:'Root x = 1, y-intercept 1/3. Asymptotes x = −1, x = 3, y = 0. Middle branch is decreasing.'},
+  {lvl:3, tex:'y = x + \\dfrac{1}{x}', f:x=>x+1/x, c:[0,0], r:5, asym:{v:[0],o:[[1,0]]}, hint:'Oblique asymptote y = x, vertical x = 0. Min (1, 2), max (−1, −2).'},
+  {lvl:3, type:'param', tex:'x = t^2 - 1,\\quad y = t^3 - t', note:'t ∈ ℝ', pieces:[{x:t=>t*t-1, y:t=>t*t*t-t, t0:-2.4, t1:2.4}], c:[0.8,0], r:3.5, hint:'At t = ±1 the curve passes through (0, 0) twice: a loop! Leftmost point (−1, 0) at t = 0.'},
+  {lvl:3, type:'param', tex:'x = \\cos t,\\quad y = \\sin 2t', note:'0 ≤ t < 2π', pieces:[{x:t=>Math.cos(t), y:t=>Math.sin(2*t), t0:0, t1:2*PI}], c:[0,0], r:1.6, hint:'Figure-of-eight crossing at the origin; extreme points (±√2⁄2, ±1).'},
+  {lvl:3, type:'param', tex:'x = t - \\sin t,\\quad y = 1 - \\cos t', note:'0 ≤ t ≤ 4π', pieces:[{x:t=>t-Math.sin(t), y:t=>1-Math.cos(t), t0:0, t1:4*PI}], c:[2*PI,1.5], r:7, hint:'A cycloid: two arches of height 2, touching the x-axis (cusps) at x = 0, 2π, 4π.'},
+  {lvl:3, type:'param', tex:'\\dfrac{x^2}{4} - y^2 = 1', pieces:[{x:t=>2*Math.cosh(t), y:t=>Math.sinh(t), t0:-3, t1:3},{x:t=>-2*Math.cosh(t), y:t=>Math.sinh(t), t0:-3, t1:3}], c:[0,0], r:5, asym:{o:[[0.5,0],[-0.5,0]]}, hint:'Hyperbola: vertices (±2, 0), asymptotes y = ±½x. Two branches!'},
+  {lvl:3, type:'param', tex:'x = 3\\cosh t,\\quad y = 2\\sinh t', note:'t ∈ ℝ', pieces:[{x:t=>3*Math.cosh(t), y:t=>2*Math.sinh(t), t0:-3, t1:3}], c:[4,0], r:5, asym:{o:[[2/3,0],[-2/3,0]]}, hint:'cosh²t − sinh²t = 1 → x²/9 − y²/4 = 1, but cosh t > 0 so only the right branch, vertex (3, 0).'},
+  {lvl:3, type:'polar', tex:'r = 2(1 + \\cos\\theta)', note:'0 ≤ θ < 2π (polar)', r:3.5, c:[1.5,0], rf:th=>2*(1+Math.cos(th)), t0:0, t1:2*PI, hint:'Cardioid: r = 4 at θ = 0, r = 2 at θ = ±π/2, passes through the pole at θ = π.'},
+  {lvl:3, type:'polar', tex:'r = 3 + 2\\cos\\theta', note:'0 ≤ θ < 2π (polar)', r:5.5, c:[0.5,0], rf:th=>3+2*Math.cos(th), t0:0, t1:2*PI, hint:'Dimpled limaçon: r from 1 (at θ = π) to 5 (at θ = 0). Never reaches the pole.'},
+  {lvl:3, type:'polar', tex:'r = 3\\sin 3\\theta', note:'r ≥ 0 (polar)', r:3.5, c:[0,0], rf:th=>3*Math.sin(3*th), t0:0, t1:2*PI, hint:'Three-petal rose, petals of length 3 centred on θ = π/6, 5π/6, 3π/2.'},
+  {lvl:3, type:'polar', tex:'r = \\tfrac{1}{2}\\theta', note:'0 ≤ θ ≤ 4π (polar)', r:7, c:[0,0], rf:th=>th/2, t0:0, t1:4*PI, hint:'Spiral from the pole, r grows by π every full turn; two turns. Ends at (2π, 0) ≈ (6.28, 0).'},
+];
+// convert polar to parametric
+Q.forEach(q => {
+  if (q.type === 'polar') {
+    q.pieces = [{x:t=>{const r=q.rf(t); return r<0?NaN:r*Math.cos(t);}, y:t=>{const r=q.rf(t); return r<0?NaN:r*Math.sin(t);}, t0:q.t0, t1:q.t1}];
+  }
+  if (!q.type) q.type = 'fn';
+  q.asym = Object.assign({v:[],h:[],o:[]}, q.asym || {});
+  /* Label the x-axis in multiples of π whenever x is an angle in radians:
+     any question whose note says so, and any plain function of x built on a
+     trig ratio. Parametric and polar curves are excluded — there x is an
+     ordinary coordinate, not an angle — as are cosh/sinh/tanh and the
+     inverse trig functions, whose input is a number. */
+  const TRIG_OF_X = /\\(sin|cos|tan|sec|cosec|cot)\b/;
+  if (q.type === 'fn' && !q.piAxis) {
+    const note = q.note || '';
+    q.piAxis = /radian/i.test(note) || /π|\\pi/.test(note) || TRIG_OF_X.test(q.tex);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const view = {x:0, y:0, s:50};
+let tool = 'pencil';
+let strokes = [], points = [], guides = [];
+let undoStack = [];
+let phase = 'start'; // start | draw | reveal | end
+const settings = {diff:1, rounds:5, timer:0};
+let game = null; // {qs, idx, scores, results}
+let curQ = null, hintUsed = false, result = null, revealT0 = 0;
+let hover = null, spaceDown = false, penSeen = false;
+let timeLeft = 0, timerId = null;
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+const w2s = (x, y) => ({x: W/2 + (x - view.x)*view.s, y: H/2 - (y - view.y)*view.s});
+const s2w = (x, y) => ({x: view.x + (x - W/2)/view.s, y: view.y - (y - H/2)/view.s});
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const hash = i => { const s = Math.sin(i*12.9898 + 78.233)*43758.5453; return s - Math.floor(s); };
+function fmt(v, dp = 2) {
+  if (!isFinite(v)) return String(v);
+  if (Math.abs(v) < 1e-9) v = 0;
+  let s = (+v.toFixed(dp)).toString();
+  return s.replace('-', '−');
+}
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 5, 10]) if (m*p >= raw) return m*p;
+  return 10*p;
+}
+const piMode = () => !!(curQ && curQ.piAxis);
+function piStep(raw) {
+  for (const k of [1/12, 1/6, 1/4, 1/2, 1, 2, 4, 8, 16, 32]) if (k*PI >= raw) return k*PI;
+  return 64*PI;
+}
+// exact multiple of π as text (e.g. 3π/2), or null if not a nice multiple
+function piExact(x, tol = 1e-6) {
+  const v = x/PI;
+  if (Math.abs(v) < tol) return '0';
+  for (const d of [1, 2, 3, 4, 6, 8, 12]) {
+    const n = Math.round(v*d);
+    if (Math.abs(v*d - n) < tol*d) {
+      const g = (a, b) => b ? g(b, a % b) : a, k = g(Math.abs(n), d), nn = n/k, dd = d/k;
+      const num = (nn < 0 ? '−' : '') + (Math.abs(nn) === 1 ? '' : Math.abs(nn)) + 'π';
+      return dd === 1 ? num : num + '/' + dd;
+    }
+  }
+  return null;
+}
+const piFrac = x => piExact(x, 1e-6) || fmt(x);
+// x-coordinate formatter: uses π form for π-axis questions when it is a nice multiple
+const fmtX = x => (piMode() && piExact(x, 2e-4)) || fmt(x);
+let toastT;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
+
+/* TeX rendering via KaTeX (served from this site, so it works offline and
+   behind a school firewall) with a plain-text fallback */
+function texPlain(t) {
+  return t.replace(/\\left|\\right/g, '')
+    .replace(/\\[dt]frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)')
+    .replace(/\\operatorname\{(\w+)\}/g, '$1')
+    .replace(/\\theta/g, 'θ').replace(/\\pi/g, 'π')
+    .replace(/\\(quad|,|;)/g, '  ')
+    .replace(/\\(\w+)/g, '$1').replace(/[{}]/g, '');
+}
+function renderTex(el, tex) {
+  if (window.katex) {
+    try { katex.render(tex, el, {displayMode: true, throwOnError: false}); return; } catch (e) {}
+  }
+  el.textContent = texPlain(tex);
+}
+
+/* Safe-ish expression evaluator for calculator and guides */
+const SCOPE = {
+  sin:Math.sin, cos:Math.cos, tan:Math.tan, sec:x=>1/Math.cos(x), cosec:x=>1/Math.sin(x), csc:x=>1/Math.sin(x), cot:x=>1/Math.tan(x),
+  arcsin:Math.asin, arccos:Math.acos, arctan:Math.atan, asin:Math.asin, acos:Math.acos, atan:Math.atan,
+  sinh:Math.sinh, cosh:Math.cosh, tanh:Math.tanh, sech, cosech:x=>1/Math.sinh(x), coth:x=>1/Math.tanh(x),
+  arsinh:Math.asinh, arcosh:Math.acosh, artanh:Math.atanh, asinh:Math.asinh, acosh:Math.acosh, atanh:Math.atanh,
+  ln:Math.log, log:(x,b)=>b===undefined?Math.log10(x):Math.log(x)/Math.log(b), exp:Math.exp, sqrt:Math.sqrt, abs:Math.abs,
+  pi:PI, e:Math.E, ans:0, x:0
+};
+function evalExpr(src, vars = {}) {
+  let s = String(src).trim().toLowerCase()
+    .replace(/π/g, 'pi').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/√/g, 'sqrt')
+    .replace(/\^/g, '**');
+  if (!s) throw new Error('empty');
+  if (!/^[0-9a-z+\-*/().,\s]*$/.test(s)) throw new Error('bad character');
+  s = s.replace(/(\d|\))\s*(?=[a-z(])/g, '$1*').replace(/\)\s*(?=\d)/g, ')*');
+  const scope = Object.assign({}, SCOPE, vars);
+  const ids = s.match(/[a-z_][a-z0-9_]*/g) || [];
+  for (const id of ids) if (!(id in scope)) throw new Error('unknown "' + id + '"');
+  const keys = Object.keys(scope);
+  const fn = new Function(...keys, '"use strict"; return (' + s + ');');
+  const v = fn(...keys.map(k => scope[k]));
+  if (typeof v !== 'number') throw new Error('not a number');
+  return v;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Curve sampling                                                     */
+/* ------------------------------------------------------------------ */
+function crossesVA(q, a, b) { for (const v of q.asym.v) if ((a - v)*(b - v) <= 0) return true; return false; }
+
+// returns array of polylines [[{x,y},...],...] clipped loosely to the box
+function sampleCurve(q, box, n, prog = 1) {
+  const out = []; let cur = [];
+  const flush = () => { if (cur.length > 1) out.push(cur); cur = []; };
+  const bw = box.x1 - box.x0, bh = box.y1 - box.y0;
+  if (q.type === 'fn') {
+    const xEnd = box.x0 + bw*prog;
+    let prev = null;
+    for (let i = 0; i <= n; i++) {
+      const x = box.x0 + (xEnd - box.x0)*i/n;
+      const y = q.f(x);
+      const ok = isFinite(y) && y >= box.y0 && y <= box.y1;
+      if (prev && crossesVA(q, prev.x, x)) flush();
+      else if (ok && prev && prev.ok && Math.abs(y - prev.y) > bh*0.5) flush();
+      if (ok) cur.push({x, y}); else flush();
+      prev = {x, y, ok};
+    }
+  } else {
+    for (const pc of q.pieces) {
+      const tEnd = pc.t0 + (pc.t1 - pc.t0)*prog;
+      let prev = null;
+      for (let i = 0; i <= n; i++) {
+        const t = pc.t0 + (tEnd - pc.t0)*i/n;
+        const x = pc.x(t), y = pc.y(t);
+        const ok = isFinite(x) && isFinite(y) && x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1;
+        if (ok && prev && Math.hypot(x - prev.x, y - prev.y) > Math.max(bw, bh)*0.3) flush();
+        if (ok) cur.push({x, y}); else flush();
+        prev = {x, y};
+      }
+      flush();
+    }
+  }
+  flush();
+  return out;
+}
+function resample(polys, spacing) {
+  const out = [];
+  for (const pl of polys) {
+    if (!pl.length) continue;
+    out.push({x: pl[0].x, y: pl[0].y});
+    for (let i = 1; i < pl.length; i++) {
+      const a = pl[i-1], b = pl[i];
+      const L = Math.hypot(b.x - a.x, b.y - a.y);
+      const k = Math.max(1, Math.ceil(L/spacing));
+      for (let j = 1; j <= k; j++) out.push({x: a.x + (b.x - a.x)*j/k, y: a.y + (b.y - a.y)*j/k});
+    }
+  }
+  return out;
+}
+function nearest(p, set) {
+  let best = Infinity, bi = -1;
+  for (let i = 0; i < set.length; i++) {
+    const dx = set[i].x - p.x, dy = set[i].y - p.y, d = dx*dx + dy*dy;
+    if (d < best) { best = d; bi = i; }
+  }
+  return {d: Math.sqrt(best), i: bi};
+}
+
+/* ------------------------------------------------------------------ */
+/*  Key features                                                       */
+/* ------------------------------------------------------------------ */
+function bisect(g, a, b, it = 60) {
+  let ga = g(a);
+  for (let i = 0; i < it; i++) { const m = (a + b)/2, gm = g(m); if (ga*gm <= 0) b = m; else { a = m; ga = gm; } }
+  return (a + b)/2;
+}
+function keyFeatures(q) {
+  const [cx, cy] = q.c, R = q.r;
+  const inBox = p => Math.abs(p.x - cx) <= R + 1e-9 && Math.abs(p.y - cy) <= R + 1e-9;
+  const feats = [];
+  const add = (type, x, y) => {
+    if (!inBox({x, y})) return;
+    const same = feats.find(f => Math.hypot(f.x - x, f.y - y) < 1e-3);
+    if (same && (same.type === type || type === 'root' || type === 'yint')) { if ((type === 'root' && same.type === 'yint') || (type === 'yint' && same.type === 'root')) same.type = 'origin'; return; }
+    if (same && (same.type === 'root' || same.type === 'yint')) { same.type = type; return; }
+    feats.push({type, x, y});
+  };
+  if (q.type === 'fn') {
+    const f = q.f, n = 3000, x0 = cx - R + 1.234567e-7, x1 = cx + R + 1.234567e-7;
+    const h = 1e-5, g = x => (f(x + h) - f(x - h))/(2*h);
+    for (let i = 0; i < n; i++) {
+      const a = x0 + (x1 - x0)*i/n, b = x0 + (x1 - x0)*(i + 1)/n;
+      if (crossesVA(q, a, b)) continue;
+      const fa = f(a), fb = f(b);
+      if (isFinite(fa) && isFinite(fb) && Math.abs(fb - fa) < R) {
+        if (fa === 0) add('root', a, 0);
+        else if (fa*fb < 0) { const r = bisect(f, a, b); add('root', r, 0); }
+      }
+      const ga = g(a), gb = g(b);
+      if (isFinite(ga) && isFinite(gb) && ga*gb < 0 && isFinite(fa) && isFinite(fb)) {
+        const t = bisect(g, a, b), ft = f(t);
+        if (isFinite(ft)) {
+          const cusp = Math.abs(g(t - 1e-3)) > 0.05 && Math.abs(g(t + 1e-3)) > 0.05;
+          const both = Math.abs(ft) < 1e-6;
+          // determine max/min
+          const kind = cusp ? 'cusp' : (f(t - 1e-3) < ft ? 'max' : 'min');
+          add(kind, t, ft);
+          if (both) add('root', t, 0);
+        }
+      }
+    }
+    if (cx - R <= 0 && cx + R >= 0) { const y0 = f(0); if (isFinite(y0)) add('yint', 0, y0); }
+  } else {
+    for (const pc of q.pieces) {
+      const n = 4000;
+      for (let i = 0; i < n; i++) {
+        const a = pc.t0 + (pc.t1 - pc.t0)*i/n, b = pc.t0 + (pc.t1 - pc.t0)*(i + 1)/n;
+        const xa = pc.x(a), xb = pc.x(b), ya = pc.y(a), yb = pc.y(b);
+        if (![xa, xb, ya, yb].every(isFinite)) continue;
+        if (ya === 0 || ya*yb < 0) { const t = ya === 0 ? a : bisect(pc.y, a, b); add('root', pc.x(t), 0); }
+        if (xa === 0 || xa*xb < 0) { const t = xa === 0 ? a : bisect(pc.x, a, b); add('yint', 0, pc.y(t)); }
+      }
+    }
+  }
+  return feats;
+}
+const FEAT_NAME = {origin:'passes through the origin', root:'x-intercept', yint:'y-intercept', max:'maximum', min:'minimum', cusp:'cusp'};
+
+/* ------------------------------------------------------------------ */
+/*  Scoring                                                            */
+/* ------------------------------------------------------------------ */
+function score() {
+  const q = curQ, [cx, cy] = q.c, R = q.r, u = R/6; // u = normalising unit
+  const ext = R*1.3;
+  const box = {x0: cx - ext, x1: cx + ext, y0: cy - ext, y1: cy + ext};
+  const truePolys = sampleCurve(q, box, 8000);
+  const trueFine = resample(truePolys, 0.02*u);
+  const inWin = p => Math.abs(p.x - cx) <= R && Math.abs(p.y - cy) <= R;
+  const trueWin = resample(truePolys, 0.05*u).filter(inWin);
+  const userPolys = strokes.filter(s => s.pts.length).map(s => s.pts.length === 1 ? [s.pts[0], s.pts[0]] : s.pts);
+  const userFine = resample(userPolys, 0.03*u);
+  const userWin = userFine.filter(p => Math.abs(p.x - cx) <= R*1.05 && Math.abs(p.y - cy) <= R*1.05);
+  const cap = 3*u;
+
+  // per stroke point distances (for heat colouring)
+  for (const s of strokes) s.d = s.pts.map(p => nearest(p, trueFine).d/u);
+
+  let dP = cap, dC = cap, coverage = 0, connectors = [];
+  if (userWin.length && trueWin.length) {
+    let sum = 0;
+    userWin.forEach((p, i) => {
+      const nr = nearest(p, trueFine), d = Math.min(nr.d, cap);
+      sum += d;
+      if (i % 6 === 0 && nr.d > 0.06*u) connectors.push({a: p, b: trueFine[nr.i], d: nr.d/u});
+    });
+    dP = sum/userWin.length;
+    let sc = 0, covered = 0;
+    for (const p of trueWin) { const d = Math.min(nearest(p, userFine).d, cap); sc += d; if (d < 0.25*u) covered++; }
+    dC = sc/trueWin.length;
+    coverage = covered/trueWin.length;
+  }
+  const dn = (0.5*dP + 0.5*dC)/u;
+  const raw = userWin.length ? 1000*Math.exp(-1.5*Math.max(0, dn - 0.04)) : 0;
+  const final = Math.round(raw*(hintUsed ? 0.8 : 1));
+
+  // asymptote feedback
+  const asyFb = [];
+  const tol = 0.15*u;
+  const used = new Set();
+  const match = (kind, test) => { const i = guides.findIndex((g, k) => !used.has(k) && g.kind === kind && test(g)); if (i >= 0) used.add(i); return i >= 0; };
+  for (const a of q.asym.v) asyFb.push({ok: match('v', g => Math.abs(g.a - a) < tol), label: 'x = ' + fmtX(a)});
+  for (const b of q.asym.h) asyFb.push({ok: match('h', g => Math.abs(g.b - b) < tol), label: 'y = ' + fmt(b)});
+  for (const [m, c] of q.asym.o) asyFb.push({ok: match('o', g => Math.abs(g.m - m) < 0.08 && Math.abs(g.c - c) < 2*tol), label: 'y = ' + (m === 1 ? '' : m === -1 ? '−' : fmt(m, 3)) + 'x' + (c ? (c > 0 ? ' + ' : ' − ') + fmt(Math.abs(c)) : '')});
+  const extra = guides.filter((g, k) => !used.has(k)).map(g => g.label);
+
+  return {final, raw, dP: dP/u, dC: dC/u, coverage, connectors, asyFb, extra, feats: keyFeatures(q), empty: !userWin.length};
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rendering                                                          */
+/* ------------------------------------------------------------------ */
+let needsDraw = true, needFit = false;
+const dirty = () => { needsDraw = true; };
+function resize() {
+  const r = $('stage').getBoundingClientRect();
+  DPR = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  if (curQ && W > 0 && H > 0 && (view.s < 1 || needFit)) { needFit = false; fitView(); }
+  dirty();
+}
+new ResizeObserver(resize).observe($('stage'));
+
+function fitView() {
+  if (!curQ) return;
+  if (!W || !H) { needFit = true; return; }
+  const R = curQ.r;
+  view.x = curQ.c[0]; view.y = curQ.c[1];
+  view.s = Math.min(W, H)*0.86/(2*R);
+  if (W > 860) view.s = Math.min(W - 140, H - 40)*0.9/(2*R);
+  dirty();
+}
+function zoomAt(p, f) {
+  const w = s2w(p.x, p.y);
+  view.s = clamp(view.s*f, 2, 20000);
+  view.x = w.x - (p.x - W/2)/view.s;
+  view.y = w.y + (p.y - H/2)/view.s;
+  dirty();
+}
+
+function heatColor(d) { // d normalised units
+  const t = clamp(d/0.8, 0, 1);
+  return `hsl(${Math.round(130*(1 - t))},75%,${38 + 6*t}%)`;
+}
+
+function drawGrid() {
+  ctx.fillStyle = '#fbf8f1'; ctx.fillRect(0, 0, W, H);
+  const tl = s2w(0, 0), br = s2w(W, H);
+  const major = niceStep(70/view.s);
+  const minorDiv = String(major).replace(/0|\./g, '').startsWith('2') ? 4 : 5;
+  const minor = major/minorDiv;
+  const pim = piMode();
+  const majorX = pim ? piStep(70/view.s) : major;
+  const minorX = pim ? majorX/2 : minor;
+  const drawLines = (stepX, stepY, style, lw) => {
+    ctx.strokeStyle = style; ctx.lineWidth = lw; ctx.beginPath();
+    if (stepX*view.s >= 7) for (let i = Math.ceil(tl.x/stepX); i*stepX <= br.x; i++) { const sx = Math.round(w2s(i*stepX, 0).x) + 0.5; ctx.moveTo(sx, 0); ctx.lineTo(sx, H); }
+    if (stepY*view.s >= 7) for (let i = Math.ceil(br.y/stepY); i*stepY <= tl.y; i++) { const sy = Math.round(w2s(0, i*stepY).y) + 0.5; ctx.moveTo(0, sy); ctx.lineTo(W, sy); }
+    ctx.stroke();
+  };
+  drawLines(minorX, minor, 'rgba(90,140,210,0.10)', 1);
+  drawLines(majorX, major, 'rgba(90,140,210,0.28)', 1);
+
+  // scored region dim + frame
+  if (curQ) {
+    const [cx, cy] = curQ.c, R = curQ.r;
+    const a = w2s(cx - R, cy + R), b = w2s(cx + R, cy - R);
+    ctx.save();
+    ctx.fillStyle = 'rgba(120,105,70,0.07)';
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.rect(a.x, a.y, b.x - a.x, b.y - a.y); ctx.fill('evenodd');
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(60,60,90,0.35)'; ctx.lineWidth = 1.2;
+    ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(60,60,90,0.45)'; ctx.font = '600 10px Inter, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('SCORED REGION', b.x - 4, a.y - 3);
+    ctx.restore();
+  }
+
+  // axes
+  const o = w2s(0, 0);
+  ctx.strokeStyle = '#3a3a48'; ctx.lineWidth = 1.5; ctx.beginPath();
+  if (o.y >= 0 && o.y <= H) { ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); }
+  if (o.x >= 0 && o.x <= W) { ctx.moveTo(o.x, 0); ctx.lineTo(o.x, H); }
+  ctx.stroke();
+  // arrows + labels
+  ctx.fillStyle = '#3a3a48'; ctx.font = 'italic 600 14px Georgia, serif';
+  if (o.y >= 0 && o.y <= H) { ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText('x', W - 8, o.y - 4); }
+  if (o.x >= 0 && o.x <= W) { ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('y', o.x + 6, 6); }
+
+  // tick labels
+  ctx.font = '11px Inter, sans-serif'; ctx.fillStyle = '#6b6a72';
+  const dp = Math.max(0, -Math.floor(Math.log10(major) + 1e-9));
+  const lab = v => fmt(v, dp + 1);
+  const ly = clamp(o.y + 4, 4, H - 16);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  if (pim) ctx.font = '600 12px Georgia, serif';
+  for (let i = Math.ceil(tl.x/majorX); i*majorX <= br.x; i++) {
+    if (i === 0) continue;
+    const x = i*majorX, sx = w2s(x, 0).x;
+    if (o.y >= 0 && o.y <= H) { ctx.fillRect(sx - 0.5, o.y - 3, 1, 6); }
+    ctx.fillText(pim ? piFrac(x) : lab(x), sx, ly);
+  }
+  ctx.font = '11px Inter, sans-serif';
+  const lx = clamp(o.x - 5, 30, W - 4);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = Math.ceil(br.y/major); i*major <= tl.y; i++) {
+    if (i === 0) continue;
+    const y = i*major, sy = w2s(0, y).y;
+    if (o.x >= 0 && o.x <= W) { ctx.fillRect(o.x - 3, sy - 0.5, 6, 1); }
+    ctx.fillText(lab(y), lx, sy);
+  }
+  if (o.x >= 0 && o.x <= W && o.y >= 0 && o.y <= H) { ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('O', o.x - 4, o.y + 4); }
+}
+
+function drawLineWorld(kind, a, b, m, c) {
+  const tl = s2w(0, 0), br = s2w(W, H);
+  ctx.beginPath();
+  if (kind === 'v') { const s = w2s(a, 0).x; ctx.moveTo(s, 0); ctx.lineTo(s, H); }
+  else if (kind === 'h') { const s = w2s(0, b).y; ctx.moveTo(0, s); ctx.lineTo(W, s); }
+  else { const p = w2s(tl.x, m*tl.x + c), q = w2s(br.x, m*br.x + c); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); }
+  ctx.stroke();
+}
+
+function drawStroke(st, heat) {
+  const pts = st.pts.map(p => ({...w2s(p.x, p.y), p: p.p}));
+  if (!pts.length) return;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const base = 'rgba(46,46,56,0.88)';
+  if (pts.length === 1) {
+    ctx.fillStyle = heat ? heatColor(st.d[0]) : base;
+    ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, 1.6, 0, 7); ctx.fill(); return;
+  }
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i-1], b = pts[i];
+      const pr = (a.p + b.p)/2;
+      const h = hash(i + st.seed);
+      if (pass === 0) {
+        ctx.strokeStyle = heat ? heatColor(st.d[i]) : base;
+        ctx.globalAlpha = heat ? 0.95 : 0.75 + 0.25*h;
+        ctx.lineWidth = (heat ? 3 : 1.3 + 2.2*pr)*(0.85 + 0.3*h);
+      } else {
+        if (heat) continue;
+        ctx.strokeStyle = 'rgba(30,30,40,0.35)';
+        ctx.globalAlpha = 0.5*h;
+        ctx.lineWidth = 0.7;
+      }
+      const j = pass ? (h - 0.5)*1.4 : 0;
+      ctx.beginPath(); ctx.moveTo(a.x + j, a.y - j); ctx.lineTo(b.x + j, b.y - j); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function render(now) {
+  requestAnimationFrame(render);
+  const animating = phase === 'reveal' && now - revealT0 < 1600;
+  if (!needsDraw && !animating) return;
+  needsDraw = false;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawGrid();
+  const revealed = phase === 'reveal' || phase === 'end';
+  const prog = phase === 'reveal' ? clamp((now - revealT0 - 250)/1100, 0, 1) : 1;
+  const ease = 1 - Math.pow(1 - prog, 3);
+
+  // user guides
+  ctx.save(); ctx.setLineDash([7, 6]); ctx.strokeStyle = 'rgba(28,126,214,0.75)'; ctx.lineWidth = 1.5;
+  for (const g of guides) drawLineWorld(g.kind, g.a, g.b, g.m, g.c);
+  ctx.restore();
+
+  // true asymptotes
+  if (revealed && curQ) {
+    ctx.save(); ctx.setLineDash([3, 5]); ctx.strokeStyle = `rgba(232,89,12,${0.7*ease})`; ctx.lineWidth = 1.6;
+    for (const a of curQ.asym.v) drawLineWorld('v', a);
+    for (const b of curQ.asym.h) drawLineWorld('h', 0, b);
+    for (const [m, c] of curQ.asym.o) drawLineWorld('o', 0, 0, m, c);
+    ctx.restore();
+  }
+
+  // error connectors
+  if (revealed && result && prog >= 1) {
+    ctx.lineWidth = 1;
+    for (const c of result.connectors) {
+      const a = w2s(c.a.x, c.a.y), b = w2s(c.b.x, c.b.y);
+      ctx.strokeStyle = heatColor(c.d); ctx.globalAlpha = 0.45;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // strokes
+  for (const s of strokes) drawStroke(s, revealed && result && s.d && prog > 0.15);
+
+  // true curve
+  if (revealed && curQ && prog > 0) {
+    const tl = s2w(0, 0), br = s2w(W, H);
+    const vw = br.x - tl.x, vh = tl.y - br.y;
+    let box;
+    if (curQ.type === 'fn') box = {x0: tl.x, x1: br.x, y0: br.y - vh, y1: tl.y + vh};
+    else box = {x0: tl.x - vw, x1: br.x + vw, y0: br.y - vh, y1: tl.y + vh};
+    const polys = sampleCurve(curQ, box, curQ.type === 'fn' ? Math.ceil(W*1.5) : 5000, ease);
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const [w, col] of [[7, 'rgba(232,89,12,0.18)'], [2.6, '#e8590c']]) {
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath();
+      for (const pl of polys) pl.forEach((p, i) => { const s = w2s(p.x, p.y); i ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y); });
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // user points
+  ctx.font = '600 11px Inter, sans-serif';
+  for (const p of points) {
+    const s = w2s(p.x, p.y);
+    ctx.strokeStyle = '#7a4f1d'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(s.x - 5, s.y - 5); ctx.lineTo(s.x + 5, s.y + 5); ctx.moveTo(s.x + 5, s.y - 5); ctx.lineTo(s.x - 5, s.y + 5); ctx.stroke();
+    ctx.fillStyle = 'rgba(122,79,29,0.9)'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`(${fmtX(p.x)}, ${fmt(p.y)})`, s.x + 7, s.y - 4);
+  }
+
+  // key features
+  if (revealed && result && prog >= 1) {
+    for (const f of result.feats) {
+      const s = w2s(f.x, f.y);
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#e8590c'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, 7); ctx.fill(); ctx.stroke();
+      const txt = `(${fmtX(f.x)}, ${fmt(f.y)})`;
+      ctx.font = '600 11px Inter, sans-serif';
+      const tw = ctx.measureText(txt).width;
+      const lxp = s.x + 8, lyp = s.y + (f.type === 'max' ? -16 : 6);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(lxp - 2, lyp - 1, tw + 4, 14);
+      ctx.fillStyle = '#c2410c'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(txt, lxp, lyp);
+    }
+  }
+
+  // eraser cursor
+  if (hover && tool === 'eraser' && phase === 'draw') {
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.arc(hover.x, hover.y, ERASE_R, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+requestAnimationFrame(render);
+
+/* ------------------------------------------------------------------ */
+/*  Input                                                              */
+/* ------------------------------------------------------------------ */
+const ERASE_R = 12;
+const ptrs = new Map();
+let mode = null, activeId = null, curStroke = null, panStart = null, gesture = null;
+let seedCounter = 1;
+
+const pos = e => { const r = cv.getBoundingClientRect(); return {x: e.clientX - r.left, y: e.clientY - r.top}; };
+function snapshot() { return JSON.stringify({strokes: strokes.map(s => ({pts: s.pts, seed: s.seed})), points, guides}); }
+function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 100) undoStack.shift(); }
+function undo() {
+  if (phase !== 'draw' || !undoStack.length) return;
+  const s = JSON.parse(undoStack.pop());
+  strokes = s.strokes; points = s.points; guides = s.guides;
+  renderChips(); dirty();
+}
+function addPt(e) {
+  const p = pos(e), w = s2w(p.x, p.y);
+  const last = curStroke.pts[curStroke.pts.length - 1];
+  if (last) { const ls = w2s(last.x, last.y); if (Math.hypot(ls.x - p.x, ls.y - p.y) < 1.2) return; }
+  const pr = e.pointerType === 'pen' ? (e.pressure || 0.5) : 0.5;
+  curStroke.pts.push({x: w.x, y: w.y, p: pr});
+}
+function eraseAt(p) {
+  const r2 = ERASE_R*ERASE_R;
+  const hit = q => { const s = w2s(q.x, q.y); return (s.x - p.x)**2 + (s.y - p.y)**2 < r2; };
+  const next = [];
+  let changed = false;
+  for (const st of strokes) {
+    let run = [];
+    for (const q of st.pts) {
+      if (hit(q)) { changed = true; if (run.length) next.push({pts: run, seed: seedCounter++}); run = []; }
+      else run.push(q);
+    }
+    if (run.length) next.push(run.length === st.pts.length ? st : {pts: run, seed: seedCounter++});
+  }
+  if (changed) strokes = next;
+  const np = points.filter(q => !hit(q));
+  if (np.length !== points.length) { points = np; renderChips(); }
+  dirty();
+}
+function startGesture() {
+  const [a, b] = [...ptrs.values()];
+  const mid = {x: (a.x + b.x)/2, y: (a.y + b.y)/2};
+  gesture = {d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, s0: view.s, w: s2w(mid.x, mid.y)};
+}
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  const p = pos(e);
+  ptrs.set(e.pointerId, p);
+  if (e.pointerType === 'pen') penSeen = true;
+  if (ptrs.size === 2 && !(penSeen && e.pointerType === 'pen')) {
+    if (mode === 'draw' && curStroke && curStroke.pts.length < 25) { strokes.pop(); undoStack.pop(); }
+    curStroke = null; mode = 'gesture'; startGesture(); dirty(); return;
+  }
+  if (ptrs.size > 2 || mode) return;
+  activeId = e.pointerId;
+  const editable = phase === 'draw';
+  if (e.button === 1 || e.button === 2 || spaceDown || tool === 'pan' || !editable || (e.pointerType === 'touch' && penSeen)) {
+    mode = 'pan'; panStart = {p, x: view.x, y: view.y}; cv.style.cursor = 'grabbing'; return;
+  }
+  if (tool === 'pencil') { pushUndo(); curStroke = {pts: [], seed: seedCounter++}; strokes.push(curStroke); addPt(e); mode = 'draw'; }
+  else if (tool === 'eraser') { pushUndo(); mode = 'erase'; eraseAt(p); }
+  else if (tool === 'point') { pushUndo(); const w = s2w(p.x, p.y); points.push({x: +w.x.toFixed(2), y: +w.y.toFixed(2)}); renderChips(); activeId = null; }
+  dirty();
+});
+cv.addEventListener('pointermove', e => {
+  const p = pos(e);
+  hover = p;
+  const w = s2w(p.x, p.y);
+  $('coords').textContent = piMode() ? `x = ${fmt(w.x)} (${fmt(w.x/PI)}π), y = ${fmt(w.y)}` : `x = ${fmt(w.x)}, y = ${fmt(w.y)}`;
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, p);
+  if (mode === 'gesture' && ptrs.size >= 2 && gesture) {
+    const [a, b] = [...ptrs.values()];
+    const mid = {x: (a.x + b.x)/2, y: (a.y + b.y)/2};
+    const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    view.s = clamp(gesture.s0*d/gesture.d0, 2, 20000);
+    view.x = gesture.w.x - (mid.x - W/2)/view.s;
+    view.y = gesture.w.y + (mid.y - H/2)/view.s;
+    dirty(); return;
+  }
+  if (e.pointerId !== activeId) { if (tool === 'eraser') dirty(); return; }
+  if (mode === 'draw' && curStroke) {
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of (evs.length ? evs : [e])) addPt(ev);
+    dirty();
+  } else if (mode === 'erase') eraseAt(p);
+  else if (mode === 'pan') {
+    view.x = panStart.x - (p.x - panStart.p.x)/view.s;
+    view.y = panStart.y + (p.y - panStart.p.y)/view.s;
+    dirty();
+  }
+});
+function endPtr(e) {
+  ptrs.delete(e.pointerId);
+  if (mode === 'gesture') { if (ptrs.size < 2) { mode = ptrs.size ? 'wait' : null; gesture = null; } if (!ptrs.size) mode = null; return; }
+  if (mode === 'wait') { if (!ptrs.size) mode = null; return; }
+  if (e.pointerId === activeId) {
+    if (mode === 'draw' && curStroke && !curStroke.pts.length) strokes.pop();
+    mode = null; curStroke = null; activeId = null; updateCursor(); dirty();
+  }
+}
+cv.addEventListener('pointerup', endPtr);
+cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('pointerleave', () => { hover = null; dirty(); });
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const p = pos(e);
+  const mouseWheel = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
+  if (e.ctrlKey) zoomAt(p, Math.exp(-e.deltaY*0.012));
+  else if (mouseWheel) zoomAt(p, Math.exp(-Math.sign(e.deltaY)*Math.min(Math.abs(e.deltaY*(e.deltaMode === 1 ? 33 : 1)), 200)*0.0016));
+  else { view.x += e.deltaX/view.s; view.y -= e.deltaY/view.s; dirty(); }
+}, {passive: false});
+
+function setTool(t) {
+  tool = t;
+  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  updateCursor(); dirty();
+}
+function updateCursor() {
+  cv.style.cursor = (spaceDown || tool === 'pan' || phase !== 'draw') ? 'grab' : tool === 'eraser' ? 'none' : 'crosshair';
+}
+document.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+$('undoBtn').onclick = undo;
+$('clearBtn').onclick = () => { if (phase !== 'draw' || !strokes.length) return; pushUndo(); strokes = []; dirty(); toast('Drawing cleared — Undo to restore'); };
+$('zinBtn').onclick = () => zoomAt({x: W/2, y: H/2}, 1.4);
+$('zoutBtn').onclick = () => zoomAt({x: W/2, y: H/2}, 1/1.4);
+$('fitBtn').onclick = fitView;
+
+const typing = () => { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA'); };
+window.addEventListener('keydown', e => {
+  if (typing()) return;
+  if (document.querySelector('.modal.show')) return;
+  const k = e.key.toLowerCase();
+  if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); undo(); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (k === ' ') { e.preventDefault(); if (!spaceDown) { spaceDown = true; updateCursor(); } return; }
+  if (k === 'p') setTool('pencil');
+  else if (k === 'e') setTool('eraser');
+  else if (k === 'o' || k === '.') setTool('point');
+  else if (k === 'h') setTool('pan');
+  else if (k === 'f') fitView();
+  else if (k === '+' || k === '=') zoomAt({x: W/2, y: H/2}, 1.4);
+  else if (k === '-' || k === '_') zoomAt({x: W/2, y: H/2}, 1/1.4);
+  else if (k === 'enter') { e.preventDefault(); if (phase === 'draw') submit(); else if (phase === 'reveal') nextRound(); }
+});
+window.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; updateCursor(); } });
+
+/* ------------------------------------------------------------------ */
+/*  Side panel: guides, calculator, notes                              */
+/* ------------------------------------------------------------------ */
+function renderChips() {
+  const box = $('chips'); box.innerHTML = '';
+  points.forEach((p, i) => {
+    const c = document.createElement('span'); c.className = 'chip pt';
+    c.innerHTML = `✕ (${fmtX(p.x)}, ${fmt(p.y)})<button title="Remove">×</button>`;
+    c.querySelector('button').onclick = () => { if (phase !== 'draw') return; pushUndo(); points.splice(i, 1); renderChips(); dirty(); };
+    box.appendChild(c);
+  });
+  guides.forEach((g, i) => {
+    const c = document.createElement('span'); c.className = 'chip';
+    c.innerHTML = `┆ ${g.label}<button title="Remove">×</button>`;
+    c.querySelector('button').onclick = () => { if (phase !== 'draw') return; pushUndo(); guides.splice(i, 1); renderChips(); dirty(); };
+    box.appendChild(c);
+  });
+}
+$('ptAdd').onclick = () => {
+  if (phase !== 'draw') return;
+  try {
+    const x = evalExpr($('ptX').value), y = evalExpr($('ptY').value);
+    if (!isFinite(x) || !isFinite(y)) throw new Error('not finite');
+    pushUndo(); points.push({x, y}); renderChips(); dirty();
+    $('ptX').value = ''; $('ptY').value = ''; $('ptX').focus();
+  } catch (err) { toast('Couldn’t read that point: ' + err.message); }
+};
+[$('ptX'), $('ptY')].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') $('ptAdd').click(); }));
+$('asyAdd').onclick = () => {
+  if (phase !== 'draw') return;
+  const raw = $('asyIn').value.trim();
+  const m = raw.replace(/\s/g, '').toLowerCase().match(/^([xy])=(.+)$/);
+  try {
+    if (!m) throw new Error('write it as x = … or y = …');
+    let g;
+    if (m[1] === 'x') { const a = evalExpr(m[2]); g = {kind: 'v', a, label: 'x = ' + fmtX(a)}; }
+    else {
+      const c = evalExpr(m[2], {x: 0}), mm = evalExpr(m[2], {x: 1}) - c, chk = evalExpr(m[2], {x: 2.5});
+      if (Math.abs(chk - (c + 2.5*mm)) > 1e-6) throw new Error('asymptote must be a straight line');
+      g = Math.abs(mm) < 1e-12 ? {kind: 'h', b: c, label: 'y = ' + fmt(c)} : {kind: 'o', m: mm, c, label: raw.replace(/^\s*y\s*=\s*/i, 'y = ')};
+    }
+    if (!isFinite(g.a ?? g.b ?? g.c)) throw new Error('not finite');
+    pushUndo(); guides.push(g); renderChips(); dirty(); $('asyIn').value = '';
+  } catch (err) { toast('Asymptote: ' + err.message); }
+};
+$('asyIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('asyAdd').click(); });
+function calc() {
+  const src = $('calcIn').value; if (!src.trim()) return;
+  const row = document.createElement('div');
+  try {
+    const v = evalExpr(src);
+    SCOPE.ans = v;
+    const shown = isFinite(v) ? (+v.toPrecision(8)).toString() : String(v);
+    row.innerHTML = `<span></span><b>${shown}</b>`;
+    $('calcIn').value = '';
+  } catch (err) { row.innerHTML = `<span></span><span class="err">${err.message}</span>`; }
+  row.firstChild.textContent = src;
+  $('calcHist').prepend(row);
+}
+$('calcGo').onclick = calc;
+$('calcIn').addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+$('notesClear').onclick = () => { $('notes').value = ''; };
+
+/* ------------------------------------------------------------------ */
+/*  Game flow                                                          */
+/* ------------------------------------------------------------------ */
+function pickOpt(groupId, key) {
+  const g = $(groupId);
+  g.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+    g.querySelectorAll('.opt').forEach(x => x.classList.remove('on')); b.classList.add('on');
+    settings[key] = +b.dataset.v; showBest();
+  }));
+}
+pickOpt('diffOpts', 'diff'); pickOpt('roundOpts', 'rounds'); pickOpt('timerOpts', 'timer');
+const DIFF_NAME = {0: 'Mixed', 1: 'Easy', 2: 'Medium', 3: 'Hard'};
+const bestKey = () => `sketchguessr-best-${settings.diff}-${settings.rounds}`;
+function getBest() { try { return +(localStorage.getItem(bestKey()) || 0); } catch (_) { return 0; } }
+function setBest(v) { try { localStorage.setItem(bestKey(), String(v)); } catch (_) {} }
+function showBest() { const b = getBest(); $('bestLine').textContent = b ? `Best (${DIFF_NAME[settings.diff]}, ${settings.rounds} rounds): ${b.toLocaleString()}` : ''; }
+showBest();
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function startGame() {
+  const n = settings.rounds;
+  let qs;
+  if (settings.diff) {
+    const pool = shuffle(Q.filter(q => q.lvl === settings.diff));
+    qs = []; while (qs.length < n) qs.push(...shuffle(pool.slice()));
+    qs = qs.slice(0, n);
+  } else {
+    const by = {1: shuffle(Q.filter(q => q.lvl === 1)), 2: shuffle(Q.filter(q => q.lvl === 2)), 3: shuffle(Q.filter(q => q.lvl === 3))};
+    qs = [];
+    for (let i = 0; i < n; i++) { const lvl = 1 + Math.min(2, Math.floor(3*i/n)); qs.push(by[lvl].pop()); }
+  }
+  game = {qs, idx: -1, scores: [], results: []};
+  $('startModal').classList.remove('show'); $('endModal').classList.remove('show');
+  $('timerBox').style.display = settings.timer ? '' : 'none';
+  nextRound();
+}
+function renderDots() {
+  const box = $('roundDots'); box.innerHTML = '';
+  game.qs.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === game.idx ? ' cur' : i < game.scores.length ? ' done' : '');
+    d.textContent = i < game.scores.length ? game.scores[i] : (i + 1);
+    box.appendChild(d);
+  });
+  $('totalVal').textContent = game.scores.reduce((a, b) => a + b, 0).toLocaleString();
+}
+function nextRound() {
+  if (!game) return;
+  if (game.idx + 1 >= game.qs.length) { endGame(); return; }
+  game.idx++;
+  curQ = game.qs[game.idx];
+  strokes = []; points = []; guides = []; undoStack = []; hintUsed = false; result = null;
+  phase = 'draw';
+  $('result').classList.remove('show');
+  $('submitBtn').style.display = ''; $('submitBtn').textContent = 'Submit sketch ⏎'; $('submitBtn').onclick = origSubmit;
+  $('qRound').textContent = `Round ${game.idx + 1} of ${game.qs.length}`;
+  const b = $('qBadge'); b.className = 'badge b' + curQ.lvl; b.textContent = DIFF_NAME[curQ.lvl];
+  renderTex($('qEq'), curQ.tex); renderTex($('qFloat'), curQ.tex);
+  $('qNote').textContent = curQ.note || '';
+  $('hintBtn').style.display = ''; $('hintText').style.display = 'none'; $('hintText').textContent = curQ.hint;
+  renderChips(); renderDots(); fitView(); updateCursor();
+  if (settings.timer) { timeLeft = settings.timer; tickTimer(); clearInterval(timerId); timerId = setInterval(tickTimer, 250); }
+}
+let lastTick = 0;
+function tickTimer() {
+  const now = performance.now();
+  if (lastTick && phase === 'draw') timeLeft -= (now - lastTick)/1000;
+  lastTick = now;
+  const t = Math.max(0, Math.ceil(timeLeft));
+  $('timerVal').textContent = `${Math.floor(t/60)}:${String(t%60).padStart(2, '0')}`;
+  $('timerBox').classList.toggle('warn', t <= 10);
+  if (phase === 'draw' && timeLeft <= 0) { toast('Time’s up!'); submit(true); }
+}
+$('hintBtn').onclick = () => { if (phase !== 'draw') return; hintUsed = true; $('hintBtn').style.display = 'none'; $('hintText').style.display = 'block'; };
+
+function verdict(s) {
+  if (s >= 950) return ['🎯 Pinpoint!', 'That’s basically the exact curve.'];
+  if (s >= 850) return ['🔥 Excellent', 'Very close — exam-ready sketch.'];
+  if (s >= 700) return ['👍 Good sketch', 'Right shape, a little off in places.'];
+  if (s >= 500) return ['🙂 Decent', 'The idea is there — check the key features.'];
+  if (s >= 250) return ['😬 Rough', 'Some features missed or misplaced.'];
+  return ['🧭 Way off', 'Compare with the real curve and try again.'];
+}
+function submit(force) {
+  if (phase !== 'draw') return;
+  if (!strokes.some(s => s.pts.length) && !force) { toast('Draw the curve first ✏️'); return; }
+  mode = null; curStroke = null;
+  result = score();
+  game.scores.push(result.final); game.results.push({q: curQ, ...result});
+  phase = 'reveal'; revealT0 = performance.now(); dirty();
+  $('submitBtn').style.display = 'none';
+  $('hintBtn').style.display = 'none'; $('hintText').style.display = 'block';
+  updateCursor(); renderDots();
+  showResult();
+}
+function showResult() {
+  const r = result, [v, sub] = verdict(r.final);
+  const last = game.idx + 1 >= game.qs.length;
+  const feats = r.feats.slice().sort((a, b) => a.x - b.x);
+  const featHtml = feats.length ? feats.map(f => `<li>${FEAT_NAME[f.type]}: (${fmtX(f.x)}, ${fmt(f.y)})</li>`).join('') : '<li>No intercepts or turning points in the scored region.</li>';
+  const asyHtml = r.asyFb.length
+    ? r.asyFb.map(a => `<li>${a.label} — ${a.ok ? '<span class="ok">✓ you marked it</span>' : guides.length ? '<span class="no">✗ missed</span>' : 'not marked'}</li>`).join('')
+    : '<li>None</li>';
+  const extraHtml = r.extra.length ? `<li><span class="no">✗ not an asymptote:</span> ${r.extra.join(', ')}</li>` : '';
+  $('result').innerHTML = `
+    <div class="rtop">
+      <div class="bigScore"><span id="countUp">0</span><small> / 1000</small></div>
+      <div><div class="verdict">${v}</div><div class="vsub">${sub}${hintUsed ? ' (hint −20%)' : ''}</div></div>
+    </div>
+    <div class="sbar"><div id="sbarFill"></div></div>
+    <div class="stats">
+      <div class="stat"><small>Avg distance</small><b>${r.empty ? '—' : fmt(r.dP*curQ.r/6, 2)}</b> <small style="display:inline">units</small></div>
+      <div class="stat"><small>Curve covered</small><b>${Math.round(r.coverage*100)}%</b></div>
+      <div class="stat"><small>Asymptotes</small><b>${r.asyFb.length ? r.asyFb.filter(a => a.ok).length + ' / ' + r.asyFb.length : 'none'}</b></div>
+    </div>
+    <div class="legend"><span><i style="background:#e8590c"></i>actual curve</span><span><i style="background:hsl(130,75%,38%)"></i>close</span><span><i style="background:hsl(0,75%,44%)"></i>far off</span><span>Zoom and pan to inspect.</span></div>
+    <div class="feat"><h4>Key features (in scored region)</h4><ul>${featHtml}</ul></div>
+    <div class="feat"><h4>Asymptotes</h4><ul>${asyHtml}${extraHtml}</ul></div>
+    <div class="ractions"><button class="bigbtn alt" id="hideRes">Hide panel</button><button class="bigbtn" id="nextBtn">${last ? 'See final score →' : 'Next round →'}</button></div>`;
+  $('nextBtn').onclick = nextRound;
+  $('hideRes').onclick = () => { $('result').classList.remove('show'); $('submitBtn').style.display = ''; $('submitBtn').textContent = 'Show result'; $('submitBtn').onclick = () => { $('result').classList.add('show'); $('submitBtn').style.display = 'none'; }; };
+  setTimeout(() => {
+    $('result').classList.add('show');
+    $('sbarFill').style.width = (r.final/10) + '%';
+    $('sbarFill').style.backgroundPosition = '0 0';
+    const t0 = performance.now();
+    const step = now => { const k = clamp((now - t0)/900, 0, 1), e = 1 - Math.pow(1 - k, 3); const el = $('countUp'); if (!el) return; el.textContent = Math.round(r.final*e); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }, 900);
+}
+const origSubmit = () => submit();
+$('submitBtn').onclick = origSubmit;
+
+function endGame() {
+  phase = 'end'; clearInterval(timerId);
+  const total = game.scores.reduce((a, b) => a + b, 0), max = game.qs.length*1000;
+  const best = getBest(); const isBest = total > best; if (isBest) setBest(total);
+  $('endTotal').innerHTML = `${total.toLocaleString()} <small style="font-size:20px;color:var(--muted);letter-spacing:0">/ ${max.toLocaleString()}</small>`;
+  const pct = total/max;
+  $('endMsg').textContent = pct >= 0.9 ? 'Outstanding — your sketches are spot on.' : pct >= 0.7 ? 'Strong work. A little polish on key features and you’re there.' : pct >= 0.45 ? 'Solid start — use the hints, intercepts and asymptotes to tighten up.' : 'Keep practising: find intercepts, turning points and asymptotes before you draw.';
+  const tb = $('endTable'); tb.innerHTML = '';
+  game.results.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--muted);width:24px">${i + 1}</td><td><span class="badge b${r.q.lvl}">${DIFF_NAME[r.q.lvl]}</span></td><td class="eq"></td><td>${r.final}</td>`;
+    renderTex(tr.querySelector('.eq'), r.q.tex);
+    tb.appendChild(tr);
+  });
+  $('endBest').textContent = isBest ? '🏆 New personal best!' : best ? `Personal best: ${best.toLocaleString()}` : '';
+  $('endModal').classList.add('show');
+  renderDots();
+}
+$('startBtn').onclick = startGame;
+$('againBtn').onclick = startGame;
+$('endSettings').onclick = () => { $('endModal').classList.remove('show'); $('startModal').classList.add('show'); showBest(); };
+$('newGameBtn').onclick = () => { clearInterval(timerId); $('startModal').classList.add('show'); showBest(); };
+
+// initial background view
+curQ = null; view.x = 0; view.y = 0; view.s = 50;
+})();
+</script>
+</body>
+</html>
