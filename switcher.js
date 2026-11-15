@@ -1,15 +1,16 @@
-/* TrainTanmay app switcher: click the logo (top left) to pick D&T, Physics or ESAT. */
+/* TrainTanmay app switcher: click the logo (top left) to pick an app or go back to the start screen. */
 (function () {
   var me = document.currentScript && document.currentScript.src || '';
   var base = me.replace(/switcher\.js.*$/, '');
   var here = /help\.html$/.test(location.pathname) ? 'help' : /\/physics\//.test(location.pathname) ? 'physics' : /\/esat\//.test(location.pathname) ? 'esat' : /\/maths\//.test(location.pathname) ? 'maths' : 'dt';
   var APPS = [
-    { id: 'dt', name: 'Design & Technology', sub: 'Edexcel 9DT0', tile: '#1f5fbf', ink: '#fff', t: '#bcd4ff', href: base },
+    { id: 'dt', name: 'Design & Technology', sub: 'Edexcel 9DT0', tile: '#1f5fbf', ink: '#fff', t: '#bcd4ff', href: base + 'dt.html' },
     { id: 'physics', name: 'Physics', sub: 'OCR A H556', tile: '#c81e66', ink: '#fff', t: '#ffd0e4', href: base + 'physics/' },
-    { id: 'maths', name: 'Maths (new)', sub: 'Edexcel 9MA0 · 9FM0', tile: '#1a7f45', ink: '#fff', t: '#c4f0d4', href: base + 'maths/' },
+    { id: 'maths', name: 'Maths', sub: 'Edexcel 9MA0 · 9FM0', tile: '#1a7f45', ink: '#fff', t: '#c4f0d4', href: base + 'maths/' },
     { id: 'esat', name: 'ESAT', sub: 'ENGAA · NSAA · TMUA', tile: '#ffc917', ink: '#1d1600', t: '#9a6200', href: base + 'esat/' },
     { id: 'help', name: 'How to use TrainTanmay', sub: 'What each app is for · tips', tile: '#3b3f48', ink: '#fff', t: '#c9ccd3', href: base + 'help.html' }
   ];
+  try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
   function logo(a) {
     return '<svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="' + a.tile + '"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="' + a.ink + '"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="' + a.t + '"/></svg>';
   }
@@ -48,14 +49,18 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '.tt-sw{position:fixed;z-index:99999;min-width:250px;background:#fff;color:#111;border:1px solid #d0d4dc;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:6px;font:14px system-ui,-apple-system,sans-serif}' +
-    '.tt-sw a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;color:inherit;text-decoration:none}' +
+    '.tt-sw{position:fixed;z-index:99999;min-width:262px;max-height:calc(100vh - 80px);overflow:auto;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);color:#111;border:1px solid #d0d4dc;border-radius:16px;box-shadow:0 24px 60px -12px rgba(10,15,30,.32),0 2px 6px rgba(10,15,30,.08);padding:7px;font:14px "IBM Plex Sans",system-ui,-apple-system,sans-serif;transform-origin:18px 0;animation:ttSwIn .26s cubic-bezier(.2,.9,.25,1.15) both}' +
+    '@keyframes ttSwIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}' +
+    '.tt-sw a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;color:inherit;text-decoration:none;transition:background .18s ease,transform .18s ease}' +
+    '.tt-sw a svg{transition:transform .25s cubic-bezier(.2,.9,.25,1.4)}.tt-sw a:hover svg{transform:scale(1.08) rotate(-4deg)}.tt-sw a:active{transform:scale(.98)}' +
+    '.tt-all{margin-bottom:2px}.tt-orb{width:34px;height:34px;flex:none;border-radius:10px;background:#14122b;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:7px}.tt-orb i{border-radius:50%}.tt-orb i:nth-child(1){background:#5b9cff}.tt-orb i:nth-child(2){background:#ff5c9e}.tt-orb i:nth-child(3){background:#4ade80}.tt-orb i:nth-child(4){background:#ffc917}' +
+    '@media (prefers-reduced-motion:reduce){.tt-sw{animation:none}.tt-sw a,.tt-sw a svg{transition:none}}' +
     '.tt-sw a:hover,.tt-sw a:focus-visible{background:#f0f2f6}.tt-sw a[aria-current]{background:#eef3fc}' +
     '.tt-sw b{display:block}.tt-sw small{opacity:.65;font-size:12px}.tt-sw .h{padding:6px 10px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.6}' +
     '.tt-lang{display:flex;gap:4px;padding:0 6px 6px}.tt-lang button{flex:1;font:inherit;font-size:13px;padding:6px 4px;border-radius:7px;border:1px solid rgba(128,128,128,.35);background:transparent;color:inherit;cursor:pointer}.tt-lang button[aria-pressed=true]{background:#1f5fbf;border-color:#1f5fbf;color:#fff}' +
     '.goog-te-banner-frame,.skiptranslate>iframe,#goog-gt-tt,.goog-te-balloon-frame,.VIpgJd-ZVi9od-ORHb-OEVmcd,.VIpgJd-ZVi9od-aZ2wEe-wOHMyf{display:none!important}body{top:0!important}.goog-text-highlight{background:none!important;box-shadow:none!important}#tt-gt{display:none}' +
     '.tt-sw .home{justify-content:center;border-top:1px solid #e6e8ec;margin-top:4px;border-radius:0 0 8px 8px;font-size:13px}' +
-    '@media (prefers-color-scheme:dark){.tt-sw{background:#1b1d22;color:#eee;border-color:#3a3d45}.tt-sw a:hover{background:#2a2d34}.tt-sw a[aria-current]{background:#262b36}.tt-sw .home{border-color:#3a3d45}}';
+    '@media (prefers-color-scheme:dark){.tt-sw{background:rgba(27,29,34,.94);color:#eee;border-color:#3a3d45}.tt-sw a:hover{background:#2a2d34}.tt-sw a[aria-current]{background:#262b36}.tt-sw .home{border-color:#3a3d45}}';
   document.head.appendChild(css);
   var menu = null;
   function close() { if (menu) { menu.remove(); menu = null; } }
@@ -68,7 +73,7 @@
     var cur = APPS.filter(function (a) { return a.id === here; })[0] || APPS[0];
     menu.innerHTML = '<div class="h">Language</div><div class="tt-lang">' + LANGS.map(function (l) {
       return '<button type="button" data-lang="' + l[0] + '"' + (l[0] === curLang() ? ' aria-pressed="true"' : '') + ' lang="' + l[0] + '">' + l[1] + '</button>';
-    }).join('') + '</div><div class="h">Switch app</div>' + APPS.map(function (a) {
+    }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Switch app</div>' + APPS.map(function (a) {
       return '<a role="menuitem" href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a) + '<span><b>' + a.name + '</b><small>' + a.sub + '</small></span></a>';
     }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
     menu.style.left = Math.max(8, r.left) + 'px';
@@ -94,6 +99,17 @@
   }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
   window.addEventListener('resize', close);
+
+  /* ---- gentle page-change fade for apps without one of their own (styles in polish.css) ---- */
+  if (here === 'maths') {
+    var lastTok = location.hash;
+    window.addEventListener('hashchange', function () {
+      var a = lastTok.split('?')[0], b = location.hash.split('?')[0]; lastTok = location.hash;
+      if (a === b) return;
+      var el = document.getElementById('app'); if (!el) return;
+      el.classList.remove('tt-enter'); void el.offsetWidth; el.classList.add('tt-enter');
+    });
+  }
 
   /* ---- keep your place through a reload: scroll position + anything half-typed ---- */
   var KEY = 'tt-keep:' + location.pathname;
