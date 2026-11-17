@@ -29,6 +29,7 @@ html.dys{--f-display:"OpenDyslexic",sans-serif;--f-body:"OpenDyslexic",sans-seri
 @font-face{font-family:"OpenDyslexic";src:url(fonts/opendyslexic-latin-700-normal.woff2) format("woff2");font-weight:600 900;font-display:swap}
 *{box-sizing:border-box}
 html,body{height:100%}
+html{overflow-x:clip}   /* the orbit bleeds past the viewport by design; clip it rather than let it scroll */
 body{margin:0;background:var(--sky);color:var(--paper);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--paper);outline-offset:4px;border-radius:8px}
@@ -94,7 +95,6 @@ h1 em::after{content:"";position:absolute;left:-2%;right:-2%;bottom:.04em;height
 .spin.rev{animation-duration:14s;animation-direction:reverse}
 .spin.slow{animation-duration:60s}
 @keyframes spin{to{transform:rotate(360deg)}}
-.world:hover .spin,.world:focus-visible .spin{animation-duration:6s}
 .w-key{font-family:var(--f-mono);font-size:.7rem;color:var(--ink);background:var(--c);border-radius:6px;padding:1px 7px;margin-top:8px;letter-spacing:.05em}
 .w-name{font-family:var(--f-display);font-weight:800;font-size:clamp(1.15rem,2.2vw,1.75rem);line-height:1.05;letter-spacing:-.02em;margin-top:6px;
   background:linear-gradient(var(--c),var(--c)) 50% 100%/0 3px no-repeat;padding-bottom:5px;transition:background-size .4s var(--ease)}
@@ -315,8 +315,22 @@ footer a{text-underline-offset:3px}
   [].forEach.call(document.querySelectorAll('.world'),function(el){
     function on(){var b=el.getBoundingClientRect();tint.style.setProperty('--tc',COL[el.getAttribute('data-go')]);tint.style.setProperty('--tx',((b.left+b.width/2)/innerWidth*100)+'%');tint.classList.add('on');}
     function off(){tint.classList.remove('on');}
-    el.addEventListener('pointerenter',on); el.addEventListener('focus',on);
-    el.addEventListener('pointerleave',off); el.addEventListener('blur',off);
+    /* Speeding the rings up by swapping animation-duration makes them jump:
+       the elapsed time gets re-mapped onto the new duration. Changing the
+       playback rate keeps the current angle and only changes the speed. */
+    function spin(fast){
+      [].forEach.call(el.querySelectorAll('.spin'),function(g){
+        (g.getAnimations?g.getAnimations():[]).forEach(function(a){
+          if(a.animationName!=='spin')return;
+          var d=a.effect.getTiming().duration;
+          a.playbackRate=fast?(typeof d==='number'&&d?d/6000:4):1;
+        });
+      });
+    }
+    function enter(){on();spin(1);}
+    function exit(){off();spin(0);}
+    el.addEventListener('pointerenter',enter); el.addEventListener('focus',enter);
+    el.addEventListener('pointerleave',exit); el.addEventListener('blur',exit);
   });
 
   /* picking a world: its colour floods the screen, then the app opens */
@@ -380,7 +394,7 @@ footer a{text-underline-offset:3px}
       g.beginPath(); g.arc(st.x-cx*st.d,st.y-cy*st.d,st.r,0,6.283); g.fill();}
     g.globalAlpha=1; g.lineJoin='round'; g.lineWidth=1.6; g.strokeStyle='#07051a';
     for(var k=0;k<shards.length;k++){var sh=shards[k], dt=t/1000;
-      var x=sh.x+Math.sin(dt*.11+k)*14+sh.vx*dt%40-cx*sh.z*2.2, y=sh.y+Math.cos(dt*.09+k*2)*12-cy*sh.z*2.2, a=sh.rot+dt*sh.vr;
+      var x=sh.x+Math.sin(dt*.11+k)*14+Math.sin(dt*.043+k*1.7)*sh.vx*10-cx*sh.z*2.2, y=sh.y+Math.cos(dt*.09+k*2)*12-cy*sh.z*2.2, a=sh.rot+dt*sh.vr;
       g.save(); g.translate(x,y); g.rotate(a);
       g.beginPath(); sh.pts.forEach(function(p,j){j?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);}); g.closePath();
       g.fillStyle=sh.fill; g.fill(); g.stroke();
