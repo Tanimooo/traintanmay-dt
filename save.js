@@ -32,7 +32,13 @@
     function n(o) { return o && typeof o === 'object' ? Object.keys(o).length : 0; }
     var has = Object.keys(data).some(function (k) { return appOf(k) === id; });
     if (!has) return '';
-    if (id === 'esat') { var e = j('esat.trainer.v1'); var a = e && e.attempts ? e.attempts.length : 0; return a ? a + ' answer' + (a === 1 ? '' : 's') + ' logged' : 'settings only'; }
+    if (id === 'esat') {
+      var e = j('esat.trainer.v1') || {}, x = j('esat.trainer.extras.v1') || {}, bits = [];
+      var a = (e.attempts || []).length; if (a) bits.push(a + ' answer' + (a === 1 ? '' : 's'));
+      if (e.active) bits.push('1 unfinished test');
+      var mm = x.mm || {}; if (n(mm.pairs) + n(mm.sq) + n(mm.tri) + n(mm.flash) + (mm.sessions || []).length + n((x.hub || {}).learned)) bits.push('mental maths');
+      return bits.length ? bits.join(' · ') : 'progress saved';
+    }
     return 'progress saved';
   }
 
