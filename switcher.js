@@ -11,6 +11,7 @@
     { id: 'help', name: 'How to use TrainTanmay', sub: 'What each app is for · tips', tile: '#3b3f48', ink: '#fff', t: '#c9ccd3', href: base + 'help.html' }
   ];
   try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
+  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261118'; document.head.appendChild(sj); }
   function logo(a) {
     return '<svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="' + a.tile + '"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="' + a.ink + '"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="' + a.t + '"/></svg>';
   }
@@ -75,11 +76,12 @@
       return '<button type="button" data-lang="' + l[0] + '"' + (l[0] === curLang() ? ' aria-pressed="true"' : '') + ' lang="' + l[0] + '">' + l[1] + '</button>';
     }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Switch app</div>' + APPS.map(function (a) {
       return '<a role="menuitem" href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a) + '<span><b>' + a.name + '</b><small>' + a.sub + '</small></span></a>';
-    }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
+    }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="#" data-tt-save><span style="width:34px;height:34px;border-radius:9px;background:#14122b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg></span><span><b>Save or load progress</b><small>Every app at once, any device</small></span></a>' + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
     menu.style.left = Math.max(8, r.left) + 'px';
     menu.style.top = (r.bottom + 6) + 'px';
     document.body.appendChild(menu);
     [].forEach.call(menu.querySelectorAll('[data-lang]'), function (b) { b.onclick = function () { setLang(b.getAttribute('data-lang')); }; });
+    var sv = menu.querySelector('[data-tt-save]'); if (sv) sv.addEventListener('click', function () { setTimeout(close, 0); });
     var hm = menu.querySelector('[data-home]'); if (hm) hm.onclick = function (e) {
       e.preventDefault(); close();
       var h = brand.getAttribute('href') || '#';
