@@ -1700,6 +1700,7 @@ function viewData() {
           <div class="stat"><div class="k">Answers recorded</div><div class="v">${s.attempts.length}</div></div>
           <div class="stat"><div class="k">Tests completed</div><div class="v">${s.sessions.length}</div></div>
         </div>
+        <p class="tt-allsave" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px dashed currentColor;opacity:.9">Moving to another device? <button type="button" class="btn btn-sm" data-tt-save style="margin-left:6px">Save every app at once</button></p>
         <div class="row">
           <button class="btn" id="d-export">Export backup</button>
           <label class="btn" style="cursor:pointer">Import backup
