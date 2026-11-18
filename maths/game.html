@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SketchGuessr · TrainTanmay Maths</title>
+<title>SketchGuessr · TrainTanmay Maths</title><link rel="manifest" href="../manifest.webmanifest"><link rel="apple-touch-icon" href="../icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrainTanmay">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -1253,5 +1253,6 @@ $('newGameBtn').onclick = () => { clearInterval(timerId); $('startModal').classL
 curQ = null; view.x = 0; view.y = 0; view.s = 50;
 })();
 </script>
+<script>if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(function(){});</script>
 </body>
 </html>

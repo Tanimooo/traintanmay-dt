@@ -11,6 +11,7 @@
     { id: 'help', name: 'How to use TrainTanmay', sub: 'What each app is for · tips', tile: '#3b3f48', ink: '#fff', t: '#c9ccd3', href: base + 'help.html' }
   ];
   try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
   if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261118b'; document.head.appendChild(sj); }
   function logo(a) {
     return '<svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="' + a.tile + '"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="' + a.ink + '"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="' + a.t + '"/></svg>';

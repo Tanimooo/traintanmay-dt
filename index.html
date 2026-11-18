@@ -5,7 +5,7 @@
 <script>/* old bookmarks into the D&T app (it used to live here) still work */
 if(location.hash.length>1)location.replace('dt.html'+location.hash);</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrainTanmay</title>
+<title>TrainTanmay</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrainTanmay"><meta name="theme-color" content="#0e0b22">
 <meta name="description" content="TrainTanmay: free A level revision apps for Design &amp; Technology, Physics, Maths and the ESAT. Pick an app to start.">
 <link rel="icon" href="esat/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -262,6 +262,7 @@ footer a{text-underline-offset:3px}
 
     <div class="dock">
       <a class="pill go" id="resume" href="dt.html" hidden><span id="resumeTxt">Continue</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <button class="pill" type="button" id="btnInstall" hidden title="Install TrainTanmay as an app">Install app</button>
       <button class="pill" type="button" data-tt-save title="Back up or move your progress for every app">Save progress</button>
       <a class="pill" href="help.html" data-go="help" data-c="#f6f1e7" data-name="How it works">New here? See how it works</a>
     </div>
@@ -273,7 +274,25 @@ footer a{text-underline-offset:3px}
   </footer>
 </div>
 
-<script src="save.js?v=20261118b"></script>
+<script src="save.js?v=20261118c"></script>
+<script>
+(function(){
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){});
+  var b=document.getElementById('btnInstall'), ev=null;
+  var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(standalone)return;
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;b.hidden=false;});
+  window.addEventListener('appinstalled',function(){b.hidden=true;});
+  if(ios)b.hidden=false;
+  b.onclick=function(){
+    if(ev){ev.prompt();ev.userChoice.then(function(){ev=null;b.hidden=true;});return;}
+    var d=document.createElement('div');d.className='tts-back';
+    d.innerHTML='<div class="tts" role="dialog" aria-modal="true" aria-label="Install TrainTanmay"><button class="x" type="button" aria-label="Close">&times;</button><h2>Install TrainTanmay</h2><p>In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</p><p class="mu">On iPhone the home-screen app keeps its own progress, separate from Safari. Use <b>Save progress</b> here first, then load the save code in the app.</p></div>';
+    document.body.appendChild(d);d.onclick=function(e){if(e.target===d||e.target.classList.contains('x'))d.remove();};
+  };
+})();
+</script>
 <div class="flood" id="flood" aria-hidden="true"><b id="floodName"></b></div>
 
 <script>
