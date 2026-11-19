@@ -2,7 +2,7 @@
    Pages and code: try the network first (so updates show straight away), fall back to the saved copy offline.
    Pictures, fonts, PDFs and question packs: use the saved copy if there is one, otherwise download and keep it.
    Everything you open while online is kept, so it works offline next time. */
-var VERSION = 'tt-2026-11-18';
+var VERSION = 'tt-2026-11-19';
 var CORE = ['./', 'index.html', 'dt.html', 'help.html', 'physics/', 'maths/', 'esat/', 'switcher.js', 'save.js', 'polish.css', 'restyle.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 var PAGES = VERSION + '-pages', FILES = VERSION + '-files';
 
