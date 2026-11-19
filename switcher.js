@@ -91,7 +91,7 @@
     var first = menu.querySelector('a'); first && first.focus();
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('.brand');
+    var b = e.target.closest && e.target.closest('.brand:not(.chip)');
     if (b && !(menu && menu.contains(b))) {
       if (b.closest('.drawer-panel')) return; // mobile menu logo keeps its normal link
       e.preventDefault(); e.stopPropagation();
