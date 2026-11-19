@@ -130,12 +130,14 @@
     var buildRail = function () {
       if (document.querySelector('.tt-rail')) return;
       var nav = document.createElement('nav'); nav.className = 'tt-rail'; nav.setAttribute('aria-label', 'Your subjects');
-      nav.innerHTML = '<a href="' + base + '">' + ico('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>') + '<span>Start screen</span></a><hr>' +
+      nav.innerHTML = '<a href="' + base + '">' + ico('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>') + '<span>Start screen</span></a>' +
+        (here !== 'esat' ? '<a href="#" data-tt-jump>' + ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>') + '<span>Jump to anything (Ctrl K)</span></a>' : '') + '<hr>' +
         mySubjects().map(function (a) { return '<a href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a).replace('width="34" height="34"', 'width="28" height="28"') + '<span>' + a.name + '</span></a>'; }).join('') +
         '<hr><a href="#" data-tt-save>' + ico('<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>') + '<span>Save or load progress</span></a>' +
         '<a href="https://revisedesk.com" target="_blank" rel="noopener">' + ico('<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>') + '<span>Plan your revision on revisedesk ↗</span></a>' +
         '<a href="' + base + 'help.html">' + ico('<circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.5-1.5 1.1-1.5 2.3M12 17.5v.1"/>') + '<span>How to use TrainTanmay</span></a>';
       document.body.appendChild(nav);
+      var jb = nav.querySelector('[data-tt-jump]'); if (jb) jb.onclick = function (e) { e.preventDefault(); if (window.ttJump) window.ttJump.open(); };
     };
     if (document.body) buildRail(); else document.addEventListener('DOMContentLoaded', buildRail);
   }
