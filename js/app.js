@@ -428,7 +428,7 @@ function viewExamList(v,pre){
 function msBlock(q){
   if(q.src==='pp'){ const ms=ppPaper(q.year,'ms'); const lv=q.levels&&D.levels[q.levels];
     return `<div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">Pearson Edexcel ${esc(q.year)}</span></div>
-     <div style="padding:12px 14px">${ttLive.card({url:ms&&ms.path,page:q.mspage,title:`${q.year} mark scheme`,q:q.q,source:'DesignAndTechBase',alt:ms&&ms.official?{url:ms.official,label:'Official copy (Pearson)'}:null})}</div>
+     <div style="padding:12px 14px">${ttCrop.html({url:ms&&ms.path,q:q.q,page:q.mspage,kind:'ms',card:{title:`${q.year} mark scheme`,source:'DesignAndTechBase',alt:ms&&ms.official?{url:ms.official,label:'Official copy (Pearson)'}:null}})}</div>
      ${lv?`<div class="levels" style="overflow-x:auto"><table><thead><tr><th>Level</th><th>Descriptor</th></tr></thead><tbody>${lv.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`; }
   const items=(q.ms||[]).filter(it=>!/^\(?CONTINUED/i.test(it.trim())).map(it=>{ if(/^(Points of|Design philosophy|Style$|Expansion|Issues to resolve|Strategies deployed|Benefits:|Drawbacks:|Method \d|Alternative)/.test(it)) return `<p class="hd">${esc(it)}</p>`; if(/^(\d+\.|•|Stage)/.test(it)) return `<p class="pt">${esc(it)}</p>`; return `<p>${esc(it)}</p>`; }).join('');
   const lv=q.levels&&D.levels[q.levels];
@@ -452,7 +452,7 @@ function renderQuestion(v,q,list,onNav){
   <div class="exam">
    <section class="paper">
     <div class="row" style="justify-content:space-between"><span class="qnum">${q.src==='pp'?esc(q.q):'Practice'}</span><span class="row">${q.src==='ai'?'<span class="chip ai">AI-generated</span>':`<span class="chip">Edexcel ${esc(q.year)}</span>`}${q.topics.map(topicChip).join('')}</span></div>
-    ${q.src==='pp'?`<div style="margin:10px 0 4px">${(p=>ttLive.card({url:p&&p.path,page:q.pages&&q.pages[0],q:q.q,title:`Pearson Edexcel 9DT0/01 · ${q.year}${q.year==='2020'?' (October)':q.year==='2021'?' (October)':' (June)'}`,source:'DesignAndTechBase',alt:p&&p.official?{url:p.official,label:'Official copy (Pearson)'}:null}))(ppPaper(q.year,'qp'))}</div>`
+    ${q.src==='pp'?`<div style="margin:10px 0 4px">${(p=>ttCrop.html({url:p&&p.path,q:q.q,page:q.pages&&q.pages[0],kind:'qp',card:{title:`Pearson Edexcel 9DT0/01 · ${q.year}${q.year==='2020'?' (October)':q.year==='2021'?' (October)':' (June)'}`,source:'DesignAndTechBase',alt:p&&p.official?{url:p.official,label:'Official copy (Pearson)'}:null}}))(ppPaper(q.year,'qp'))}</div>`
      :`${q.stem?`<p class="stemtxt">${esc(q.stem)}</p>`:''}<p class="qtxt">${esc(q.text)}</p>`}<div class="marks">(${q.marks})</div>
     ${q.fig?`<figure class="aifig" style="margin:12px 0;text-align:center"><img loading="lazy" src="${esc(q.fig.src)}" alt="${esc(q.fig.alt)}" style="max-width:100%;max-height:420px;border-radius:8px;background:#fff" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'muted',textContent:'Image could not load – use the link below.'}))"><figcaption class="muted" style="font-size:.8rem;margin-top:6px">${esc(q.text.match(/Figure [A-Z]/)?q.text.match(/Figure [A-Z]/)[0]:'Figure')} · ${esc(q.fig.credit)}${q.fig.link?` · <a href="${esc(q.fig.link)}" target="_blank" rel="noopener">source</a>`:''}</figcaption></figure>`:''}
     <label class="field" for="ans" style="margin-top:10px">Your answer (saved in this browser)</label>
