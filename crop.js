@@ -260,7 +260,7 @@
           if (!canvases.length) throw new Error('empty');
           var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; canvases.forEach(function (c) { strip.appendChild(c); });
           var link = window.ttLive.at(o.url, loc.start.page);
-          strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>' + (o.kind === 'ms' ? 'Mark scheme' : 'Question ' + window.ttLive.esc(o.q)) + ' · page ' + loc.start.page + ' · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(link) + '" target="_blank" rel="noopener">Whole paper ↗</a>' +
+          strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>' + (o.kind === 'ms' ? 'Mark scheme' : 'Question ' + window.ttLive.esc(o.q)) + ' · page ' + loc.start.page + ' · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(link) + '" target="_blank" rel="noopener" data-ttview="' + window.ttLive.esc(card.title || 'Paper') + '" data-src="' + window.ttLive.esc(card.source || '') + '">Whole paper</a>' +
             (card.alt ? ' · <a href="' + window.ttLive.esc(window.ttLive.at(card.alt.url, loc.start.page)) + '" target="_blank" rel="noopener">' + window.ttLive.esc(card.alt.label) + ' ↗</a>' : '') + '</span></div>');
         });
       });
