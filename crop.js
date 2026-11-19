@@ -250,9 +250,62 @@
   css.textContent = '.ttc{border:1px solid rgba(128,128,128,.28);border-radius:14px;overflow:hidden}' +
     '.ttc-strip{background:#fff;padding:10px 6px}.ttc-strip canvas+canvas{border-top:1px dashed #d5d8de;margin-top:6px;padding-top:6px}' +
     '.ttc-wait{padding:30px;text-align:center;opacity:.7;font-size:.9rem}' +
+    '.ttc-all{display:flex;flex-direction:column;gap:10px}.ttc-all canvas+canvas{border-top:0;margin-top:0;padding-top:0}.ttc-all canvas{border-bottom:1px solid #e4e6eb}' +
+    '.ttc-ph{aspect-ratio:1/1.3;background:#f4f5f7}' +
+    '.ttc-pg{position:relative;border-bottom:1px solid #e4e6eb}.ttc-rot{position:absolute;top:6px;right:6px;font:600 12px system-ui,sans-serif;padding:5px 9px;border-radius:8px;border:1px solid #c9ced8;background:rgba(255,255,255,.92);color:#14161b;cursor:pointer;opacity:.75}.ttc-rot:hover,.ttc-rot:focus-visible{opacity:1}' +
     '.ttc-f{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:.8rem;border-top:1px solid rgba(128,128,128,.22)}' +
     '.ttc-f span{opacity:.7}.ttc-f a{font-weight:600;color:inherit}';
   document.head.appendChild(css);
+
+  /* Scanned PDFs (handwritten worked solutions): every page, one after another in the page itself,
+     each zoomed in by trimming the white margins off the scan. Pages draw as you scroll to them. */
+  function trim(c) {
+    var x = c.getContext('2d'), W = c.width, H = c.height, d = x.getImageData(0, 0, W, H).data, st = Math.max(1, Math.round(W / 400));
+    var x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (var y = 0; y < H; y += st) for (var i = 0; i < W; i += st) {
+      var p = (y * W + i) * 4; if (d[p] < 200 || d[p + 1] < 200 || d[p + 2] < 200) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 <= x0 || y1 <= y0) return null; // blank page
+    var pad = Math.round(W * 0.015); x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W, x1 + pad); y1 = Math.min(H, y1 + pad);
+    var o = document.createElement('canvas'), w = x1 - x0, h = y1 - y0;
+    o.width = w; o.height = h; o.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, w, h);
+    o.style.width = '100%'; o.style.display = 'block';
+    return o;
+  }
+  /* turn a canvas by quarter turns (some scans are sideways; the reader fixes them with the ⟳ button) */
+  function turned(c, q) {
+    q = ((q % 4) + 4) % 4; if (!q) return c;
+    var o = document.createElement('canvas'), side = q % 2; o.width = side ? c.height : c.width; o.height = side ? c.width : c.height;
+    var g = o.getContext('2d'); g.translate(o.width / 2, o.height / 2); g.rotate(q * Math.PI / 2); g.drawImage(c, -c.width / 2, -c.height / 2);
+    o.style.width = '100%'; o.style.display = 'block'; return o;
+  }
+  var ROT = 'tt-scan-rotation'; // remembered per PDF page, and kept in "Save progress"
+  function rotGet(k) { try { return (JSON.parse(localStorage.getItem(ROT) || '{}'))[k] || 0; } catch (e) { return 0; } }
+  function rotSet(k, v) { try { var m = JSON.parse(localStorage.getItem(ROT) || '{}'); if (v) m[k] = v; else delete m[k]; localStorage.setItem(ROT, JSON.stringify(m)); } catch (e) {} }
+  function renderAll(doc, el, o, card) {
+    var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; strip.classList.add('ttc-all');
+    var width = Math.min(el.clientWidth || 800, 1000), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) {
+        if (!en.isIntersecting || en.target.dataset.done) return; en.target.dataset.done = 1;
+        doc.getPage(+en.target.dataset.p).then(function (pg) {
+          var vp0 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: width / vp0.width * 1.6 * dpr });
+          var c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+          return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
+            var t = trim(c); if (!t) { en.target.remove(); return; }
+            var key = o.url.split('#')[0] + '#' + en.target.dataset.p, q = rotGet(key);
+            var wrap = document.createElement('div'); wrap.className = 'ttc-pg';
+            wrap.appendChild(turned(t, q));
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'ttc-rot'; b.title = 'Turn this page'; b.setAttribute('aria-label', 'Turn page ' + en.target.dataset.p); b.textContent = '⟳ Rotate';
+            b.onclick = function () { q = (q + 1) % 4; rotSet(key, q); wrap.replaceChild(turned(t, q), wrap.firstChild); };
+            wrap.appendChild(b); en.target.replaceWith(wrap);
+          });
+        });
+      });
+    }, { rootMargin: '1200px' });
+    for (var i = 1; i <= doc.numPages; i++) { var ph = document.createElement('div'); ph.className = 'ttc-ph'; ph.dataset.p = i; strip.appendChild(ph); io.observe(ph); }
+    strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>All ' + doc.numPages + ' pages · handwritten, so find question ' + window.ttLive.esc(o.q) + ' by eye · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(o.url) + '" target="_blank" rel="noopener" data-ttview="' + window.ttLive.esc(card.title || 'Worked solutions') + '" data-src="' + window.ttLive.esc(card.source || '') + '">Whole PDF</a></span></div>');
+  }
 
   function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
   function mount(el, o) {
@@ -262,6 +315,13 @@
     el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
     var token = el.ttcToken = {};
     open(o.url).then(function (doc) {
+      return isScanned(doc, o.url).then(function (sc) {
+        if (!sc) return doc;
+        if (el.ttcToken === token) renderAll(doc, el, o, card);
+        return null;
+      });
+    }).then(function (doc) {
+      if (!doc) return;
       // a mark scheme at the back of the question PDF: start looking where the mark scheme starts
       var from = !o.combined ? Promise.resolve(o.from || 1) : (function find(p) {
         if (p > doc.numPages) return Promise.resolve(doc.numPages + 1);
