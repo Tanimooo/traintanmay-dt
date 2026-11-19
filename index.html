@@ -59,6 +59,7 @@ a{color:inherit}
 .pill:active{transform:scale(.96)}
 .pill.solid{background:var(--paper);color:var(--ink);border-color:var(--paper)}
 .pill.solid:hover{background:#fff}
+.pill[hidden]{display:none!important}
 .pill[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
 .pill svg{width:17px;height:17px}
 
@@ -278,18 +279,25 @@ footer a{text-underline-offset:3px}
 <script>
 (function(){
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){});
-  var b=document.getElementById('btnInstall'), ev=null;
-  var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
-  if(standalone)return;
+  var b=document.getElementById('btnInstall'), ev=null, K='tt-installed';
+  function mark(){try{localStorage.setItem(K,'1')}catch(e){} b.hidden=true;}
+  function isMarked(){try{return localStorage.getItem(K)==='1'}catch(e){return false}}
+  var modes=['standalone','fullscreen','minimal-ui','window-controls-overlay'];
+  var inApp=navigator.standalone||/[?&]source=app/.test(location.search)||modes.some(function(m){return matchMedia('(display-mode: '+m+')').matches;});
+  if(inApp){mark();return;}
+  if(isMarked())return;
+  /* Chrome and Edge can tell us directly if it's already installed */
+  if(navigator.getInstalledRelatedApps)navigator.getInstalledRelatedApps().then(function(l){if(l&&l.length)mark();}).catch(function(){});
   var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;b.hidden=false;});
-  window.addEventListener('appinstalled',function(){b.hidden=true;});
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;if(!isMarked())b.hidden=false;});
+  window.addEventListener('appinstalled',mark);
+  modes.forEach(function(m){var q=matchMedia('(display-mode: '+m+')');q.addEventListener&&q.addEventListener('change',function(){if(q.matches)mark();});});
   if(ios)b.hidden=false;
   b.onclick=function(){
-    if(ev){ev.prompt();ev.userChoice.then(function(){ev=null;b.hidden=true;});return;}
+    if(ev){ev.prompt();ev.userChoice.then(function(c){ev=null;if(c&&c.outcome==='accepted')mark();else b.hidden=true;});return;}
     var d=document.createElement('div');d.className='tts-back';
-    d.innerHTML='<div class="tts" role="dialog" aria-modal="true" aria-label="Install TrainTanmay"><button class="x" type="button" aria-label="Close">&times;</button><h2>Install TrainTanmay</h2><p>In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</p><p class="mu">On iPhone the home-screen app keeps its own progress, separate from Safari. Use <b>Save progress</b> here first, then load the save code in the app.</p></div>';
-    document.body.appendChild(d);d.onclick=function(e){if(e.target===d||e.target.classList.contains('x'))d.remove();};
+    d.innerHTML='<div class="tts" role="dialog" aria-modal="true" aria-label="Install TrainTanmay"><button class="x" type="button" aria-label="Close">&times;</button><h2>Install TrainTanmay</h2><p>In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</p><p class="mu">On iPhone the home-screen app keeps its own progress, separate from Safari. Use <b>Save progress</b> here first, then load the save code in the app.</p><div class="row"><button type="button" class="pr" id="ttDone">I\'ve installed it</button></div></div>';
+    document.body.appendChild(d);d.onclick=function(e){if(e.target===d||e.target.classList.contains('x'))d.remove();if(e.target.id==='ttDone'){mark();d.remove();}};
   };
 })();
 </script>
