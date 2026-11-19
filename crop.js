@@ -96,7 +96,21 @@
      number; a later part like 4(c) starts at its "(c)" label, found on the stored page or the one after.
      It ends at the next part, the next question, or "(Total for Question …)", and never runs past 3 pages.
      from: ignore everything before this page (used to skip the questions in a combined question+mark scheme PDF). */
+  /* scanned PDFs (e.g. handwritten worked solutions) have no real text, only scanning noise:
+     a "match" there would be a guess, so they aren't cropped at all */
+  var scanned = {};
+  function isScanned(doc, url) {
+    if (url in scanned) return Promise.resolve(scanned[url]);
+    var n = Math.min(4, doc.numPages), ps = []; for (var p = 1; p <= n; p++) ps.push(pageText(doc, url, p));
+    return Promise.all(ps).then(function (all) {
+      var words = 0; all.forEach(function (P) { P.items.forEach(function (i) { if (/\b[a-z]{4,}\b/i.test(i.s)) words++; }); });
+      return (scanned[url] = words < 12 * n);
+    });
+  }
   function locate(doc, url, label, hint, kind, from) {
+    return isScanned(doc, url).then(function (sc) { return sc ? null : locate2(doc, url, label, hint, kind, from); });
+  }
+  function locate2(doc, url, label, hint, kind, from) {
     var L = parseLabel(label); if (!L) return Promise.resolve(null);
     var total = doc.numPages, wantPart = L.part && L.part !== 'a';
     var s = Math.max(from || 1, hint ? hint - (wantPart ? 0 : 1) : 1);
