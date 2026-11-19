@@ -125,7 +125,7 @@ function itemRow(it, opts = {}){
     <div class="nm">${esc(it.n)}${sub}</div>
     ${b ? `<span class="score" title="Best score">${b.s}/${b.m} · ${Math.round(100 * b.s / b.m)}%</span>` : ''}
     <div class="docs">${it.d.map(([k, u]) => `<a class="doc ${DOCC[k] || ''}" href="${esc(url(u))}" target="_blank" rel="noopener" data-open="${it.i}">${DOCN[k] || k}</a>`).join('')}
-    ${it.s === 'test' ? `<a class="doc" href="#run-${it.i}" title="Timed attempt">${ic('clock')}Time it</a>` : ''}</div>
+    ${it.s === 'test' ? `<a class="doc" href="#run-${it.i}" data-exam="${it.i}" title="Sit it under exam conditions: full screen, timed">${ic('clock')}Time it</a>` : ''}</div>
   </div>`;
 }
 function groupBlocks(list, opts = {}){
@@ -146,7 +146,21 @@ function bindItems(root){
     save(); b.setAttribute('aria-pressed', S.done[id] ? 'true' : 'false'); b.closest('.item').classList.toggle('done', !!S.done[id]);
     const grp = b.closest('.group'); if (grp) { const ids = $$('[data-done]', grp); grp.querySelector('.cnt').textContent = `${ids.filter(x => S.done[x.dataset.done]).length}/${ids.length} done`; }
   });
-  $$('[data-open]', root).forEach(a => a.addEventListener('click', () => { const id = a.dataset.open; S.recent = [id, ...S.recent.filter(x => x !== id)].slice(0, 12); touchDay(); save(); }));
+  $$('[data-open]', root).forEach(a => a.addEventListener('click', e => {
+    const id = a.dataset.open; S.recent = [id, ...S.recent.filter(x => x !== id)].slice(0, 12); touchDay(); save();
+    // open the PDF here in the site (Ctrl/middle-click still opens a new tab)
+    if (window.ttExam && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) { e.preventDefault(); const it = IBY[id]; ttExam.view({url: a.href, title: (it ? it.n + ' · ' : '') + a.textContent.trim(), source: srcLabel(a.href)}); }
+  }));
+  $$('[data-exam]', root).forEach(a => a.addEventListener('click', e => { if (!window.ttExam || e.ctrlKey || e.metaKey) return; e.preventDefault(); startExam(a.dataset.exam); }));
+}
+const srcLabel = u => /madasmaths/.test(u) ? 'Madas Maths' : /supabase/.test(u) ? 'Mr Further Maths' : /physicsandmathstutor/.test(u) ? 'Physics & Maths Tutor' : '';
+/* exam conditions: full screen, just the paper and the clock; when it ends, log the score with the time used */
+function startExam(id, resumeUsed){
+  const it = IBY[id]; if (!it) return;
+  const qp = it.d.find(d => /QP/.test(d[0])) || it.d[0]; if (!qp) return;
+  const u = url(qp[1]);
+  ttExam.exam({key: id, url: u, title: (CBY[it.c]?.name ? CBY[it.c].name + ' · ' : '') + it.n, source: srcLabel(u), mins: it.x?.mins || 90, resumeUsed,
+    onEnd: () => { if (location.hash !== '#run-' + id) location.hash = 'run-' + id; else pageRun(id); }});
 }
 
 /* ---------------- pages ---------------- */
@@ -373,7 +387,8 @@ function pageRun(id){
   const c = CBY[it.c];
   const mins = it.x?.mins || 90, marks = it.x?.marks || 75;
   clearInterval(TIMER);
-  let T = {left: mins * 60, running: false, started: null};
+  const ex = window.ttExam ? ttExam.lastTime(id) : null; // a finished exam's time, kept until it's logged
+  let T = {left: mins * 60 - (ex ? ex.secs : 0), running: false, started: null};
   const fmt = s => { const neg = s < 0; s = Math.abs(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (neg ? '+' : '') + (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
   const hist = (S.scores[id] || []).slice().reverse();
   app.innerHTML = `<div class="crumbs"><a href="#cp-${it.c}">${esc(c?.name || '')} papers</a>›<span>${esc(it.g)}</span></div>
@@ -381,8 +396,9 @@ function pageRun(id){
    <div class="runner" style="margin-top:20px">
     <div class="card">
       <div class="row" style="justify-content:space-between"><span class="eyebrow">Time allowed · ${mins} min${it.x?.spec === 'old' || it.x?.spec === 'extra' || it.x?.spec === 'ial' ? ' (typical)' : ''}</span><span class="chip">${marks} marks</span></div>
+      ${ex ? `<p class="chip g" style="margin:10px 0 0">Exam finished · ${Math.floor(ex.secs / 60)} min ${ex.secs % 60} s used · log your score →</p>` : ''}
       <div class="clock" id="clock" aria-live="off">${fmt(T.left)}</div>
-      <div class="row" style="margin-top:16px"><button class="btn primary" id="go">${ic('play')}Start</button><button class="btn" id="reset">Reset</button>
+      <div class="row" style="margin-top:16px"><button class="btn primary" id="exam">${ic('clock')}Start exam (full screen)</button><button class="btn" id="go">${ic('play')}Start clock only</button><button class="btn" id="reset">Reset</button>
         <label class="field" style="flex-direction:row;align-items:center;gap:6px">Minutes <input type="number" id="mins" value="${mins}" min="5" max="300" style="width:80px"></label></div>
       <div class="docs" style="margin-top:18px">${it.d.map(([k, u]) => `<a class="doc ${DOCC[k] || ''}" href="${esc(url(u))}" target="_blank" rel="noopener" data-open="${it.i}">${ic('ext')}${DOCN[k] || k}</a>`).join('')}</div>
       <p class="muted" style="font-size:.86rem;margin-top:14px">Open the question paper, start the clock, and only open the mark scheme when time is up. The timer keeps counting into overtime (shown in red) so you can see how far over you went.</p>
@@ -399,16 +415,19 @@ function pageRun(id){
    </div>`;
   const clock = $('#clock');
   const draw = () => { clock.textContent = fmt(Math.round(T.left)); clock.classList.toggle('over', T.left < 0); };
-  let used = 0, last = 0;
+  let used = ex ? ex.secs : 0, last = 0;
+  $('#exam').onclick = () => { clearInterval(TIMER); startExam(id, used || undefined); };
   $('#go').onclick = () => {
     if (T.running) { T.running = false; clearInterval(TIMER); $('#go').innerHTML = ic('play') + 'Resume'; return; }
     T.running = true; last = Date.now(); $('#go').textContent = 'Pause';
     TIMER = setInterval(() => { const now = Date.now(); const dt = (now - last) / 1000; last = now; T.left -= dt; used += dt; draw(); if (!document.body.contains(clock)) clearInterval(TIMER); }, 250);
   };
-  $('#reset').onclick = () => { clearInterval(TIMER); T.running = false; T.left = (+$('#mins').value || mins) * 60; used = 0; $('#go').innerHTML = ic('play') + 'Start'; draw(); };
+  $('#reset').onclick = () => { clearInterval(TIMER); T.running = false; T.left = (+$('#mins').value || mins) * 60; used = 0; if (window.ttExam) ttExam.clearTime(id); $('#go').innerHTML = ic('play') + 'Start clock only'; draw(); };
   $('#mins').onchange = () => { if (!T.running && used === 0) { T.left = (+$('#mins').value || mins) * 60; draw(); } };
   $('#scoreform').onsubmit = e => { e.preventDefault(); const s = +$('#sc').value, m = +$('#of').value || marks; if (isNaN(s) || s < 0 || s > m) { toast('Score must be between 0 and ' + m); return; }
-    (S.scores[id] = S.scores[id] || []).push({s, m, at: Date.now(), t: Math.round(used)}); S.done[id] = S.done[id] || Date.now(); touchDay(); save(); toast('Score saved'); pageRun(id); };
+    (S.scores[id] = S.scores[id] || []).push({s, m, at: Date.now(), t: Math.round(used)}); S.done[id] = S.done[id] || Date.now(); touchDay(); save();
+    if (window.ttExam) ttExam.clearTime(id); // the time now lives in the score history
+    toast('Score saved'); pageRun(id); };
   bindItems(app);
 }
 
@@ -789,4 +808,6 @@ function draw(h){
 }
 window.addEventListener('hashchange', route);
 route();
+/* an exam still running when the page closed or crashed: offer to carry on with the same clock */
+setTimeout(() => { if (window.ttExam) ttExam.offerResume(o => startExam(o.key, o.resumeUsed)); }, 800);
 })();
