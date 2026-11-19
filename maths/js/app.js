@@ -535,7 +535,26 @@ function pageProgress(){
 }
 
 /* ---------------- practice questions (whole exam questions + mark schemes, self-marked) ---------------- */
-const QBASE = 'img/q/', QALT = 'https://tanimooo.github.io/trainTanmay-maths/q/';
+/* No question is stored on this site: each practice question is shown live from the PDF its author
+   publishes (PMT, Madas Maths, Mr Further Maths), so the list here is only "which pack, which question". */
+/* "Paper 1 · June 2019" or "IYGB MP2 · Paper D" -> that paper's [QP, MS] links in the catalogue */
+const PACK_AB = {fm: 'further mechanics', fs: 'further statistics', fp: 'further pure', fd: 'decision', mms: 'applied', mp: 'paper'};
+const pnorm = s => s.toLowerCase().replace(/[()·,–-]/g, ' ').replace(/\s+/g, ' ').trim();
+const PACKDOCS = {};
+function packDocs(name, course){
+  if (name in PACKDOCS) return PACKDOCS[name];
+  const [gh, nm0 = ''] = name.split(' · '), nm = nm0.replace(/^PMT Mock$/, 'Mock'), isAS = /^as /i.test(gh);
+  const words = pnorm(gh).split(' ').filter(w => w !== 'as').map(w => { const m = /^([a-z]+)(\d)$/.exec(w); return m && PACK_AB[m[1]] ? PACK_AB[m[1]] + ' ' + m[2] : PACK_AB[w] || w; });
+  const same = (CAT.items || []).filter(i => pnorm(i.n) === pnorm(nm)), cur = same.filter(i => !/^Old spec|International|IAL/.test(i.g));
+  const score = i => { const g = pnorm(i.g); return words.filter(w => g.includes(w)).length + (i.c === course ? 1 : 0) - (isAS !== /^as /.test(g) ? 2 : 0); };
+  const pool = cur.map(i => [score(i), i]).sort((a, b) => b[0] - a[0]);
+  const qpOf = i => (i.d.find(x => /QP/.test(x[0])) || i.d[0])[1], top = pool.filter(p => pool.length && p[0] === pool[0][0]);
+  let r = null;
+  if (top.length && top.every(p => qpOf(p[1]) === qpOf(top[0][1]))) { const d = top[0][1].d, ms = d.find(x => x[0] === 'MS'); r = [qpOf(top[0][1]), ms ? ms[1] : '']; }
+  return PACKDOCS[name] = r;
+}
+const srcName = s => SRCNAME[s] || (/^PMT/.test(s) ? 'Physics & Maths Tutor' : s);
+const SRCNAME = {'PMT': 'Physics & Maths Tutor', 'PMT mock': 'Physics & Maths Tutor', 'Edexcel past paper': 'Physics & Maths Tutor', 'Edexcel legacy': 'Physics & Maths Tutor', 'Madas Maths (IYGB)': 'Madas Maths', 'Mr Further Maths': 'Mr Further Maths'};
 const CIDX = Object.fromEntries(COURSES.map((c, i) => [c.id, i])), PTIDX = q => (TOP[q.c] || []).findIndex(x => x[0] === q.t);
 let PR = null, PQ = [], PQBY = {};
 function buildPractice(){
@@ -552,7 +571,6 @@ function pfilter(f = PF()){
   return PQ.filter(q => (!f.cs.length || f.cs.includes(q.c)) && (!f.ts.length || f.ts.includes(q.c + '/' + q.t) || !f.ts.some(k => k.startsWith(q.c + '/'))) && (!f.srcs.length || f.srcs.includes(q.src)) && (
     f.st === 'all' || (f.st === 'new' && !S.prac[q.id]) || (f.st === 'weak' && pscore(q) != null && pscore(q) < .6) || (f.st === 'flag' && S.prac[q.id]?.f)));
 }
-const qimg = (p, cls = '') => p ? `<div class="qimg ${cls}" style="aspect-ratio:${p[3]}/${p[2]};max-width:${Math.round(p[3] / 1.6 * 1.3)}px"><img src="${QBASE}${esc(p[0])}" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${QALT}${esc(p[0])}'}" alt="" decoding="async" style="width:${(p[4] / p[3] * 100).toFixed(3)}%;margin-top:-${(p[1] / p[3] * 100).toFixed(4)}%"></div>` : '';
 /* Where a question came from, and anything about that source worth knowing before
    you trust it. Shown on the question page and under the source filter. */
 const SRCINFO = {
@@ -640,8 +658,9 @@ function pageQ(id){
   const inSet = PSET && PSET.ids.includes(q.id); if (inSet) { PSET.i = PSET.ids.indexOf(q.id); savePset(); }
   let L = inSet ? PSET.ids.map(x => PQBY[x]) : pfilter(); if (!L.includes(q)) L = PQ.filter(x => x.pk === q.pk);
   const i = L.indexOf(q), prev = L[i - 1], next = L[i + 1], r = S.prac[q.id] || null, it = IBY[q.pk];
-  /* legacy module papers aren't in the papers catalogue, so their PDFs come from plinks.js */
-  const lk = (window.PLINKS || {})[q.pk];
+  /* legacy module papers aren't in the papers catalogue, so their PDFs come from plinks.js;
+     past papers and IYGB papers are found in the catalogue by name */
+  const lk = (window.PLINKS || {})[q.pk] || (!it && packDocs(q.pn, q.c));
   const pdf = it ? (it.d.find(d => /QP/.test(d[0])) || it.d[0]) : lk && lk[0] ? ['QP', lk[0]] : null,
         mspdf = it ? it.d.find(d => d[0] === 'MS') : lk && lk[1] ? ['MS', lk[1]] : null;
   const max = q.mk || (r && r.of) || 0;
@@ -649,14 +668,14 @@ function pageQ(id){
     <div class="qhead"><div><p class="eyebrow">${inSet ? `Set · question ${i + 1} of ${L.length}` : `${esc(q.src)} · ${i + 1} of ${L.length}`}</p>${inSet ? `<div class="bar" style="margin:6px 0 10px;max-width:320px"><i style="width:${Math.round(100 * (i + 1) / L.length)}%"></i></div>` : ''}<h1>${esc(q.pn)} – Q${q.n}</h1></div>
       <div class="row"><span class="chip brand">${max ? max + ' marks' : 'marks not listed'}</span>${pstatus(q)}</div></div>
     ${srcnote(q.src)}
-    <div class="qcard card">${qimg(q.qi)}</div>
+    ${ttLive.card({url: pdf && url(pdf[1]), q: String(q.n), title: q.pn, source: srcName(q.src), home: /Madas/.test(q.src) ? 'https://madasmaths.com/' : /^PMT|Edexcel/.test(q.src) ? 'https://www.physicsandmathstutor.com/a-level-maths-papers/' : '', ms: mspdf && mspdf !== pdf ? url(mspdf[1]) : '', msLabel: 'Mark scheme'})}
+    <p class="muted" style="font-size:.85rem;margin:8px 0 0">Find <b>question ${q.n}</b> in the paper above${pdf && /QPMS/.test(pdf[0]) ? ' – the mark scheme is at the back of the same PDF' : ''}.</p>
     <div class="qbar">
-      ${q.mi ? `<button class="btn primary" id="showms" aria-expanded="false">Show mark scheme <kbd>M</kbd></button>` : `<span class="muted">No mark scheme could be cut for this one${mspdf || pdf ? ` – <a href="${esc(url((mspdf || pdf)[1]))}" target="_blank" rel="noopener">open the mark scheme PDF</a>` : ''}.</span>`}
+      <button class="btn primary" id="showms" aria-expanded="false">I've answered it – mark it <kbd>M</kbd></button>
       <button class="btn" id="flag" aria-pressed="${!!r?.f}">${r?.f ? '★ Flagged' : '☆ Flag for later'}</button>
-      ${pdf ? `<a class="btn" href="${esc(url(pdf[1]))}" target="_blank" rel="noopener">${it ? 'Full pack PDF' : 'Full paper PDF'} ${ic('ext')}</a>` : ''}
     </div>
     <div id="msbox" hidden>
-      <h2 style="margin:22px 0 10px">Mark scheme</h2><div class="qcard card ms">${qimg(q.mi)}</div>
+      <h2 style="margin:22px 0 10px">Mark scheme</h2>${mspdf && mspdf !== pdf ? ttLive.card({url: url(mspdf[1]), q: String(q.n), title: q.pn + ' · mark scheme', source: srcName(q.src)}) : `<p class="muted">The mark scheme for question ${q.n} is in the same PDF as the questions${pdf && /QPMS/.test(pdf[0]) ? ', after the last question' : ''}.</p>`}
       <div class="markbox card"><h3 style="margin:0 0 10px">How many marks did you get?</h3>
         ${max && max <= 25 ? `<div class="marks" role="group" aria-label="Marks">${[...Array(max + 1)].map((_, k) => `<button data-m="${k}" aria-pressed="${r && r.m === k}">${k}</button>`).join('')}</div>`
           : `<div class="row"><input id="mgot" type="number" min="0" value="${r ? r.m : ''}" style="width:80px"> out of <input id="mof" type="number" min="1" value="${max || (r && r.of) || ''}" style="width:80px"><button class="btn primary sm" id="msave">Save</button></div>`}

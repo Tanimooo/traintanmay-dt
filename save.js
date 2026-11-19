@@ -92,6 +92,39 @@
     s.removeItem(UNDO); return true;
   }
 
+  /* ---- automatic safety copies ----
+     Once a day, a copy of every app's progress goes into this browser's IndexedDB (separate from
+     the progress itself). If an update or a bad load ever spoils your progress, the save panel can
+     put back any of the last 7 days. Nothing leaves your device. */
+  var SAFE_DB = 'tt-safety', SAFE_KEEP = 7;
+  function safeDb() {
+    return new Promise(function (ok, no) {
+      try { var r = indexedDB.open(SAFE_DB, 1); } catch (e) { return no(e); }
+      r.onupgradeneeded = function () { r.result.createObjectStore('snaps', { keyPath: 'day' }); };
+      r.onsuccess = function () { ok(r.result); }; r.onerror = function () { no(r.error); };
+    });
+  }
+  function safeList() {
+    return safeDb().then(function (db) { return new Promise(function (ok) {
+      var q = db.transaction('snaps').objectStore('snaps').getAll();
+      q.onsuccess = function () { ok((q.result || []).sort(function (a, b) { return b.at - a.at; })); }; q.onerror = function () { ok([]); };
+    }); }).catch(function () { return []; });
+  }
+  function safeSnap() {
+    var data = collect(), n = Object.keys(data).filter(function (k) { return appOf(k) !== 'shared'; }).length;
+    if (!n) return Promise.resolve();
+    var day = new Date().toISOString().slice(0, 10);
+    return safeDb().then(function (db) { return new Promise(function (ok) {
+      var st = db.transaction('snaps', 'readwrite').objectStore('snaps');
+      st.put({ day: day, at: Date.now(), data: data });
+      var all = st.getAll();
+      all.onsuccess = function () { (all.result || []).sort(function (a, b) { return b.at - a.at; }).slice(SAFE_KEEP).forEach(function (s) { st.delete(s.day); }); ok(); };
+      all.onerror = function () { ok(); };
+    }); }).catch(function () {});
+  }
+  // a few seconds after the page opens, so it never slows anything down
+  setTimeout(safeSnap, 4000);
+
   function ago(t) {
     if (!t) return 'never';
     var m = Math.round((Date.now() - t) / 60000);
@@ -148,6 +181,7 @@
       '<textarea id="tts-paste" placeholder="…or paste a save code here" aria-label="Paste a save code"></textarea>' +
       '<div id="tts-cf"></div><div id="tts-msg" class="msg" role="status" aria-live="polite"></div>' +
       (hasUndo ? '<div class="row"><button type="button" id="tts-undo">Undo the last load</button></div>' : '') +
+      '<div id="tts-safe"></div>' +
       '</div>';
     document.body.appendChild(back);
     back.addEventListener('click', function (e) { if (e.target === back || e.target.hasAttribute('data-x')) close(); });
@@ -194,6 +228,14 @@
     box.addEventListener('dragover', function (e) { e.preventDefault(); box.classList.add('drop'); });
     box.addEventListener('dragleave', function () { box.classList.remove('drop'); });
     box.addEventListener('drop', function (e) { e.preventDefault(); box.classList.remove('drop'); var f = e.dataTransfer.files[0]; if (f) { var rd = new FileReader(); rd.onload = function () { offer(rd.result); }; rd.readAsText(f); } });
+    safeList().then(function (snaps) {
+      if (!back || !snaps.length) return;
+      el('#tts-safe').innerHTML = '<h3>Automatic copies</h3><p class="mu">This browser keeps a copy of your progress from each of the last ' + SAFE_KEEP + ' days you used TrainTanmay. If something ever looks wrong, put one back.</p><div class="row">' +
+        snaps.map(function (s, i) { return '<button type="button" data-snap="' + i + '">' + new Date(s.at).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + '</button>'; }).join('') + '</div>';
+      [].forEach.call(back.querySelectorAll('[data-snap]'), function (b) {
+        b.onclick = function () { var s = snaps[+b.getAttribute('data-snap')]; offer(JSON.stringify({ kind: 'all-apps', saved: new Date(s.at).toISOString(), data: s.data })); };
+      });
+    });
     var u = el('#tts-undo'); if (u) u.onclick = function () { if (undo()) { msg('Put back what was here before. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 500); } };
   }
   document.addEventListener('keydown', function (e) {

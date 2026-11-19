@@ -1093,7 +1093,7 @@ const Player = (() => {
             ${q.onSpec ? '' : `<span class="badge badge-warn" title="${esc(q.offSpecReason)}">off-spec</span>`}
             <span class="muted" style="margin-left:auto;font-size:var(--text-xs)">${q.exam} ${q.year} · Q${q.qno}</span>
           </header>
-          <div class="qimg"><img data-qimg="${q.img}" alt="Question ${q.qno} from ${q.exam} ${q.year}" loading="eager" /></div>
+          <div class="qlive">${window.esatLive(q)}</div>
           <div class="opts" id="p-opts">
             ${LETTERS.slice(0, q.options)
               .split('')
@@ -1432,8 +1432,7 @@ async function openReview(qid, s) {
   d.innerHTML = `<summary>${q.exam} ${q.year} Q${q.qno} · ${esc(q.topic)}
       ${a ? `<span class="badge ${a.chosen === q.answer ? 'badge-ok' : 'badge-bad'}" style="margin-left:auto">${a.chosen ? esc(a.chosen) : '—'} → ${esc(q.answer)}</span>` : ''}
       </summary>
-    <div class="qimg" style="padding:var(--space-4)"><img data-qimg="${q.img}" alt=""
-      style="width:100%;max-width:700px;display:block;margin:0 auto;filter:var(--question-filter);mix-blend-mode:var(--question-blend)" /></div>
+    <div class="qlive" style="padding:var(--space-4)">${window.esatLive(q, { noEmbed: true })}</div>
     <div class="explain"><div class="skel" style="height:70px"></div></div>`;
   box.prepend(d);
   d.scrollIntoView({ behavior: 'smooth', block: 'center' });

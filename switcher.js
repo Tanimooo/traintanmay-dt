@@ -12,7 +12,7 @@
   ];
   try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
-  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261118b'; document.head.appendChild(sj); }
+  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261119b'; document.head.appendChild(sj); }
   function logo(a) {
     return '<svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="' + a.tile + '"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="' + a.ink + '"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="' + a.t + '"/></svg>';
   }
@@ -75,9 +75,9 @@
     var cur = APPS.filter(function (a) { return a.id === here; })[0] || APPS[0];
     menu.innerHTML = '<div class="h">Language</div><div class="tt-lang">' + LANGS.map(function (l) {
       return '<button type="button" data-lang="' + l[0] + '"' + (l[0] === curLang() ? ' aria-pressed="true"' : '') + ' lang="' + l[0] + '">' + l[1] + '</button>';
-    }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Switch app</div>' + APPS.map(function (a) {
+    }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Your subjects</div>' + mySubjects().concat(APPS.filter(function (a) { return a.id === 'help'; })).map(function (a) {
       return '<a role="menuitem" href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a) + '<span><b>' + a.name + '</b><small>' + a.sub + '</small></span></a>';
-    }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="#" data-tt-save><span style="width:34px;height:34px;border-radius:9px;background:#14122b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg></span><span><b>Save or load progress</b><small>Every app at once, any device</small></span></a>' + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
+    }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="#" data-tt-save><span style="width:34px;height:34px;border-radius:9px;background:#14122b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg></span><span><b>Save or load progress</b><small>Every app at once, any device</small></span></a>' + '<a role="menuitem" href="https://revisedesk.com" target="_blank" rel="noopener"><span style="width:34px;height:34px;border-radius:9px;background:#14161b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span><span><b>Plan your revision</b><small>revisedesk.com · opens in a new tab</small></span></a>' + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
     menu.style.left = Math.max(8, r.left) + 'px';
     menu.style.top = (r.bottom + 6) + 'px';
     document.body.appendChild(menu);
@@ -102,6 +102,55 @@
   }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
   window.addEventListener('resize', close);
+
+  /* ---- your subjects: the apps you picked on the start screen (all of them until you pick) ---- */
+  function mySubjects() {
+    var p = null; try { p = JSON.parse(localStorage.getItem('tt-profile') || 'null'); } catch (e) {}
+    var ids = p && p.subjects && p.subjects.length ? p.subjects : ['dt', 'physics', 'maths', 'esat'];
+    return APPS.filter(function (a) { return ids.indexOf(a.id) >= 0; });
+  }
+
+  /* ---- subject rail: one way round every app, always in the same place ----
+     Wide screens: a slim bar on the left edge. Phones: a row along the bottom of the logo menu does the job. */
+  if (here !== 'help') {
+    var railCss = document.createElement('style');
+    railCss.textContent =
+      '.tt-rail{position:fixed;left:10px;top:50%;transform:translateY(-50%);z-index:9000;display:none;flex-direction:column;gap:6px;padding:7px;border-radius:16px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(120,128,140,.25);box-shadow:0 10px 30px -12px rgba(10,15,30,.25);font:13px "IBM Plex Sans",system-ui,sans-serif}' +
+      '@media (min-width:1280px) and (pointer:fine){.tt-rail{display:flex}}' +
+      '.tt-rail a{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;text-decoration:none;color:#111;outline-offset:2px}' +
+      '.tt-rail a:hover{background:rgba(120,128,140,.14)}.tt-rail a[aria-current]::before{content:"";position:absolute;left:-7px;top:9px;bottom:9px;width:3px;border-radius:3px;background:currentColor}' +
+      '.tt-rail a span{position:absolute;left:46px;white-space:nowrap;padding:5px 9px;border-radius:8px;background:#14161b;color:#fff;font-size:12px;opacity:0;pointer-events:none;transform:translateX(-4px);transition:opacity .15s,transform .15s}' +
+      '.tt-rail a:hover span,.tt-rail a:focus-visible span{opacity:1;transform:none}' +
+      '.tt-rail hr{border:0;border-top:1px solid rgba(120,128,140,.25);margin:2px 4px;width:auto}' +
+      '.tt-rail .ic{width:20px;height:20px}' +
+      '@media (prefers-color-scheme:dark){.tt-rail{background:rgba(27,29,34,.9);border-color:#3a3d45}.tt-rail a{color:#eee}}' +
+      '@media print{.tt-rail{display:none!important}}';
+    document.head.appendChild(railCss);
+    var ico = function (d) { return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+    var buildRail = function () {
+      if (document.querySelector('.tt-rail')) return;
+      var nav = document.createElement('nav'); nav.className = 'tt-rail'; nav.setAttribute('aria-label', 'Your subjects');
+      nav.innerHTML = '<a href="' + base + '">' + ico('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>') + '<span>Start screen</span></a><hr>' +
+        mySubjects().map(function (a) { return '<a href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a).replace('width="34" height="34"', 'width="28" height="28"') + '<span>' + a.name + '</span></a>'; }).join('') +
+        '<hr><a href="#" data-tt-save>' + ico('<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>') + '<span>Save or load progress</span></a>' +
+        '<a href="https://revisedesk.com" target="_blank" rel="noopener">' + ico('<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h4M7 17h7"/>') + '<span>Plan your revision on revisedesk ↗</span></a>' +
+        '<a href="' + base + 'help.html">' + ico('<circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.5-1.5 1.1-1.5 2.3M12 17.5v.1"/>') + '<span>How to use TrainTanmay</span></a>';
+      document.body.appendChild(nav);
+    };
+    if (document.body) buildRail(); else document.addEventListener('DOMContentLoaded', buildRail);
+  }
+
+  /* ---- "updated" bar: when a new version of the site is ready, say so quietly instead of jumping ---- */
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (document.querySelector('.tt-upd')) return;
+      var bar = document.createElement('div'); bar.className = 'tt-upd'; bar.setAttribute('role', 'status');
+      bar.innerHTML = '<span>TrainTanmay has been updated. Your progress is safe.</span><button type="button">Reload</button><button type="button" aria-label="Dismiss">✕</button>';
+      bar.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99998;display:flex;gap:10px;align-items:center;padding:9px 10px 9px 16px;border-radius:12px;background:#14161b;color:#fff;font:14px "IBM Plex Sans",system-ui,sans-serif;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);max-width:calc(100vw - 24px)';
+      [].forEach.call(bar.querySelectorAll('button'), function (b, i) { b.style.cssText = 'font:inherit;font-weight:600;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;' + (i ? 'background:transparent;color:#aaa' : 'background:#fff;color:#14161b'); b.onclick = function () { if (i) bar.remove(); else location.reload(); }; });
+      document.body.appendChild(bar);
+    });
+  }
 
   /* ---- gentle page-change fade for apps without one of their own (styles in polish.css) ---- */
   if (here === 'maths') {
