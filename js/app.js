@@ -169,11 +169,17 @@ async function downloadFile(path,title){
   catch(e){ if(e&&e.code==='declined') return; window.open(path,'_blank','noopener'); }
 }
 document.addEventListener('click',e=>{
-  const o=e.target.closest('[data-pdf]'); if(o){ e.preventDefault(); openPdf(o.dataset.pdf,o.dataset.title||'Document',+o.dataset.page||1); return; }
+  const o=e.target.closest('[data-pdf]');
+  /* live papers sit on Pearson's site, which only lets you read them there: open in a new tab at the right page */
+  if(o&&/^https?:/.test(o.dataset.pdf)){ e.preventDefault(); window.open(ttLive.at(o.dataset.pdf,+o.dataset.page||0),'_blank','noopener'); return; }
+  const dl=e.target.closest('[data-dl]'); if(dl&&/^https?:/.test(dl.dataset.dl)){ e.preventDefault(); window.open(dl.dataset.dl,'_blank','noopener'); return; }
+  if(o){ e.preventDefault(); openPdf(o.dataset.pdf,o.dataset.title||'Document',+o.dataset.page||1); return; }
   const d=e.target.closest('[data-dl]'); if(d){ e.preventDefault(); downloadFile(d.dataset.dl,d.dataset.title||''); return; }
   const s=e.target.closest('[data-open-sim]'); if(s){ e.preventDefault(); go('lab-'+s.dataset.openSim); return; }
 });
 function resItem(r){
+  if(/^https?:/.test(r.path)) return `<div class="lib-item"><div class="ic pdf">PDF</div><div><div class="tt">${esc(r.title)}</div><div class="mt">Past paper · opens live on Pearson's website</div></div>
+  <div class="row acts"><a class="btn btn-sm" href="${esc(r.path)}" target="_blank" rel="noopener">${I.ext} Open</a></div></div>`;
   const isPdf=r.ext==='pdf';
   return `<div class="lib-item"><div class="ic ${r.ext}">${r.ext.toUpperCase()}</div><div><div class="tt">${esc(r.title)}</div><div class="mt">${r.cat==='cheatsheets'?'Cheat sheet':r.cat==='slides'?'Teacher slides':r.cat==='worksheets'?'Worksheet':r.cat==='papers'?'Past paper':'Resource'} · ${r.pages?r.pages+' pages · ':''}${fmtSize(r.size)}</div></div>
   <div class="row acts">${isPdf?`<button class="btn btn-sm" data-pdf="${esc(r.path)}" data-title="${esc(r.title)}">${I.eye} Open</button>`:''}<button class="btn btn-sm" data-dl="${esc(r.path)}" data-title="${esc(r.title)}">${I.dl} Download</button></div></div>`;
@@ -313,10 +319,15 @@ function viewTopic(v,id){
   }
   show('notes');
 }
+/* Past-paper questions are not stored here (they are Pearson's): the list shows what each one is about,
+   and opening it shows the real question live from Pearson's website. */
+const ppPaper=(y,kind)=>D.papers.find(p=>p.year===y&&p.kind===kind);
+const qTopics=q=>q.topics.map(id=>topicById[id]?topicById[id].title:id).join(' · ');
+const qText=q=>q.src==='pp'?qTopics(q):(q.stem?q.stem+' ':'')+(q.text||'');
 function qItem(q){
   const r=S.exam[q.id]; const done=r&&r.got!=null;
   const lbl=q.src==='pp'?`${q.year} Q${q.q}`:'AI practice';
-  return `<a class="qitem" href="#q-${qkey(q.id)}" style="text-decoration:none;color:inherit"><span class="qid">${esc(lbl)}</span><span class="qt">${esc((q.stem&&q.text.length<120?q.stem+' ':'')+q.text)}</span><span class="qm">${done?`<span class="chip ${r.got>=q.marks*.7?'good':r.got>=q.marks*.4?'warn':'bad'}">${r.got}/${q.marks}</span>`:`${q.marks} mark${q.marks>1?'s':''}`}${q.src==='ai'?' <span class="chip ai">AI</span>':''}</span></a>`;
+  return `<a class="qitem" href="#q-${qkey(q.id)}" style="text-decoration:none;color:inherit"><span class="qid">${esc(lbl)}</span><span class="qt">${q.src==='pp'?`<span class="muted">Past paper · </span>${esc(qTopics(q))}`:esc((q.stem&&q.text.length<120?q.stem+' ':'')+q.text)}</span><span class="qm">${done?`<span class="chip ${r.got>=q.marks*.7?'good':r.got>=q.marks*.4?'warn':'bad'}">${r.got}/${q.marks}</span>`:`${q.marks} mark${q.marks>1?'s':''}`}${q.src==='ai'?' <span class="chip ai">AI</span>':''}</span></a>`;
 }
 
 /* ---------- LABS ---------- */
@@ -406,7 +417,7 @@ function viewExamList(v,pre){
   if(pre&&topicById[pre]) $('#fT').value=pre;
   let cur=[];
   const render=()=>{ const T=$('#fT').value,Y=$('#fY').value,M=$('#fM').value,St=$('#fS').value,Q=$('#fQ').value.trim().toLowerCase(); S.settings.ai=$('#fAI').checked; save();
-    cur=ALLQ.filter(q=>(S.settings.ai||q.src==='pp')&&(!T||q.topics.includes(T))&&(!Y||q.year===Y)&&(!M||(q.marks>=+M.split('-')[0]&&q.marks<=+M.split('-')[1]))&&(!Q||(q.stem+' '+q.text).toLowerCase().includes(Q))&&(!St||(St==='todo'?!(S.exam[q.id]&&S.exam[q.id].got!=null):St==='done'?(S.exam[q.id]&&S.exam[q.id].got!=null):(S.exam[q.id]&&S.exam[q.id].got!=null&&S.exam[q.id].got<q.marks/2))));
+    cur=ALLQ.filter(q=>(S.settings.ai||q.src==='pp')&&(!T||q.topics.includes(T))&&(!Y||q.year===Y)&&(!M||(q.marks>=+M.split('-')[0]&&q.marks<=+M.split('-')[1]))&&(!Q||qText(q).toLowerCase().includes(Q))&&(!St||(St==='todo'?!(S.exam[q.id]&&S.exam[q.id].got!=null):St==='done'?(S.exam[q.id]&&S.exam[q.id].got!=null):(S.exam[q.id]&&S.exam[q.id].got!=null&&S.exam[q.id].got<q.marks/2))));
     if(Y) cur=cur.filter(q=>q.src==='pp');
     $('#fCount').textContent=`${cur.length} question${cur.length===1?'':'s'} · ${cur.reduce((a,q)=>a+q.marks,0)} marks`;
     $('#qList').innerHTML=cur.length?cur.map(qItem).join(''):'<div class="empty">No questions match these filters.</div>'; };
@@ -415,13 +426,16 @@ function viewExamList(v,pre){
   render();
 }
 function msBlock(q){
-  const items=q.ms.filter(it=>!/^\(?CONTINUED/i.test(it.trim())).map(it=>{ if(/^(Points of|Design philosophy|Style$|Expansion|Issues to resolve|Strategies deployed|Benefits:|Drawbacks:|Method \d|Alternative)/.test(it)) return `<p class="hd">${esc(it)}</p>`; if(/^(\d+\.|•|Stage)/.test(it)) return `<p class="pt">${esc(it)}</p>`; return `<p>${esc(it)}</p>`; }).join('');
+  if(q.src==='pp'){ const ms=ppPaper(q.year,'ms'); const lv=q.levels&&D.levels[q.levels];
+    return `<div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">Pearson Edexcel ${esc(q.year)}</span></div>
+     <div style="padding:12px 14px">${ttLive.card({url:ms&&ms.path,page:q.mspage,title:`${q.year} mark scheme`,q:q.q,source:'Pearson Edexcel',embed:false})}</div>
+     ${lv?`<div class="levels" style="overflow-x:auto"><table><thead><tr><th>Level</th><th>Descriptor</th></tr></thead><tbody>${lv.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`; }
+  const items=(q.ms||[]).filter(it=>!/^\(?CONTINUED/i.test(it.trim())).map(it=>{ if(/^(Points of|Design philosophy|Style$|Expansion|Issues to resolve|Strategies deployed|Benefits:|Drawbacks:|Method \d|Alternative)/.test(it)) return `<p class="hd">${esc(it)}</p>`; if(/^(\d+\.|•|Stage)/.test(it)) return `<p class="pt">${esc(it)}</p>`; return `<p>${esc(it)}</p>`; }).join('');
   const lv=q.levels&&D.levels[q.levels];
   const qn=q.src==='pp'?q.q:'AI';
-  return `<div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="row">${q.src==='pp'?`<span class="chip">Pearson Edexcel ${esc(q.year)}</span>${q.mspage?`<button class="btn btn-sm" data-pdf="files/papers/9DT0-01-${q.year}-mark-scheme.pdf" data-title="${q.year} mark scheme" data-page="${q.mspage}">${I.eye} Original p.${q.mspage}</button>`:''}`:'<span class="chip ai">AI-generated in mark scheme style</span>'}</span></div>
+  return `<div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="row"><span class="chip ai">AI-generated in mark scheme style</span></span></div>
    <div style="overflow-x:auto"><table><thead><tr><th>Question number</th><th>Answer</th><th>Mark</th></tr></thead><tbody><tr><td class="qn">${esc(qn)}</td><td class="msl">${items||'<p class="muted">See the original mark scheme.</p>'}</td><td class="mk">(${q.marks})</td></tr></tbody></table></div>
    ${lv?`<div class="levels" style="overflow-x:auto"><table><thead><tr><th>Level</th><th>Descriptor</th></tr></thead><tbody>${lv.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>`:''}
-   ${q.levels==='draw'&&q.src==='pp'&&q.mspage?`<div style="padding:10px 14px;border-top:1px solid var(--line)"><button class="btn btn-sm" data-pdf="files/papers/9DT0-01-${q.year}-mark-scheme.pdf" data-title="${q.year} mark scheme" data-page="${q.mspage}">${I.eye} See the exemplar drawing in the mark scheme</button></div>`:''}
   </div>`;
 }
 function viewQuestion(v,key){
@@ -438,15 +452,14 @@ function renderQuestion(v,q,list,onNav){
   <div class="exam">
    <section class="paper">
     <div class="row" style="justify-content:space-between"><span class="qnum">${q.src==='pp'?esc(q.q):'Practice'}</span><span class="row">${q.src==='ai'?'<span class="chip ai">AI-generated</span>':`<span class="chip">Edexcel ${esc(q.year)}</span>`}${q.topics.map(topicChip).join('')}</span></div>
-    ${q.stem?`<p class="stemtxt">${esc(q.stem)}</p>`:''}
-    <p class="qtxt">${esc(q.text)}</p><div class="marks">(${q.marks})</div>
+    ${q.src==='pp'?`<div style="margin:10px 0 4px">${ttLive.card({url:ppPaper(q.year,'qp')&&ppPaper(q.year,'qp').path,page:q.pages&&q.pages[0],q:q.q,title:`Pearson Edexcel 9DT0/01 · ${q.year}${q.year==='2020'?' (October)':q.year==='2021'?' (October)':' (June)'}`,source:'Pearson Edexcel',embed:false})}</div>`
+     :`${q.stem?`<p class="stemtxt">${esc(q.stem)}</p>`:''}<p class="qtxt">${esc(q.text)}</p>`}<div class="marks">(${q.marks})</div>
     ${q.fig?`<figure class="aifig" style="margin:12px 0;text-align:center"><img loading="lazy" src="${esc(q.fig.src)}" alt="${esc(q.fig.alt)}" style="max-width:100%;max-height:420px;border-radius:8px;background:#fff" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'muted',textContent:'Image could not load – use the link below.'}))"><figcaption class="muted" style="font-size:.8rem;margin-top:6px">${esc(q.text.match(/Figure [A-Z]/)?q.text.match(/Figure [A-Z]/)[0]:'Figure')} · ${esc(q.fig.credit)}${q.fig.link?` · <a href="${esc(q.fig.link)}" target="_blank" rel="noopener">source</a>`:''}</figcaption></figure>`:''}
-    ${q.pages&&q.pages.length?`<div class="figs"><details ${q.pages.length&&/Figure|figure|table|drawing|shown|shows/.test(q.stem+q.text)?'open':''}><summary>Original exam paper page${q.pages.length>1?'s':''} (figures and data)</summary>${q.pages.map(p=>`<img loading="lazy" src="pp/q${q.year}-${String(p).padStart(2,'0')}.jpg" alt="${q.year} question paper page ${p}">`).join('')}</details></div>`:''}
     <label class="field" for="ans" style="margin-top:10px">Your answer (saved in this browser)</label>
     <textarea id="ans" placeholder="Write your answer here, as you would in the exam…">${esc(S.answers[q.id]||'')}</textarea>
     <div class="row" style="margin-top:10px;justify-content:space-between"><span class="muted" style="font-size:.82rem">Aim for about ${Math.max(1,Math.round(q.marks*1.25))} minutes.</span></div>
     <div id="aiOut"></div>
-    ${q.src==='pp'?`<div class="card" style="margin-top:12px;padding:12px 14px"><span class="eyebrow">Source: Pearson Edexcel 9DT0/01, ${esc(q.year)}${q.year==='2020'?' (October)':' (June)'}, Question ${esc(q.q)}</span><div class="row" style="margin-top:8px;gap:8px"><button class="btn btn-sm" data-pdf="files/papers/9DT0-01-${q.year}-question-paper.pdf" data-title="${q.year} question paper" data-page="${(q.pages&&q.pages[0])||1}">${I.eye} Open the paper${q.pages&&q.pages[0]?' at p.'+q.pages[0]:''}</button><a class="btn btn-sm" href="https://qualifications.pearson.com/en/support/support-topics/exams/past-papers.html" target="_blank" rel="noopener">${I.ext} Pearson past papers</a><a class="btn btn-sm" href="https://www.savemyexams.com/a-level/design-and-technology/edexcel/product-design/past-papers/" target="_blank" rel="noopener">${I.ext} Save My Exams</a><a class="btn btn-sm" href="https://simplestudy.com/gb/a-level/edexcel/design-and-technology-product-design/past-papers" target="_blank" rel="noopener">${I.ext} SimpleStudy</a></div></div>`:''}
+    ${q.src==='pp'?`<div class="card" style="margin-top:12px;padding:12px 14px"><span class="eyebrow">If Pearson's site is down, try these</span><div class="row" style="margin-top:8px;gap:8px"><a class="btn btn-sm" href="https://qualifications.pearson.com/en/support/support-topics/exams/past-papers.html" target="_blank" rel="noopener">${I.ext} Pearson past papers</a><a class="btn btn-sm" href="https://www.savemyexams.com/a-level/design-and-technology/edexcel/product-design/past-papers/" target="_blank" rel="noopener">${I.ext} Save My Exams</a><a class="btn btn-sm" href="https://simplestudy.com/gb/a-level/edexcel/design-and-technology-product-design/past-papers" target="_blank" rel="noopener">${I.ext} SimpleStudy</a></div></div>`:''}
     ${q.tip?`<div class="examtip" style="margin-top:12px"><b>Examiner's report:</b> ${esc(q.tip)}</div>`:''}
    </section>
    <section class="rightcol">
@@ -464,7 +477,7 @@ function renderQuestion(v,q,list,onNav){
   aiBtn && (aiBtn.onclick=async()=>{
     if(!sampleCap) return; const a=ans.value.trim(); if(a.length<5){ toast('Write an answer first'); return; }
     const out=$('#aiOut'); out.innerHTML='<div class="aimark muted" style="margin-top:10px">Marking…</div>'; aiBtn.disabled=true;
-    const prompt=`You are an experienced Pearson Edexcel A level Design and Technology (Product Design) 9DT0/01 examiner. Mark the student's answer strictly using the mark scheme. Reply in plain text with: a first line "Mark: X/${q.marks}", then 2–4 short bullet points on what earned marks and what was missing, then one sentence on how to reach full marks. Do not rewrite the whole answer.\n\nQUESTION (${q.marks} marks): ${q.stem?q.stem+' ':''}${q.text}\n\nMARK SCHEME:\n${q.ms.join('\n')}${q.levels?'\nLevels-based marking: '+D.levels[q.levels].map(x=>x.join(': ')).join(' | '):''}\n\nSTUDENT ANSWER:\n${a}`;
+    const prompt=`You are an experienced Pearson Edexcel A level Design and Technology (Product Design) 9DT0/01 examiner. Mark the student's answer strictly using the mark scheme. Reply in plain text with: a first line "Mark: X/${q.marks}", then 2–4 short bullet points on what earned marks and what was missing, then one sentence on how to reach full marks. Do not rewrite the whole answer.\n\nQUESTION (${q.marks} marks): ${qText(q)}\n\nMARK SCHEME:\n${(q.ms||[]).join('\n')}${q.levels?'\nLevels-based marking: '+D.levels[q.levels].map(x=>x.join(': ')).join(' | '):''}\n\nSTUDENT ANSWER:\n${a}`;
     try{ let txt=''; const res=await sampleCap(prompt,{modelTier:'default',onText:({text})=>{ txt=text; out.innerHTML=`<div class="aimark" style="margin-top:10px">${paragraphs(text)}</div>`; }}); txt=res.text||txt; out.innerHTML=`<div class="aimark" style="margin-top:10px"><span class="chip ai" style="margin-bottom:6px">AI marking – check against the mark scheme</span>${paragraphs(txt)}</div>`; const m=txt.match(/Mark:\s*(\d+)\s*\/\s*(\d+)/i); if(m&&$('#got')&&!$('#got').value) $('#got').value=m[1]; }
     catch(e){ out.innerHTML=`<div class="aimark muted" style="margin-top:10px">${e&&e.code==='not_granted'?'AI marking was not allowed in this view.':e&&e.code==='rate_limited'?'Too many requests – try again in a minute.':'AI marking is unavailable right now.'}</div>`; }
     aiBtn.disabled=false;
@@ -537,11 +550,11 @@ function viewVideos(v,g){
 function viewPapers(v){
   const years=['2025','2024','2023','2022','2021','2020','2019'];
   const spec=D.papers.find(p=>p.kind==='spec');
-  v.innerHTML=`<span class="eyebrow">Edexcel 9DT0/01 · Principles of Design and Technology</span><h1>Past papers</h1><p class="muted" style="max-width:76ch">Every Paper 1 series since the first exam in 2019 (the 2020 paper was sat in autumn 2020). Open the paper or mark scheme, download it, or sit it question by question with a timer and self-marking.</p>
+  v.innerHTML=`<span class="eyebrow">Edexcel 9DT0/01 · Principles of Design and Technology</span><h1>Past papers</h1><p class="muted" style="max-width:76ch">Every Paper 1 series since the first exam in 2019 (the 2020 paper was sat in autumn 2020). Papers and mark schemes open live from Pearson's website (nothing is copied onto this site). Sit any paper question by question with a timer and self-marking.</p>
   <div class="grid g3" style="margin-top:16px">${years.map(y=>{ const qp=D.papers.find(p=>p.year===y&&p.kind==='qp'), ms=D.papers.find(p=>p.year===y&&p.kind==='ms'); const qs=D.pp.filter(q=>q.year===y); const st=examStats(qs); return `<div class="card yearcard"><div class="row" style="justify-content:space-between"><span class="yr">${y}</span><span class="chip">${qs.length} parts · 120 marks</span></div>
    <div class="bar"><i style="width:${st.max?st.got/120*100:0}%"></i></div><span class="muted" style="font-size:.84rem">${st.n?`${st.got} marks from ${st.n} parts attempted`:'Not attempted yet'}</span>
-   <div class="row"><a class="btn btn-sm primary" href="#paper-${y}">Sit this paper</a><button class="btn btn-sm" data-pdf="${qp.path}" data-title="${esc(qp.title)}">${I.eye} Paper</button><button class="btn btn-sm" data-pdf="${ms.path}" data-title="${esc(ms.title)}">${I.eye} Mark scheme</button></div>
-   <div class="row"><button class="btn btn-sm ghost" data-dl="${qp.path}">${I.dl} Paper PDF</button><button class="btn btn-sm ghost" data-dl="${ms.path}">${I.dl} Mark scheme PDF</button></div></div>`; }).join('')}</div>
+   <div class="row"><a class="btn btn-sm primary" href="#paper-${y}">Sit this paper</a><a class="btn btn-sm" href="${esc(qp.path)}" target="_blank" rel="noopener">${I.ext} Paper</a><a class="btn btn-sm" href="${esc(ms.path)}" target="_blank" rel="noopener">${I.ext} Mark scheme</a></div>
+   <span class="muted" style="font-size:.78rem">Opens live on Pearson's website</span></div>`; }).join('')}</div>
   <div class="sep"></div><h2 style="margin-bottom:10px">Specification and official links</h2><div class="stack">${resItem(Object.assign({cat:'papers'},spec))}
   <div class="card"><p style="margin:0 0 8px">Pearson also publishes Sample Assessment Materials (SAMs) and examiner reports for each series. Examiner report advice is built into the questions here (look for <span class="chip warn">Examiner's report</span> notes on 2024 and 2025 questions).</p><a href="https://qualifications.pearson.com/en/qualifications/edexcel-a-levels/design-and-technology-product-design-2017.coursematerials.html" target="_blank" rel="noopener">Pearson Edexcel course materials ${I.ext}</a></div></div>`;
 }
@@ -589,7 +602,7 @@ function viewProgress(v){
 function viewSearch(v){
   v.innerHTML=`<span class="eyebrow">Notes, key terms and questions</span><h1>Search</h1><div class="searchbox" style="margin:14px 0">${I.search}<input type="search" id="sq" placeholder="Search e.g. galvanising, Six Sigma, Loewy…" autofocus></div><div id="sr"></div>`;
   const idx=[]; D.topics.forEach(t=>{ idx.push({k:'topic',t,title:`${t.id} ${t.title}`,text:t.html.replace(/<[^>]+>/g,' '),href:`#t-${t.id}`}); t.terms.forEach(([a,b])=>idx.push({k:'term',t,title:a,text:b,href:`#t-${t.id}`})); });
-  ALLQ.forEach(q=>idx.push({k:'q',q,title:q.src==='pp'?`${q.year} Q${q.q}`:'AI practice question',text:q.stem+' '+q.text,href:`#q-${qkey(q.id)}`}));
+  ALLQ.forEach(q=>idx.push({k:'q',q,title:q.src==='pp'?`${q.year} Q${q.q}`:'AI practice question',text:qText(q),href:`#q-${qkey(q.id)}`}));
   const sq=$('#sq');
   const render=()=>{ const s=sq.value.trim().toLowerCase(); if(s.length<2){ $('#sr').innerHTML='<p class="muted">Type at least two letters.</p>'; return; }
     const words=s.split(/\s+/); const res=idx.map(r=>{ const T=(r.title).toLowerCase(), X=r.text.toLowerCase(); let sc=0; for(const w of words){ if(T.includes(w)) sc+=5; else if(X.includes(w)) sc+=1; else return null; } if(r.k==='term') sc+=2; return [sc,r]; }).filter(Boolean).sort((a,b)=>b[0]-a[0]).slice(0,60);

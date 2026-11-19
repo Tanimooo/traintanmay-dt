@@ -1,6 +1,6 @@
 /* TrainTanmay Physics – PMT question bank and mock tests.
-   window.BANK (data/bank.js) holds the metadata; question and mark-scheme images plus full text
-   are packed per source pack in qbank/pNNN.json and fetched on demand. */
+   window.BANK (data/bank.js) holds only metadata (pack, question number, page, marks, topics).
+   The questions themselves are shown live from PMT's PDFs: nothing from the papers is stored here. */
 (function(){
 'use strict';
 window.BANKUI=function(C){
@@ -34,21 +34,23 @@ const pmtQ=q=>pk(q).qp_url+(q.qp?'#page='+q.qp:'');
 const pmtM=q=>pk(q).ms_url+(q.mp?'#page='+q.mp:'');
 const minsFor=m=>Math.max(1,Math.round(m*1.2));
 
-/* ---------- image packs ---------- */
-const PK={};
-const loadPack=c=>PK[c]||(PK[c]=fetch('qbank/c'+c+'.json').then(r=>r.ok?r.json():{}).catch(()=>{ delete PK[c]; return {}; }));
+/* ---------- live questions ----------
+   No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
+const live=(q,kind)=>{ const p=pk(q); return kind==='m'
+  ? ttLive.card({url:p.ms_url,page:q.mp,title:p.title+' · mark scheme',q:String(q.n),source:'Physics & Maths Tutor'})
+  : ttLive.card({url:p.qp_url,page:q.qp,ms:p.ms_url,msPage:q.mp,title:p.title,q:String(q.n),source:'Physics & Maths Tutor'}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
-  const k=`p${String(q.p).padStart(3,'0')}_${q.n}${kind}`; const w=kind==='m'?q.mw:q.w, ht=kind==='m'?q.mh:q.h;
-  return `<div class="qpaper"><img data-bk="${k}" data-p="${q.c}" alt="${kind==='m'?'Mark scheme':'Question'} ${esc(qLabel(q))}" width="${w||600}" height="${ht||300}" style="aspect-ratio:${w||600}/${ht||300}"></div>`; };
-const fill=root=>{ $$('.qpaper',root).forEach(d=>{ if(d.dataset.z) return; d.dataset.z=1; d.title='Tap to zoom'; d.onclick=()=>d.classList.toggle('zoom'); }); $$('img[data-bk]',root).forEach(im=>{ if(im.dataset.done) return; im.dataset.done=1; loadPack(+im.dataset.p).then(m=>{ const s=m[im.dataset.bk]; if(s){ im.src=s; im.removeAttribute('style'); } else im.alt='Image unavailable: open it on PMT'; }); }); };
-const textOf=(q,kind)=>loadPack(q.c).then(m=>(m._t||{})[q.id+kind]||'');
+  return live(q,kind); };
+const fill=()=>{};
+/* the question text isn't stored, so AI marking only has the mark count to go on for PMT questions */
+const textOf=()=>Promise.resolve('');
 
 /* ---------- helpers ---------- */
 const topicChips=q=>q.t.filter(t=>byId[t]).map((t,i)=>`<a class="chip ${i?'':'brand'}" href="#t-${t}">${t} ${esc(byId[t].title)}</a>`).join('');
 const done=q=>{ const r=S.bank[q.id]; return !!(r&&(r.got!=null||r.ch||r.rev))||!!((S.answers||{})['b:'+q.id]); };
 /* a short, readable preview: drop part labels, figure/table refs, marks, dotted lines and number soup; keep the first real sentence */
-const snip=q=>{ let s=(q.wr?q.wr.stem+' '+q.wr.parts[0].q:q.s)||''; s=s.replace(/\[\s*\d+\s*(marks?)?\s*\]/gi,' ').replace(/\b(Fig(ure)?|Table)\.?\s*\d+(\.\d+)?/gi,' ').replace(/\((?:[a-h]|i{1,3}|iv|vi{0,3}|ix|x)\)/g,' ').replace(/[.…_]{3,}/g,' ').replace(/^\s*(Q|M)?\d{1,2}\s*/,'').replace(/\s+/g,' ').trim();
+const snip=q=>{ if(!q.wr) return `Question ${q.n} from “${pk(q).title}” (opens live from PMT)`; let s=(q.wr.stem+' '+q.wr.parts[0].q)||''; s=s.replace(/\[\s*\d+\s*(marks?)?\s*\]/gi,' ').replace(/\b(Fig(ure)?|Table)\.?\s*\d+(\.\d+)?/gi,' ').replace(/\((?:[a-h]|i{1,3}|iv|vi{0,3}|ix|x)\)/g,' ').replace(/[.…_]{3,}/g,' ').replace(/^\s*(Q|M)?\d{1,2}\s*/,'').replace(/\s+/g,' ').trim();
   const sents=s.split(/(?<=[.?!])\s+/); const good=sents.find(x=>{ const w=x.split(' '); const words=w.filter(t=>/^[A-Za-z][a-z’'-]{2,}[,.?!:]?$/.test(t)).length; return w.length>=6&&words/w.length>0.6; })||s;
   return good.length>150?good.slice(0,147).replace(/\s+\S*$/,'')+'…':good; };
 const status=q=>{ const r=S.bank[q.id]; if(q.mcq&&r&&r.ch) return `<span class="chip ${r.ch===q.mcq?'good':'bad'}">${r.ch===q.mcq?'✓ correct':'✗ '+r.ch}</span>`; if(!r||r.got==null) return done(q)?'<span class="chip">started</span>':''; const f=r.got/(q.m||1); return `<span class="chip ${f>=0.7?'good':f>=0.4?'warn':'bad'}">${r.got}/${q.m}</span>`; };
@@ -77,7 +79,7 @@ async function runAI(q,ansText,mode,out,onMark){
 function filterQs(f){
   return Q.filter(q=>(!f.t||q.t.every(t=>t===f.t))&&(!f.m||q.t.every(t=>byId[t]&&byId[t].mod===+f.m))&&(!f.src||srcOf(q)===f.src)&&(!f.type||(f.type==='mcq'?!!q.mcq:!q.mcq))
     &&(!f.st||(f.st==='todo'?!(S.bank[q.id]&&S.bank[q.id].got!=null):f.st==='wrong'?(S.bank[q.id]&&S.bank[q.id].got!=null&&S.bank[q.id].got<(q.m||1)*0.6):(S.bank[q.id]&&S.bank[q.id].got!=null)))
-    &&(!f.q||(q.s+' '+pk(q).title).toLowerCase().includes(f.q)));
+    &&(!f.q||((q.s||'')+' '+pk(q).title+' '+q.t.map(t=>byId[t]?byId[t].title:'').join(' ')).toLowerCase().includes(f.q)));
 }
 function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
@@ -116,12 +118,11 @@ function viewBankQ(v,id){
    ${img(q,'q')}
    ${q.mcq?`<div class="mcq-row" id="mcq">${'ABCD'.split('').map(c=>`<button class="btn mcq ${r.ch===c?(c===q.mcq?'right':'wrong'):''}" data-c="${c}">${c}</button>`).join('')}<span class="muted" id="mcqmsg">${r.ch?(r.ch===q.mcq?'Correct!':'The answer is '+q.mcq):'Pick an answer'}</span></div>`
      :`<label class="muted" for="ans" style="font-size:.8rem">Your answer and working (saved on this device)</label><textarea id="ans" placeholder="Write your answer, part by part…">${esc((S.answers||{})[ak]||'')}</textarea>`}
-   ${q.wr?'':`<div class="row pmt-links"><a class="btn btn-sm ghost" href="${esc(pmtQ(q))}" target="_blank" rel="noopener">Question paper on PMT${q.qp?' (p. '+q.qp+')':''} ↗</a><a class="btn btn-sm ghost" href="${esc(pmtM(q))}" target="_blank" rel="noopener">Mark scheme on PMT${q.mp?' (p. '+q.mp+')':''} ↗</a></div>`}
    <nav class="qnav" aria-label="Question navigation">${prev?`<a class="btn" href="#pq-${prev}">← Previous</a>`:'<span></span>'}<span class="muted">${ix>=0?`${ix+1} of ${list.length}`:''}</span>${next?`<a class="btn primary" href="#pq-${next}">Next question →</a>`:`<a class="btn" href="#bank">Back to the list</a>`}</nav>
   </section>
   <section class="stack">
    <div class="veil ${r.rev?'':'hidden'}" id="veil"><div class="vin"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m||'?'} marks</span></div>
-    ${q.mw?img(q,'m'):`<p class="muted">This question's mark scheme could not be cut out automatically. Open it on PMT with the button on the left.</p>`}
+    ${img(q,'m')}
     ${q.mcq?'':`<div class="selfmark"><b>Self-mark:</b><input type="number" id="got" min="0" max="${q.m||20}" value="${r.got??''}" aria-label="Marks scored" inputmode="numeric"><span>/ ${q.m||'?'}</span><span class="muted" id="gotMsg" aria-live="polite">${r.got!=null?'Saved ✓':''}</span></div>`}
     
    </div></div><div class="vbtn"><button class="btn primary" id="reveal">Reveal mark scheme</button></div></div>
@@ -149,7 +150,7 @@ function pickQs(cfg){
   if(cfg.mode==='unseen') units=units.filter(u=>u.every(q=>!att(q)));
   if(cfg.mode==='wrong') units=units.filter(u=>u.some(wrong));
   shuffle(units); const out=[]; let sum=0; const seenText=new Set();
-  for(const u of units){ if(sum>=cfg.marks) break; const key=u[0].s.slice(0,80); if(seenText.has(key)) continue; const um=unitMarks(u); if(sum+um>cfg.marks+Math.max(3,cfg.marks*0.1)) continue; out.push(u); sum+=um; seenText.add(key); }
+  for(const u of units){ if(sum>=cfg.marks) break; const key=u[0].wr?u[0].s.slice(0,80):u[0].p+'/'+u[0].n; if(seenText.has(key)) continue; const um=unitMarks(u); if(sum+um>cfg.marks+Math.max(3,cfg.marks*0.1)) continue; out.push(u); sum+=um; seenText.add(key); }
   if(cfg.order==='paper') out.sort((a,b)=>(b[0].mcq?1:0)-(a[0].mcq?1:0)||unitMarks(a)-unitMarks(b));
   return out.flat();
 }
@@ -225,7 +226,7 @@ function viewMockRun(v,id,cleanupSet){
      <div class="bk-q"><section class="stack"><div class="row" style="gap:6px">${q.t.filter(t=>byId[t]).map(t=>`<span class="chip">${t} ${esc(byId[t].title)}</span>`).join('')}</div>${partNote(q,i>0&&q.pi>0?'Question '+LB.lab[i-1]:'')}${partialNote(q)}${img(q,'q')}
       ${q.mcq?`<div class="mcq-row">${'ABCD'.split('').map(c=>`<button class="btn mcq ${a.ch===c?'sel':''}" data-c="${c}">${c}</button>`).join('')}</div>`:`<label class="muted" for="mans" style="font-size:.8rem">Your answer (or answer on paper and use this for notes)</label><textarea id="mans" placeholder="Write your answer…">${esc(a.txt||'')}</textarea>`}
       <div class="row" style="justify-content:space-between"><button class="btn btn-sm ghost" id="flag">${a.flag?'Unflag':'Flag for review'}</button><div class="row">${i>0?'<button class="btn btn-sm" id="prev">← Previous</button>':''}${i<qs.length-1?'<button class="btn btn-sm primary" id="next">Next →</button>':''}<button class="btn btn-sm ${i===qs.length-1?'primary':''}" id="fin">Finish and mark</button></div></div></section>
-      <section class="stack">${m.cfg.reveal==='instant'?`<div class="veil ${a.rev?'':'hidden'}" id="veil"><div class="vin"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m} mark${q.m===1?'':'s'}</span></div>${q.mw?img(q,'m'):'<p class="muted">Open this mark scheme on PMT.</p>'}${q.mcq?'':`<div class="selfmark"><b>Self-mark:</b><input type="number" id="mgot" min="0" max="${q.m}" value="${a.got??''}" inputmode="numeric"><span>/ ${q.m}</span><span class="muted" id="mgotMsg" aria-live="polite">${a.got!=null?'Saved ✓':''}</span></div>`}</div></div><div class="vbtn"><button class="btn primary" id="mrev">Check this question</button></div></div>`:`<div class="card"><span class="eyebrow">Exam conditions</span><p style="margin:6px 0 0;font-size:.92rem">Mark schemes appear when you finish. Aim for about ${minsFor(q.m)} minute${minsFor(q.m)===1?'':'s'} on this question. Flag anything you want to come back to.</p></div>`}
+      <section class="stack">${m.cfg.reveal==='instant'?`<div class="veil ${a.rev?'':'hidden'}" id="veil"><div class="vin"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m} mark${q.m===1?'':'s'}</span></div>${img(q,'m')}${q.mcq?'':`<div class="selfmark"><b>Self-mark:</b><input type="number" id="mgot" min="0" max="${q.m}" value="${a.got??''}" inputmode="numeric"><span>/ ${q.m}</span><span class="muted" id="mgotMsg" aria-live="polite">${a.got!=null?'Saved ✓':''}</span></div>`}</div></div><div class="vbtn"><button class="btn primary" id="mrev">Check this question</button></div></div>`:`<div class="card"><span class="eyebrow">Exam conditions</span><p style="margin:6px 0 0;font-size:.92rem">Mark schemes appear when you finish. Aim for about ${minsFor(q.m)} minute${minsFor(q.m)===1?'':'s'} on this question. Flag anything you want to come back to.</p></div>`}
       <div class="card"><span class="eyebrow">Progress</span><p style="margin:6px 0 0;font-size:.92rem">${qs.filter(x=>{ const aa=m.a[x.id]||{}; return aa.ch||aa.txt; }).length} of ${qs.length} answered · ${qs.filter(x=>(m.a[x.id]||{}).flag).length} flagged</p></div></section></div>`;
     fill(v);
     $$('.mk-nav [data-j]',v).forEach(b=>b.onclick=()=>{ m.cur=+b.dataset.j; save(); draw(); });
@@ -258,7 +259,7 @@ function viewMockRes(v,id){
     <p class="muted" style="margin:0 0 12px">Multiple choice is marked for you. For each structured question, compare your answer with the official mark scheme and enter your mark.</p>
     <div class="stack" id="rv">${qs.map((q,i)=>{ const a=m.a[q.id]||{}; return `<details class="card rv" data-q="${q.id}" ${i===0?'open':''}><summary><b>Q${LB.lab[i]}</b> <span class="muted">${esc(qLabel(q))}</span><span class="rv-s">${a.got!=null?`<span class="chip ${a.got/q.m>=0.7?'good':a.got/q.m>=0.4?'warn':'bad'}">${a.got}/${q.m}</span>`:`<span class="chip warn">Mark me · ${q.m}</span>`}</span></summary>
       <div class="bk-q" style="margin-top:12px"><section class="stack">${partialNote(q)}${img(q,'q')}${q.mcq?`<p>Your answer: <b>${a.ch||'none'}</b> · correct answer: <b>${q.mcq}</b></p>`:`<div class="yours"><span class="eyebrow">Your answer</span><p>${a.txt?esc(a.txt).replace(/\n/g,'<br>'):'<span class="muted">No typed answer (you may have answered on paper).</span>'}</p></div>`}${q.wr?'':`<div class="row pmt-links"><a class="btn btn-sm ghost" href="${esc(pmtQ(q))}" target="_blank" rel="noopener">Question on PMT ↗</a><a class="btn btn-sm ghost" href="${esc(pmtM(q))}" target="_blank" rel="noopener">Mark scheme on PMT ↗</a></div>`}</section>
-      <section class="stack"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m} mark${q.m===1?'':'s'}</span></div>${q.mw?img(q,'m'):'<p class="muted">Open this mark scheme on PMT.</p>'}
+      <section class="stack"><div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">${q.m} mark${q.m===1?'':'s'}</span></div>${img(q,'m')}
        ${q.mcq?'':`<div class="selfmark"><b>Your mark:</b><input type="number" class="rvgot" min="0" max="${q.m}" value="${a.got??''}" aria-label="Marks for question ${LB.lab[i]}" inputmode="numeric"><span>/ ${q.m}</span><span class="muted rvsaved" aria-live="polite">${a.got!=null?'Saved ✓':''}</span></div>`}
        </div></section></div></details>`; }).join('')}</div>`;
     const lazy=d=>{ if(d.open) fill(d); };
