@@ -277,7 +277,11 @@
     var x = c.getContext('2d'), W = c.width, H = c.height, d = x.getImageData(0, 0, W, H).data, st = Math.max(1, Math.round(W / 400));
     var x0 = W, y0 = H, x1 = 0, y1 = 0;
     for (var y = 0; y < H; y += st) for (var i = 0; i < W; i += st) {
-      var p = (y * W + i) * 4; if (d[p] < 200 || d[p + 1] < 200 || d[p + 2] < 200) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      // ink = dark pen or coloured highlighter; the grey grid of the graph paper doesn't count
+      var p = (y * W + i) * 4, lo = Math.min(d[p], d[p + 1], d[p + 2]), hi = Math.max(d[p], d[p + 1], d[p + 2]);
+      // and the scanner's corner marks near the very edge of the page don't either
+      if (i < W * 0.05 || i > W * 0.95 || y < H * 0.035 || y > H * 0.965) continue;
+      if (lo < 110 || hi - lo > 70) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     }
     if (x1 <= x0 || y1 <= y0) return null; // blank page
     var pad = Math.round(W * 0.015); x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W, x1 + pad); y1 = Math.min(H, y1 + pad);
