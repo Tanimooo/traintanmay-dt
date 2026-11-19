@@ -78,8 +78,9 @@ function renderNav(active){
     '<hr class="dw-rule">' +
     `<div class="dw-set"><label for="dtheme">Theme</label><select class="sel" id="dtheme"><option value="system">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></div>` +
     `<div class="dw-set"><label for="ddys">Dyslexia-friendly font</label><button class="iconbtn" id="ddys" role="switch" aria-checked="${S.settings.dys ? 'true' : 'false'}">${S.settings.dys ? 'On' : 'Off'}</button></div>` +
-    '<hr class="dw-rule">' + COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') +
+    '<hr class="dw-rule">' +
     `<a href="#mycourses" class="mclink" ${active === 'mycourses' ? 'aria-current="page"' : ''}>${ic('sliders')}My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>` +
+    COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') +
     `<button class="dw-switch" id="dswitch">Switch app <small>Design &amp; Technology \u00b7 Physics \u00b7 ESAT</small></button>`;
   $('#dclose').onclick = closeDrawer;
   const dt = $('#dtheme'); dt.value = S.settings.theme;
@@ -197,8 +198,10 @@ function pageHome(){
     <a class="qtile" href="#progress"><span class="ic">${ic('progress')}</span><span><b>Progress</b><span>Scores & weak topics</span></span></a>
   </div></section>
   ${maths.length ? `<section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>` : ''}
-  ${fm.length ? `<section><div class="sec-head"><h2>Further Maths</h2><span class="muted">${HIDE.length ? '9FM0 · your modules' : '9FM0 · all modules'}</span></div><div class="grid g4">${fm.map(courseCard).join('')}</div></section>` : ''}
-  <p class="muted" style="margin-top:14px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>`;
+  ${fm.length ? `<section><div class="sec-head"><h2>Further Maths</h2><span class="muted">${HIDE.length ? '9FM0 · your modules' : '9FM0 · all modules'}</span></div>
+    <p class="muted" style="margin:0 0 12px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>
+    <div class="grid g4">${fm.map(courseCard).join('')}</div></section>`
+  : `<p class="muted" style="margin-top:14px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>`}`;
   $('#bigsearch').onsubmit = e => { e.preventDefault(); Q.q = $('#bsq').value; location.hash = 'search'; };
   $('#heroart').onclick = () => location.hash = 'vis-matrix2d';
   bindItems(app);
