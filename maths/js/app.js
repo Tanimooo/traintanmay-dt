@@ -572,7 +572,7 @@ function packDocs(name, course){
   const pool = cur.map(i => [score(i), i]).sort((a, b) => b[0] - a[0]);
   const qpOf = i => (i.d.find(x => /QP/.test(x[0])) || i.d[0])[1], top = pool.filter(p => pool.length && p[0] === pool[0][0]);
   let r = null;
-  if (top.length && top.every(p => qpOf(p[1]) === qpOf(top[0][1]))) { const d = top[0][1].d, ms = d.find(x => x[0] === 'MS'); r = [qpOf(top[0][1]), ms ? ms[1] : '']; }
+  if (top.length && top.every(p => qpOf(p[1]) === qpOf(top[0][1]))) { const d = top[0][1].d, ms = d.find(x => x[0] === 'MS') || d.find(x => x[0] === 'SOL') || d.find(x => x[0] === 'MA'); r =[qpOf(top[0][1]), ms ? ms[1] : '']; }
   return PACKDOCS[name] = r;
 }
 const srcName = s => SRCNAME[s] || (/^PMT/.test(s) ? 'Physics & Maths Tutor' : s);
@@ -684,7 +684,8 @@ function pageQ(id){
      past papers and IYGB papers are found in the catalogue by name */
   const lk = (window.PLINKS || {})[q.pk] || (!it && packDocs(q.pn, q.c));
   const pdf = it ? (it.d.find(d => /QP/.test(d[0])) || it.d[0]) : lk && lk[0] ? ['QP', lk[0]] : null,
-        mspdf = it ? it.d.find(d => d[0] === 'MS') : lk && lk[1] ? ['MS', lk[1]] : null;
+        // no mark scheme? worked solutions (Madas) or model answers do the same job
+        mspdf = it ? (it.d.find(d => d[0] === 'MS') || it.d.find(d => d[0] === 'SOL') || it.d.find(d => d[0] === 'MA')) : lk && lk[1] ? [/_solutions\.pdf$/.test(lk[1]) ? 'SOL' : 'MS', lk[1]] : null;
   const max = q.mk || (r && r.of) || 0;
   app.innerHTML = `<div class="crumbs"><a href="#practice">Practice</a>›<a href="#px-${q.c}">${esc(CBY[q.c]?.name || q.c)}</a>›<a href="#px-${q.c}-${q.t}">${esc(tname(q.c, q.t))}</a>›<span>Q${q.n}</span></div>
     <div class="qhead"><div><p class="eyebrow">${inSet ? `Set · question ${i + 1} of ${L.length}` : `${esc(q.src)} · ${i + 1} of ${L.length}`}</p>${inSet ? `<div class="bar" style="margin:6px 0 10px;max-width:320px"><i style="width:${Math.round(100 * (i + 1) / L.length)}%"></i></div>` : ''}<h1>${esc(q.pn)} – Q${q.n}</h1></div>
@@ -696,7 +697,7 @@ function pageQ(id){
       <button class="btn" id="flag" aria-pressed="${!!r?.f}">${r?.f ? '★ Flagged' : '☆ Flag for later'}</button>
     </div>
     <div id="msbox" hidden>
-      <h2 style="margin:22px 0 10px">Mark scheme</h2>${mspdf && mspdf !== pdf ? ttCrop.html({url: url(mspdf[1]), q: String(q.n), kind: 'ms', card: {title: q.pn + ' · mark scheme', source: srcName(q.src)}})
+      <h2 style="margin:22px 0 10px">${mspdf && mspdf[0] === 'SOL' ? 'Worked solutions' : mspdf && mspdf[0] === 'MA' ? 'Model answers' : 'Mark scheme'}</h2>${mspdf && mspdf !== pdf ? ttCrop.html({url: url(mspdf[1]), q: String(q.n), kind: 'ms', card: {title: q.pn + (mspdf[0] === 'SOL' ? ' · worked solutions' : mspdf[0] === 'MA' ? ' · model answers' : ' · mark scheme'), source: srcName(q.src)}})
         : pdf ? ttCrop.html({url: url(pdf[1]), q: String(q.n), kind: 'ms', combined: true, card: {title: q.pn + ' (mark scheme at the back)', source: srcName(q.src)}}) : ''}
       <div class="markbox card"><h3 style="margin:0 0 10px">How many marks did you get?</h3>
         ${max && max <= 25 ? `<div class="marks" role="group" aria-label="Marks">${[...Array(max + 1)].map((_, k) => `<button data-m="${k}" aria-pressed="${r && r.m === k}">${k}</button>`).join('')}</div>`
