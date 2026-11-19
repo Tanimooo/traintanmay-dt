@@ -78,14 +78,17 @@
     /* one row: the label, then the places in a strip that scrolls sideways instead of wrapping */
     '.tt-cont{display:flex;align-items:center;gap:10px;margin:4px 0 14px;min-width:0}' +
     '.tt-cont>b{flex:none;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}' +
-    '.tt-cont .tt-row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;min-width:0;padding:2px}.tt-cont .tt-row::-webkit-scrollbar{display:none}' +
-    '.tt-cont a,.tt-cont button{flex:none;scroll-snap-align:start;display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;max-width:240px;padding:7px 12px;border-radius:12px;border:1px solid var(--line,rgba(128,128,128,.35));background:var(--surface,transparent);color:inherit;text-decoration:none;font:inherit;font-size:.88rem;font-weight:500;line-height:1.25;cursor:pointer;text-align:left}' +
-    '.tt-cont a span,.tt-cont button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.tt-cont small{opacity:.65;font-size:.72rem;font-weight:400;white-space:nowrap}' +
+    '.tt-cont .tt-row{display:flex;align-items:stretch;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;min-width:0;padding:2px}.tt-cont .tt-row::-webkit-scrollbar{display:none}' +
+    /* every chip the same height, same type: title then a quieter line under it */
+    '.tt-cont a,.tt-cont button{flex:none;scroll-snap-align:start;display:inline-flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;max-width:240px;padding:7px 12px;border-radius:12px;border:1px solid var(--line,rgba(128,128,128,.35));background:var(--surface,transparent);color:inherit;text-decoration:none;font-family:inherit;font-size:.86rem;line-height:1.25;cursor:pointer;text-align:left}' +
+    '.tt-cont .tt-row>*{align-self:stretch!important;height:auto!important;min-height:0!important;margin:0!important;box-sizing:border-box}' +
+    '.tt-cont a span,.tt-cont button span{font-weight:600;font-size:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}' +
+    '.tt-cont small{opacity:.65;font-size:.84em;font-weight:400;white-space:nowrap}' +
     '.tt-cont a:hover,.tt-cont button:hover{border-color:var(--brand,#5b9cff)}.tt-cont .weak{border-color:#e0a030}.tt-cont .jump{border-style:dashed}' +
     /* thin screens: label on its own line, everything scaled with the screen */
     '@media (max-width:640px){.tt-cont{flex-direction:column;align-items:stretch;gap:5px;margin:2px 0 10px}.tt-cont>b{font-size:.66rem}' +
-    '.tt-cont a,.tt-cont button{max-width:62vw;padding:6px 10px;border-radius:10px;font-size:clamp(.74rem,3.3vw,.86rem)}.tt-cont small{font-size:clamp(.64rem,2.8vw,.72rem)}' +
-    '.tt-cont .jump small{display:none}.tt-cont .jump span::before{content:"⌕ ";}}' +
+    '.tt-cont a,.tt-cont button{max-width:62vw;padding:6px 10px;border-radius:10px;font-size:clamp(.72rem,3.2vw,.84rem)}' +
+    '.tt-cont .jump small{display:block}}' +
     /* smaller headers */
     '#app .hero{padding-top:clamp(14px,2.4vw,28px)!important;padding-bottom:clamp(14px,2.4vw,28px)!important;min-height:0!important;gap:clamp(12px,2vw,28px)!important}' +
     '#app .hero h1{font-size:clamp(1.55rem,3.4vw,2.5rem)!important;line-height:1.1!important;margin-top:4px!important;margin-bottom:6px!important}' +
@@ -174,7 +177,7 @@
     div.innerHTML = '<b>' + (R.length || W ? 'Continue' : 'Get going') + '</b><div class="tt-row">' +
       R.map(function (r) { return '<a href="' + esc(r.h) + '"><span>' + esc(r.t) + '</span><small>' + esc(r.sub) + '</small></a>'; }).join('') +
       (W ? '<a class="weak" href="' + esc(W.h) + '"><span>' + esc(W.t) + '</span><small>Your weakest topic</small></a>' : '') +
-      '<button type="button" class="jump"><span>' + (narrow ? 'Jump' : 'Jump to anything') + '</span><small>Ctrl K or /</small></button></div>';
+      '<button type="button" class="jump"><span>' + (narrow ? 'Jump to…' : 'Jump to anything') + '</span><small>' + (narrow ? 'Search' : 'Ctrl K or /') + '</small></button></div>';
     div.querySelector('.jump').onclick = open;
     hero.insertAdjacentElement('beforebegin', div);
   }
