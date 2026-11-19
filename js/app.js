@@ -178,7 +178,7 @@ document.addEventListener('click',e=>{
   const s=e.target.closest('[data-open-sim]'); if(s){ e.preventDefault(); go('lab-'+s.dataset.openSim); return; }
 });
 function resItem(r){
-  if(/^https?:/.test(r.path)) return `<div class="lib-item"><div class="ic pdf">PDF</div><div><div class="tt">${esc(r.title)}</div><div class="mt">Past paper · opens live on Pearson's website</div></div>
+  if(/^https?:/.test(r.path)) return `<div class="lib-item"><div class="ic pdf">PDF</div><div><div class="tt">${esc(r.title)}</div><div class="mt">Past paper · opens live from ${r.path.includes('designandtechbase')?'DesignAndTechBase':'Pearson'}</div></div>
   <div class="row acts"><a class="btn btn-sm" href="${esc(r.path)}" target="_blank" rel="noopener">${I.ext} Open</a></div></div>`;
   const isPdf=r.ext==='pdf';
   return `<div class="lib-item"><div class="ic ${r.ext}">${r.ext.toUpperCase()}</div><div><div class="tt">${esc(r.title)}</div><div class="mt">${r.cat==='cheatsheets'?'Cheat sheet':r.cat==='slides'?'Teacher slides':r.cat==='worksheets'?'Worksheet':r.cat==='papers'?'Past paper':'Resource'} · ${r.pages?r.pages+' pages · ':''}${fmtSize(r.size)}</div></div>
@@ -428,7 +428,7 @@ function viewExamList(v,pre){
 function msBlock(q){
   if(q.src==='pp'){ const ms=ppPaper(q.year,'ms'); const lv=q.levels&&D.levels[q.levels];
     return `<div class="ms"><div class="ms-head"><h4>Mark scheme</h4><span class="chip">Pearson Edexcel ${esc(q.year)}</span></div>
-     <div style="padding:12px 14px">${ttLive.card({url:ms&&ms.path,page:q.mspage,title:`${q.year} mark scheme`,q:q.q,source:'Pearson Edexcel',embed:false})}</div>
+     <div style="padding:12px 14px">${ttLive.card({url:ms&&ms.path,page:q.mspage,title:`${q.year} mark scheme`,q:q.q,source:'DesignAndTechBase',alt:ms&&ms.official?{url:ms.official,label:'Official copy (Pearson)'}:null})}</div>
      ${lv?`<div class="levels" style="overflow-x:auto"><table><thead><tr><th>Level</th><th>Descriptor</th></tr></thead><tbody>${lv.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div>`:''}</div>`; }
   const items=(q.ms||[]).filter(it=>!/^\(?CONTINUED/i.test(it.trim())).map(it=>{ if(/^(Points of|Design philosophy|Style$|Expansion|Issues to resolve|Strategies deployed|Benefits:|Drawbacks:|Method \d|Alternative)/.test(it)) return `<p class="hd">${esc(it)}</p>`; if(/^(\d+\.|•|Stage)/.test(it)) return `<p class="pt">${esc(it)}</p>`; return `<p>${esc(it)}</p>`; }).join('');
   const lv=q.levels&&D.levels[q.levels];
@@ -452,14 +452,14 @@ function renderQuestion(v,q,list,onNav){
   <div class="exam">
    <section class="paper">
     <div class="row" style="justify-content:space-between"><span class="qnum">${q.src==='pp'?esc(q.q):'Practice'}</span><span class="row">${q.src==='ai'?'<span class="chip ai">AI-generated</span>':`<span class="chip">Edexcel ${esc(q.year)}</span>`}${q.topics.map(topicChip).join('')}</span></div>
-    ${q.src==='pp'?`<div style="margin:10px 0 4px">${ttLive.card({url:ppPaper(q.year,'qp')&&ppPaper(q.year,'qp').path,page:q.pages&&q.pages[0],q:q.q,title:`Pearson Edexcel 9DT0/01 · ${q.year}${q.year==='2020'?' (October)':q.year==='2021'?' (October)':' (June)'}`,source:'Pearson Edexcel',embed:false})}</div>`
+    ${q.src==='pp'?`<div style="margin:10px 0 4px">${(p=>ttLive.card({url:p&&p.path,page:q.pages&&q.pages[0],q:q.q,title:`Pearson Edexcel 9DT0/01 · ${q.year}${q.year==='2020'?' (October)':q.year==='2021'?' (October)':' (June)'}`,source:'DesignAndTechBase',alt:p&&p.official?{url:p.official,label:'Official copy (Pearson)'}:null}))(ppPaper(q.year,'qp'))}</div>`
      :`${q.stem?`<p class="stemtxt">${esc(q.stem)}</p>`:''}<p class="qtxt">${esc(q.text)}</p>`}<div class="marks">(${q.marks})</div>
     ${q.fig?`<figure class="aifig" style="margin:12px 0;text-align:center"><img loading="lazy" src="${esc(q.fig.src)}" alt="${esc(q.fig.alt)}" style="max-width:100%;max-height:420px;border-radius:8px;background:#fff" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'muted',textContent:'Image could not load – use the link below.'}))"><figcaption class="muted" style="font-size:.8rem;margin-top:6px">${esc(q.text.match(/Figure [A-Z]/)?q.text.match(/Figure [A-Z]/)[0]:'Figure')} · ${esc(q.fig.credit)}${q.fig.link?` · <a href="${esc(q.fig.link)}" target="_blank" rel="noopener">source</a>`:''}</figcaption></figure>`:''}
     <label class="field" for="ans" style="margin-top:10px">Your answer (saved in this browser)</label>
     <textarea id="ans" placeholder="Write your answer here, as you would in the exam…">${esc(S.answers[q.id]||'')}</textarea>
     <div class="row" style="margin-top:10px;justify-content:space-between"><span class="muted" style="font-size:.82rem">Aim for about ${Math.max(1,Math.round(q.marks*1.25))} minutes.</span></div>
     <div id="aiOut"></div>
-    ${q.src==='pp'?`<div class="card" style="margin-top:12px;padding:12px 14px"><span class="eyebrow">If Pearson's site is down, try these</span><div class="row" style="margin-top:8px;gap:8px"><a class="btn btn-sm" href="https://qualifications.pearson.com/en/support/support-topics/exams/past-papers.html" target="_blank" rel="noopener">${I.ext} Pearson past papers</a><a class="btn btn-sm" href="https://www.savemyexams.com/a-level/design-and-technology/edexcel/product-design/past-papers/" target="_blank" rel="noopener">${I.ext} Save My Exams</a><a class="btn btn-sm" href="https://simplestudy.com/gb/a-level/edexcel/design-and-technology-product-design/past-papers" target="_blank" rel="noopener">${I.ext} SimpleStudy</a></div></div>`:''}
+    ${q.src==='pp'?`<div class="card" style="margin-top:12px;padding:12px 14px"><span class="eyebrow">Other places with this paper</span><div class="row" style="margin-top:8px;gap:8px"><a class="btn btn-sm" href="https://qualifications.pearson.com/en/support/support-topics/exams/past-papers.html" target="_blank" rel="noopener">${I.ext} Pearson past papers</a><a class="btn btn-sm" href="https://www.savemyexams.com/a-level/design-and-technology/edexcel/product-design/past-papers/" target="_blank" rel="noopener">${I.ext} Save My Exams</a><a class="btn btn-sm" href="https://simplestudy.com/gb/a-level/edexcel/design-and-technology-product-design/past-papers" target="_blank" rel="noopener">${I.ext} SimpleStudy</a></div></div>`:''}
     ${q.tip?`<div class="examtip" style="margin-top:12px"><b>Examiner's report:</b> ${esc(q.tip)}</div>`:''}
    </section>
    <section class="rightcol">
@@ -550,11 +550,11 @@ function viewVideos(v,g){
 function viewPapers(v){
   const years=['2025','2024','2023','2022','2021','2020','2019'];
   const spec=D.papers.find(p=>p.kind==='spec');
-  v.innerHTML=`<span class="eyebrow">Edexcel 9DT0/01 · Principles of Design and Technology</span><h1>Past papers</h1><p class="muted" style="max-width:76ch">Every Paper 1 series since the first exam in 2019 (the 2020 paper was sat in autumn 2020). Papers and mark schemes open live from Pearson's website (nothing is copied onto this site). Sit any paper question by question with a timer and self-marking.</p>
+  v.innerHTML=`<span class="eyebrow">Edexcel 9DT0/01 · Principles of Design and Technology</span><h1>Past papers</h1><p class="muted" style="max-width:76ch">Every Paper 1 series since the first exam in 2019 (the 2020 paper was sat in autumn 2020). Papers and mark schemes open live from DesignAndTechBase, with Pearson's official copy a click away (nothing is copied onto this site). Sit any paper question by question with a timer and self-marking.</p>
   <div class="grid g3" style="margin-top:16px">${years.map(y=>{ const qp=D.papers.find(p=>p.year===y&&p.kind==='qp'), ms=D.papers.find(p=>p.year===y&&p.kind==='ms'); const qs=D.pp.filter(q=>q.year===y); const st=examStats(qs); return `<div class="card yearcard"><div class="row" style="justify-content:space-between"><span class="yr">${y}</span><span class="chip">${qs.length} parts · 120 marks</span></div>
    <div class="bar"><i style="width:${st.max?st.got/120*100:0}%"></i></div><span class="muted" style="font-size:.84rem">${st.n?`${st.got} marks from ${st.n} parts attempted`:'Not attempted yet'}</span>
    <div class="row"><a class="btn btn-sm primary" href="#paper-${y}">Sit this paper</a><a class="btn btn-sm" href="${esc(qp.path)}" target="_blank" rel="noopener">${I.ext} Paper</a><a class="btn btn-sm" href="${esc(ms.path)}" target="_blank" rel="noopener">${I.ext} Mark scheme</a></div>
-   <span class="muted" style="font-size:.78rem">Opens live on Pearson's website</span></div>`; }).join('')}</div>
+   <span class="muted" style="font-size:.78rem">Opens live from DesignAndTechBase${qp.official?` · <a href="${esc(qp.official)}" target="_blank" rel="noopener">official copy</a>`:''}</span></div>`; }).join('')}</div>
   <div class="sep"></div><h2 style="margin-bottom:10px">Specification and official links</h2><div class="stack">${resItem(Object.assign({cat:'papers'},spec))}
   <div class="card"><p style="margin:0 0 8px">Pearson also publishes Sample Assessment Materials (SAMs) and examiner reports for each series. Examiner report advice is built into the questions here (look for <span class="chip warn">Examiner's report</span> notes on 2024 and 2025 questions).</p><a href="https://qualifications.pearson.com/en/qualifications/edexcel-a-levels/design-and-technology-product-design-2017.coursematerials.html" target="_blank" rel="noopener">Pearson Edexcel course materials ${I.ext}</a></div></div>`;
 }

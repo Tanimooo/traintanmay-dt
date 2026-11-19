@@ -7,7 +7,8 @@
      url      the official PDF                    page    page the question starts on (optional)
      ms       mark scheme / answers PDF (optional) msPage  page in the mark scheme (optional)
      q        question label, e.g. "3(b)"          source  who publishes it, e.g. "Pearson Edexcel"
-     embed    false when the source does not allow being shown inside another site (Pearson) */
+     embed    false when the source does not allow being shown inside another site (Pearson)
+     alt      {url, label} a second place the same paper lives, e.g. the exam board's official copy */
 (function () {
   if (window.ttLive) return;
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -39,7 +40,8 @@
     var embed = o.embed !== false && canEmbed();
     var h = '<div class="ttl"><div class="ttl-h"><span><b>' + label + '</b><small>' + (o.q && o.title ? esc(o.title) + ' · ' : '') + 'Live from ' + esc(src) + '</small></span>' +
       '<span class="ttl-b"><a class="p" href="' + esc(qp) + '" target="_blank" rel="noopener">Open paper ↗</a>' +
-      (ms ? '<a href="' + esc(ms) + '" target="_blank" rel="noopener">' + esc(o.msLabel || 'Mark scheme') + ' ↗</a>' : '') + '</span></div>';
+      (ms ? '<a href="' + esc(ms) + '" target="_blank" rel="noopener">' + esc(o.msLabel || 'Mark scheme') + ' ↗</a>' : '') +
+      (o.alt ? '<a href="' + esc(at(o.alt.url, o.page)) + '" target="_blank" rel="noopener">' + esc(o.alt.label) + ' ↗</a>' : '') + '</span></div>';
     if (embed) h += '<iframe loading="lazy" src="' + esc(qp + (o.page ? '&' : '#') + 'view=FitH') + '" title="' + esc(label) + ' from ' + esc(src) + '"></iframe>';
     else if (o.embed === false) h += '<div class="ttl-n">' + esc(src) + ' doesn\'t let other sites show its papers, so it opens in a new tab' + (o.page ? ' at page ' + o.page : '') + '.</div>';
     else h += '<a class="ttl-tap" href="' + esc(qp) + '" target="_blank" rel="noopener">Tap to open ' + (o.q ? 'question ' + esc(o.q) : 'the paper') + (o.page ? ' (page ' + o.page + ')' : '') + '</a>';
