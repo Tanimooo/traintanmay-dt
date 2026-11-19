@@ -252,6 +252,20 @@
     '.ttc-wait{padding:30px;text-align:center;opacity:.7;font-size:.9rem}' +
     '.ttc-all{display:flex;flex-direction:column;gap:10px}.ttc-all canvas+canvas{border-top:0;margin-top:0;padding-top:0}.ttc-all canvas{border-bottom:1px solid #e4e6eb}' +
     '.ttc-ph{aspect-ratio:1/1.3;background:#f4f5f7}' +
+    '.ttc-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(128,128,128,.22)}' +
+    '.ttc-bar button{font:inherit;font-size:.85rem;font-weight:600;padding:7px 12px;border-radius:9px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;cursor:pointer}' +
+    '.ttc-bar button.pr{background:#14161b;color:#fff;border-color:#14161b}.ttc-hint{flex-basis:100%;font-size:.85rem;opacity:.8}' +
+    '@media (prefers-color-scheme:dark){.ttc-bar button.pr{background:#eceef2;color:#14161b;border-color:#eceef2}}' +
+    '.ttc-ov{position:absolute;inset:0;cursor:crosshair;touch-action:none;z-index:1}' +
+    /* the pop-up uses each app's own theme colours (green in Maths) */
+    '.ttc-pop{position:fixed;inset:0;z-index:100002;background:rgba(4,10,7,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px}' +
+    '.ttc-pbox{width:min(980px,100%);height:min(92vh,100%);display:flex;flex-direction:column;background:var(--surface,#0f1f16);color:var(--ink,#eaf7ee);border:1px solid var(--brand,#4ade80);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}' +
+    '.ttc-phead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;padding:12px 16px;background:var(--brand-soft,rgba(74,222,128,.14));border-bottom:1px solid var(--line,rgba(128,128,128,.3))}' +
+    '.ttc-phead b{font-size:1.05rem}.ttc-phead span{opacity:.75;font-size:.85rem;flex:1}' +
+    '.ttc-px{font:inherit;font-size:1.5rem;line-height:1;width:38px;height:38px;border-radius:10px;border:1px solid var(--line,rgba(128,128,128,.4));background:transparent;color:inherit;cursor:pointer}' +
+    '.ttc-pbody{flex:1;overflow:auto;padding:12px}.ttc-pbody .ttc{border-color:var(--line,rgba(128,128,128,.3))}' +
+    '.ttc-pbox .ttc-bar button.pr{background:var(--brand,#4ade80);color:var(--brand-ink,#052e14);border-color:var(--brand,#4ade80)}' +
+    '.ttc-box{position:absolute;z-index:2;border:2px solid #2563eb;background:rgba(37,99,235,.12);border-radius:4px;cursor:pointer}.ttc-box.live{pointer-events:none;border-style:dashed}' +
     '.ttc-pg{position:relative;border-bottom:1px solid #e4e6eb}.ttc-rot{position:absolute;top:6px;right:6px;font:600 12px system-ui,sans-serif;padding:5px 9px;border-radius:8px;border:1px solid #c9ced8;background:rgba(255,255,255,.92);color:#14161b;cursor:pointer;opacity:.75}.ttc-rot:hover,.ttc-rot:focus-visible{opacity:1}' +
     '.ttc-f{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:.8rem;border-top:1px solid rgba(128,128,128,.22)}' +
     '.ttc-f span{opacity:.7}.ttc-f a{font-weight:600;color:inherit}';
@@ -282,29 +296,127 @@
   var ROT = 'tt-scan-rotation'; // remembered per PDF page, and kept in "Save progress"
   function rotGet(k) { try { return (JSON.parse(localStorage.getItem(ROT) || '{}'))[k] || 0; } catch (e) { return 0; } }
   function rotSet(k, v) { try { var m = JSON.parse(localStorage.getItem(ROT) || '{}'); if (v) m[k] = v; else delete m[k]; localStorage.setItem(ROT, JSON.stringify(m)); } catch (e) {} }
-  function renderAll(doc, el, o, card) {
-    var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; strip.classList.add('ttc-all');
-    var width = Math.min(el.clientWidth || 800, 1000), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  /* ---- "mark it once, keep it forever" ----
+     For a scanned solutions PDF, the reader draws a box (or a few) round one question's answer. Only the
+     box positions are kept (fractions of the page as shown, with its rotation), in this browser and in
+     "Save progress"; from then on that question shows just those bits. Nothing from the PDF is stored. */
+  var MARKS = 'tt-solution-marks';
+  function marksGet(k) { try { return (JSON.parse(localStorage.getItem(MARKS) || '{}'))[k] || []; } catch (e) { return []; } }
+  function marksSet(k, v) { try { var m = JSON.parse(localStorage.getItem(MARKS) || '{}'); if (v && v.length) m[k] = v; else delete m[k]; localStorage.setItem(MARKS, JSON.stringify(m)); } catch (e) {} }
+
+  var scanCache = {};
+  function scanPage(doc, url, p, width) {
+    var k = url + '#' + p + '@' + width;
+    return scanCache[k] || (scanCache[k] = doc.getPage(p).then(function (pg) {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2), vp0 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: width / vp0.width * 1.6 * dpr });
+      var c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+      return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { return trim(c); });
+    }));
+  }
+  function cut(c, b) {
+    var x0 = Math.round(b.x0 * c.width), y0 = Math.round(b.y0 * c.height), w = Math.max(1, Math.round((b.x1 - b.x0) * c.width)), h = Math.max(1, Math.round((b.y1 - b.y0) * c.height));
+    var o = document.createElement('canvas'); o.width = w; o.height = h; o.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, w, h);
+    o.style.width = '100%'; o.style.display = 'block'; return o;
+  }
+
+  /* Under the question: your marked bit of the worked solutions, or a button to go and find it. */
+  function inline(doc, el, o, card) {
+    var E = window.ttLive.esc, url = o.url.split('#')[0], key = url + '|' + o.q, marks = marksGet(key);
+    var width = Math.min(el.clientWidth || 800, 1000);
+    el.innerHTML = '<div class="ttc"><div class="ttc-bar"></div><div class="ttc-strip ttc-all"></div><div class="ttc-f"></div></div>';
+    var bar = el.querySelector('.ttc-bar'), strip = el.querySelector('.ttc-strip'), foot = el.querySelector('.ttc-f');
+    var btn = function (label, fn, pr) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (pr) b.className = 'pr'; b.onclick = fn; bar.appendChild(b); return b; };
+    var refresh = function () { inline(doc, el, o, card); };
+    if (!marks.length) {
+      bar.insertAdjacentHTML('beforeend', '<span class="ttc-hint">These worked solutions are handwritten scans. Open them, find question ' + E(o.q) + ' and mark it once: from then on just that bit shows here.</span>');
+      btn('Open worked solutions', function () { popup(doc, o, card, 'all', refresh); }, true);
+      strip.remove();
+    } else {
+      btn('Open worked solutions', function () { popup(doc, o, card, 'all', refresh); });
+      btn('Re-mark', function () { popup(doc, o, card, 'mark', refresh); });
+      marks.forEach(function (m) {
+        var ph = document.createElement('div'); ph.className = 'ttc-ph'; ph.style.aspectRatio = 'auto'; ph.style.height = '160px'; strip.appendChild(ph);
+        scanPage(doc, url, m.p, width).then(function (t) { if (t) ph.replaceWith(cut(turned(t, m.r || 0), m)); else ph.remove(); });
+      });
+    }
+    foot.innerHTML = '<span>' + (marks.length ? 'Your marked answer for question ' + E(o.q) + ' · ' : '') + 'live from ' + E(card.source || host(url)) + '</span>';
+  }
+
+  /* The pop-up: every page, zoomed, in a panel themed like the app. Rotate pages; mark the answer. */
+  function popup(doc, o, card, mode, after) {
+    var E = window.ttLive.esc;
+    var back = document.createElement('div'); back.className = 'ttc-pop';
+    back.innerHTML = '<div class="ttc-pbox" role="dialog" aria-modal="true" aria-label="Worked solutions"><div class="ttc-phead"><b>' + E(card.title || 'Worked solutions') + '</b><span>Question ' + E(o.q) + ' · live from ' + E(card.source || host(o.url)) + '</span><button type="button" class="ttc-px" aria-label="Close">×</button></div><div class="ttc-pbody"></div></div>';
+    document.body.appendChild(back); document.documentElement.style.overflow = 'hidden';
+    var close = function () { back.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', key); };
+    var key = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', key);
+    back.onclick = function (e) { if (e.target === back) close(); };
+    back.querySelector('.ttc-px').onclick = close;
+    back.querySelector('.ttc-px').focus();
+    renderAll(doc, back.querySelector('.ttc-pbody'), o, card, mode, { saved: function () { close(); if (after) after(); } });
+  }
+
+  function renderAll(doc, el, o, card, mode, opts) {
+    var E = window.ttLive.esc, url = o.url.split('#')[0], key = url + '|' + o.q, marks = marksGet(key);
+    opts = opts || {}; mode = mode || 'all';
+    var width = Math.min(el.clientWidth || 800, 1000);
+    el.innerHTML = '<div class="ttc"><div class="ttc-bar"></div><div class="ttc-strip ttc-all"></div></div>';
+    var bar = el.querySelector('.ttc-bar'), strip = el.querySelector('.ttc-strip');
+    var btn = function (label, fn, pr) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (pr) b.className = 'pr'; b.onclick = fn; bar.appendChild(b); return b; };
+    var again = function (m) { renderAll(doc, el, o, card, m, opts); };
+
+    var pending = mode === 'mark' ? marks.map(function (m) { return Object.assign({}, m); }) : [];
+    if (mode === 'mark') {
+      bar.insertAdjacentHTML('beforeend', '<span class="ttc-hint">Drag a box round question ' + E(o.q) + '\'s answer. Use more boxes if it carries on. Tap a box to remove it.</span>');
+      btn('Save', function () { marksSet(key, pending); if (opts.saved) opts.saved(); else again('all'); }, true);
+      btn('Cancel', function () { again('all'); });
+    } else {
+      btn('Mark the answer for question ' + o.q, function () { again('mark'); }, true);
+      if (marks.length) bar.insertAdjacentHTML('beforeend', '<span class="ttc-hint">Already marked: your boxes show below the question.</span>');
+    }
+
+    var drawBoxes = function (wrap) {
+      [].slice.call(wrap.querySelectorAll('.ttc-box')).forEach(function (b) { b.remove(); });
+      pending.forEach(function (m, i) {
+        if (m.p !== +wrap.dataset.p || (m.r || 0) !== wrap.ttRot) return;
+        var b = document.createElement('div'); b.className = 'ttc-box'; b.title = 'Tap to remove';
+        b.style.left = m.x0 * 100 + '%'; b.style.top = m.y0 * 100 + '%'; b.style.width = (m.x1 - m.x0) * 100 + '%'; b.style.height = (m.y1 - m.y0) * 100 + '%';
+        b.onclick = function (e) { e.stopPropagation(); pending.splice(i, 1); [].forEach.call(strip.querySelectorAll('.ttc-pg'), drawBoxes); };
+        wrap.appendChild(b);
+      });
+    };
+    var markable = function (wrap) {
+      var ov = document.createElement('div'); ov.className = 'ttc-ov'; wrap.appendChild(ov);
+      var start = null, live = null;
+      var pos = function (e) { var r = wrap.firstChild.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) }; };
+      ov.onpointerdown = function (e) { e.preventDefault(); ov.setPointerCapture(e.pointerId); start = pos(e); live = document.createElement('div'); live.className = 'ttc-box live'; wrap.appendChild(live); };
+      ov.onpointermove = function (e) { if (!start) return; var p = pos(e); live.style.left = Math.min(start.x, p.x) * 100 + '%'; live.style.top = Math.min(start.y, p.y) * 100 + '%'; live.style.width = Math.abs(p.x - start.x) * 100 + '%'; live.style.height = Math.abs(p.y - start.y) * 100 + '%'; };
+      ov.onpointerup = function (e) {
+        if (!start) return; var p = pos(e); live.remove();
+        if (Math.abs(p.x - start.x) > 0.03 && Math.abs(p.y - start.y) > 0.02) pending.push({ p: +wrap.dataset.p, r: wrap.ttRot, x0: Math.min(start.x, p.x), y0: Math.min(start.y, p.y), x1: Math.max(start.x, p.x), y1: Math.max(start.y, p.y) });
+        start = null; drawBoxes(wrap);
+      };
+    };
+
     var io = new IntersectionObserver(function (ents) {
       ents.forEach(function (en) {
         if (!en.isIntersecting || en.target.dataset.done) return; en.target.dataset.done = 1;
-        doc.getPage(+en.target.dataset.p).then(function (pg) {
-          var vp0 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: width / vp0.width * 1.6 * dpr });
-          var c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
-          return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
-            var t = trim(c); if (!t) { en.target.remove(); return; }
-            var key = o.url.split('#')[0] + '#' + en.target.dataset.p, q = rotGet(key);
-            var wrap = document.createElement('div'); wrap.className = 'ttc-pg';
-            wrap.appendChild(turned(t, q));
-            var b = document.createElement('button'); b.type = 'button'; b.className = 'ttc-rot'; b.title = 'Turn this page'; b.setAttribute('aria-label', 'Turn page ' + en.target.dataset.p); b.textContent = '⟳ Rotate';
-            b.onclick = function () { q = (q + 1) % 4; rotSet(key, q); wrap.replaceChild(turned(t, q), wrap.firstChild); };
-            wrap.appendChild(b); en.target.replaceWith(wrap);
-          });
+        var pn = +en.target.dataset.p;
+        scanPage(doc, url, pn, width).then(function (t) {
+          if (!t) { en.target.remove(); return; }
+          var rk = url + '#' + pn, q = rotGet(rk);
+          var wrap = document.createElement('div'); wrap.className = 'ttc-pg'; wrap.dataset.p = pn; wrap.ttRot = q;
+          wrap.appendChild(turned(t, q));
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'ttc-rot'; b.title = 'Turn this page'; b.setAttribute('aria-label', 'Turn page ' + pn); b.textContent = '⟳ Rotate';
+          b.onclick = function () { q = (q + 1) % 4; rotSet(rk, q); wrap.ttRot = q; wrap.replaceChild(turned(t, q), wrap.firstChild); drawBoxes(wrap); };
+          wrap.appendChild(b);
+          if (mode === 'mark') { markable(wrap); drawBoxes(wrap); }
+          en.target.replaceWith(wrap);
         });
       });
     }, { rootMargin: '1200px' });
     for (var i = 1; i <= doc.numPages; i++) { var ph = document.createElement('div'); ph.className = 'ttc-ph'; ph.dataset.p = i; strip.appendChild(ph); io.observe(ph); }
-    strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>All ' + doc.numPages + ' pages · handwritten, so find question ' + window.ttLive.esc(o.q) + ' by eye · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(o.url) + '" target="_blank" rel="noopener" data-ttview="' + window.ttLive.esc(card.title || 'Worked solutions') + '" data-src="' + window.ttLive.esc(card.source || '') + '">Whole PDF</a></span></div>');
   }
 
   function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
@@ -317,7 +429,7 @@
     open(o.url).then(function (doc) {
       return isScanned(doc, o.url).then(function (sc) {
         if (!sc) return doc;
-        if (el.ttcToken === token) renderAll(doc, el, o, card);
+        if (el.ttcToken === token) inline(doc, el, o, card);
         return null;
       });
     }).then(function (doc) {
