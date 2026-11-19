@@ -668,14 +668,14 @@ function pageQ(id){
     <div class="qhead"><div><p class="eyebrow">${inSet ? `Set · question ${i + 1} of ${L.length}` : `${esc(q.src)} · ${i + 1} of ${L.length}`}</p>${inSet ? `<div class="bar" style="margin:6px 0 10px;max-width:320px"><i style="width:${Math.round(100 * (i + 1) / L.length)}%"></i></div>` : ''}<h1>${esc(q.pn)} – Q${q.n}</h1></div>
       <div class="row"><span class="chip brand">${max ? max + ' marks' : 'marks not listed'}</span>${pstatus(q)}</div></div>
     ${srcnote(q.src)}
-    ${ttLive.card({url: pdf && url(pdf[1]), q: String(q.n), title: q.pn, source: srcName(q.src), home: /Madas/.test(q.src) ? 'https://madasmaths.com/' : /^PMT|Edexcel/.test(q.src) ? 'https://www.physicsandmathstutor.com/a-level-maths-papers/' : '', ms: mspdf && mspdf !== pdf ? url(mspdf[1]) : '', msLabel: 'Mark scheme'})}
-    <p class="muted" style="font-size:.85rem;margin:8px 0 0">Find <b>question ${q.n}</b> in the paper above${pdf && /QPMS/.test(pdf[0]) ? ' – the mark scheme is at the back of the same PDF' : ''}.</p>
+    ${ttCrop.html({url: pdf ? url(pdf[1]) : '', q: String(q.n), kind: 'qp', card: {title: q.pn, source: srcName(q.src), home: /Madas/.test(q.src) ? 'https://madasmaths.com/' : /^PMT|Edexcel/.test(q.src) ? 'https://www.physicsandmathstutor.com/a-level-maths-papers/' : '', ms: mspdf && mspdf !== pdf ? url(mspdf[1]) : '', msLabel: 'Mark scheme'}})}
     <div class="qbar">
       <button class="btn primary" id="showms" aria-expanded="false">I've answered it – mark it <kbd>M</kbd></button>
       <button class="btn" id="flag" aria-pressed="${!!r?.f}">${r?.f ? '★ Flagged' : '☆ Flag for later'}</button>
     </div>
     <div id="msbox" hidden>
-      <h2 style="margin:22px 0 10px">Mark scheme</h2>${mspdf && mspdf !== pdf ? ttLive.card({url: url(mspdf[1]), q: String(q.n), title: q.pn + ' · mark scheme', source: srcName(q.src)}) : `<p class="muted">The mark scheme for question ${q.n} is in the same PDF as the questions${pdf && /QPMS/.test(pdf[0]) ? ', after the last question' : ''}.</p>`}
+      <h2 style="margin:22px 0 10px">Mark scheme</h2>${mspdf && mspdf !== pdf ? ttCrop.html({url: url(mspdf[1]), q: String(q.n), kind: 'ms', card: {title: q.pn + ' · mark scheme', source: srcName(q.src)}})
+        : pdf ? ttCrop.html({url: url(pdf[1]), q: String(q.n), kind: 'ms', combined: true, card: {title: q.pn + ' (mark scheme at the back)', source: srcName(q.src)}}) : ''}
       <div class="markbox card"><h3 style="margin:0 0 10px">How many marks did you get?</h3>
         ${max && max <= 25 ? `<div class="marks" role="group" aria-label="Marks">${[...Array(max + 1)].map((_, k) => `<button data-m="${k}" aria-pressed="${r && r.m === k}">${k}</button>`).join('')}</div>`
           : `<div class="row"><input id="mgot" type="number" min="0" value="${r ? r.m : ''}" style="width:80px"> out of <input id="mof" type="number" min="1" value="${max || (r && r.of) || ''}" style="width:80px"><button class="btn primary sm" id="msave">Save</button></div>`}

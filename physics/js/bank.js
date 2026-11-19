@@ -38,8 +38,8 @@ const minsFor=m=>Math.max(1,Math.round(m*1.2));
    No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
 const live=(q,kind)=>{ const p=pk(q); return kind==='m'
-  ? ttLive.card({url:p.ms_url,page:q.mp,title:p.title+' · mark scheme',q:String(q.n),source:'Physics & Maths Tutor'})
-  : ttLive.card({url:p.qp_url,page:q.qp,ms:p.ms_url,msPage:q.mp,title:p.title,q:String(q.n),source:'Physics & Maths Tutor'}); };
+  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
+  : ttCrop.html({url:p.qp_url,q:String(q.n),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
   return live(q,kind); };
 const fill=()=>{};

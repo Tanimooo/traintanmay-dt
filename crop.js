@@ -1,0 +1,278 @@
+/* TrainTanmay live question cropper.
+   Shows just one question, cut out of the real paper, the way the old site did, but without storing
+   anything: your browser fetches the source PDF live, PDF.js finds where the question starts and where
+   the next one begins, and only that strip is drawn. Works for sources that let other sites load their
+   PDFs (PMT, Mr Further Maths, DesignAndTechBase). For anything else, or if the question can't be
+   found, it falls back to the live paper card from live.js.
+
+   ttCrop.mount(el, {url, q, page, kind, card})
+     url   PDF address                q     question label: "4", "4(c)", "12"
+     page  page to start looking (optional)   kind  'qp' or 'ms'
+     card  options for ttLive.card, used as the fallback and for the "open paper" links */
+(function () {
+  if (window.ttCrop) return;
+  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  var CORS_OK = /(^|\.)(physicsandmathstutor\.com|supabase\.co|designandtechbase\.com)$/;
+  // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through our own
+  // Cloudflare Worker, which fetches the file live from the source and passes it straight on (it stores nothing).
+  var PROXY = 'https://traintanmay.halkblackgamer.workers.dev/?url=';
+  var PROXIED = /(^|\.)(madasmaths\.com|uat-wp\.s3\.eu-west-2\.amazonaws\.com)$/;
+  function src(u) { try { return PROXIED.test(new URL(u).hostname) ? PROXY + encodeURIComponent(u) : u; } catch (e) { return u; } }
+  var libP = null, docs = {};
+
+  function lib() {
+    if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; return Promise.resolve(window.pdfjsLib); }
+    return libP || (libP = new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = PDFJS + 'pdf.min.js';
+      s.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; ok(window.pdfjsLib); };
+      s.onerror = no; document.head.appendChild(s);
+    }));
+  }
+  function open(url) {
+    return docs[url] || (docs[url] = lib().then(function (L) { return L.getDocument({ url: src(url), disableAutoFetch: true }).promise; })
+      .catch(function (e) { delete docs[url]; throw e; }));
+  }
+  var textCache = {};
+  /* every text item on a page, as {s, x, y (from top), h} in PDF points */
+  function pageText(doc, url, n) {
+    var k = url + '#' + n;
+    return textCache[k] || (textCache[k] = doc.getPage(n).then(function (pg) {
+      var vp = pg.getViewport({ scale: 1 });
+      return pg.getTextContent().then(function (tc) {
+        // viewport coordinates, so rotated (landscape) pages such as mark schemes read the right way up
+        var items = tc.items.filter(function (i) { return i.str && i.str.trim(); }).map(function (i) {
+          var pt = vp.convertToViewportPoint(i.transform[4], i.transform[5]);
+          return { s: i.str.trim(), x: pt[0], y: pt[1], h: Math.hypot(i.transform[2], i.transform[3]) || i.height || 10, w: i.width || 0 };
+        });
+        // pieces on the same line, joined, so "4" "(c)" or "Question" "4" read as one
+        items.sort(function (a, b) { return Math.abs(a.y - b.y) < 2 ? a.x - b.x : a.y - b.y; });
+        // labels are sometimes split into single glyphs ("6" "(b" ")"): join short touching pieces back up
+        var LBL = /^[\d()a-z.]{1,4}$/i, merged = [];
+        items.forEach(function (it) {
+          var p = merged[merged.length - 1], gap = p ? it.x - (p.x + (p.w || 0)) : 0;
+          if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1) {
+            p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
+          } else merged.push(Object.assign({}, it)); // overlapping numbers (a renumbered pack) stay separate
+        });
+        return { w: vp.width, h: vp.height, items: merged, page: n };
+      });
+    }));
+  }
+
+  /* --- where do questions start? --- */
+  function parseLabel(q) { var m = /^\s*(\d+)\s*(?:\(?\s*([a-z]{1,2})\s*\)?)?/i.exec(String(q)); return m ? { n: +m[1], part: m[2] ? m[2].toLowerCase() : '' } : null; }
+  var romans = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/;
+  // the item just after this one on the same line, if any
+  function nextOnLine(it, P) {
+    var best = null;
+    for (var i = 0; i < P.items.length; i++) { var o = P.items[i]; if (o !== it && Math.abs(o.y - it.y) < 3 && o.x > it.x && (!best || o.x < best.x)) best = o; }
+    return best;
+  }
+  var DOTS = /^[.…_\s]{5,}$/;
+  var HEADER = /^(Q|Qu|Question( Number)?|Answers?|Expected Answers|Marks?|Guidance|Additional [Gg]uidance|Scheme|Notes|AOs?|Acceptable answers|Mark scheme)$/i;
+  // a question number at the left margin: "4", "4.", "Q4", "Question 4", "4 (a)"; returns n or null.
+  // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
+  function numAt(it, P, kind) {
+    if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
+    if (!m) return null;
+    if (/^\d{1,2}\.?$/.test(it.s)) {
+      var nx = nextOnLine(it, P);
+      if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s))) return null;
+    }
+    return +m[1];
+  }
+  function partAt(it, P) {
+    if (it.x > P.w * 0.3) return null;
+    var m = /^(?:\d{1,2}\s*)?\(\s*([a-z]{1,2})\s*\)\.?(?:\s|$|\()/i.exec(it.s) || /^\d{1,2}\s*\(?([a-h])\)?$/i.exec(it.s);
+    if (!m) return null;
+    var p = m[1].toLowerCase();
+    return romans.test(p) && p !== 'i' && p !== 'v' && p !== 'x' ? null : p; // (ii), (iii)… are sub-parts, not parts
+  }
+  function isChrome(it, P) { return it.y < 36 || it.y > P.h - 40; } // page header / footer band
+
+  /* find {start:{page,y}, end:{page,y}} for a label, scanning from a hint page */
+  /* Reads the pages in order. A whole question (or part a, which keeps the question's intro) starts at its
+     number; a later part like 4(c) starts at its "(c)" label, found on the stored page or the one after.
+     It ends at the next part, the next question, or "(Total for Question …)", and never runs past 3 pages.
+     from: ignore everything before this page (used to skip the questions in a combined question+mark scheme PDF). */
+  function locate(doc, url, label, hint, kind, from) {
+    var L = parseLabel(label); if (!L) return Promise.resolve(null);
+    var total = doc.numPages, wantPart = L.part && L.part !== 'a';
+    var s = Math.max(from || 1, hint ? hint - (wantPart ? 0 : 1) : 1);
+    var start = null, end = null, seenNum = false, gaveUp = false;
+    function page(pn) {
+      if (pn > total || end || gaveUp) return Promise.resolve();
+      if (!start && hint && pn > hint + 1) { gaveUp = true; return Promise.resolve(); }
+      if (start && pn - start.page >= 3) { end = { page: pn - 1, y: -1 }; return Promise.resolve(); }
+      return pageText(doc, url, pn).then(function (P) {
+        for (var k = 0; k < P.items.length && !end; k++) {
+          var it = P.items[k]; if (isChrome(it, P)) continue;
+          var n = numAt(it, P, kind), pt = partAt(it, P), top = it.y - it.h - 4;
+          if (!start) {
+            if (n === L.n) seenNum = true;
+            if (!wantPart && n === L.n) start = { page: pn, y: top };
+            else if (wantPart && pt === L.part && (hint || seenNum)) start = { page: pn, y: top };
+          } else if ((n !== null && n > L.n && n <= L.n + 3) || (L.part && pt && pt > L.part && pt.length === 1) ||
+                     /^\(?Total for Question/i.test(it.s) || /^(TOTAL FOR|END OF QUESTION PAPER)/i.test(it.s)) {
+            if (pn === start.page && top <= start.y + 2) continue;
+            end = { page: pn, y: top };
+          }
+        }
+        return page(pn + 1);
+      });
+    }
+    return page(s).then(function () {
+      if (!start) return null;
+      end = end || { page: Math.min(total, start.page), y: -1 };
+      if (end.page <= start.page || kind === 'ms') return { start: start, end: end };
+      // a part (4(c)) stays on its own page unless it starts low down and has to carry on
+      if (L.part && L.part !== 'a') return pageText(doc, url, start.page).then(function (P0) {
+        if (start.y < P0.h - 160) end = { page: start.page, y: -1 };
+        return { start: start, end: end };
+      });
+      // If the page the question "ends" on holds no answer lines before the end, what's there is the
+      // intro to the next part, not this question: stop at the bottom of the page before.
+      return pageText(doc, url, end.page).then(function (P) {
+        var lines = P.items.some(function (i) { return DOTS.test(i.s) && (end.y < 0 || i.y < end.y) && !isChrome(i, P); });
+        if (!lines && end.y > 60) end = { page: end.page - 1, y: -1 };
+        return { start: start, end: end };
+      });
+    });
+  }
+
+  /* where the pictures are on a page (top-based PDF points), so empty-looking gaps that hold a figure are kept */
+  var imgCache = {};
+  function pageImages(doc, url, n) {
+    var k = url + '#' + n;
+    return imgCache[k] || (imgCache[k] = Promise.all([doc.getPage(n), lib()]).then(function (r) {
+      var pg = r[0], O = r[1].OPS, vp = pg.getViewport({ scale: 1 });
+      return pg.getOperatorList().then(function (ol) {
+        var ctm = [1, 0, 0, 1, 0, 0], stack = [], boxes = [];
+        var mul = function (a, b) { return [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]]; };
+        for (var i = 0; i < ol.fnArray.length; i++) {
+          var f = ol.fnArray[i], a = ol.argsArray[i];
+          if (f === O.save) stack.push(ctm.slice());
+          else if (f === O.restore) ctm = stack.pop() || ctm;
+          else if (f === O.transform) ctm = mul(ctm, a);
+          else if (f === O.paintImageXObject || f === O.paintInlineImageXObject || f === O.paintJpegXObject || f === O.paintImageMaskXObject) {
+            var ys = [[0, 0], [1, 0], [0, 1], [1, 1]].map(function (u) { return vp.convertToViewportPoint(ctm[0] * u[0] + ctm[2] * u[1] + ctm[4], ctm[1] * u[0] + ctm[3] * u[1] + ctm[5])[1]; });
+            var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+            if (y1 - y0 > 12) boxes.push([y0, y1]);
+          }
+        }
+        return boxes;
+      });
+    }).catch(function () { return []; }));
+  }
+
+  /* --- draw the strip(s) --- */
+  function render(doc, url, loc, box) {
+    var pages = []; for (var p = loc.start.page; p <= loc.end.page; p++) pages.push(p);
+    var width = Math.min(box.clientWidth || 700, 900), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Promise.all(pages.map(function (pn) {
+      return Promise.all([doc.getPage(pn), pageText(doc, url, pn), pageImages(doc, url, pn)]).then(function (r) {
+        var pg = r[0], P = r[1], imgs = r[2];
+        var top = pn === loc.start.page ? Math.max(0, loc.start.y) : 36;
+        var bot = pn === loc.end.page ? (loc.end.y < 0 ? P.h - 40 : loc.end.y) : P.h - 40;
+        // carrying on to another page: skip that page's repeated table header ("Question  Answer  Marks …")
+        if (pn !== loc.start.page) {
+          var hdr = P.items.filter(function (i) { return i.y < 110 && HEADER.test(i.s); });
+          if (hdr.length >= 2) top = Math.max(top, Math.max.apply(null, hdr.map(function (i) { return i.y; })) + 6);
+        }
+        if (bot - top < 12) return null;
+        var inside = P.items.filter(function (i) { return i.y > top && i.y < bot + 4 && !isChrome(i, P); });
+        // trim to the text actually there, left and right, so the strip isn't mostly margin
+        // Keep the question, drop the answer space: bands of dotted answer lines are cut out, and so is the
+        // empty space after the last words (figures always have a caption or labels, so they stay).
+        var words = inside.filter(function (i) { return !DOTS.test(i.s) && !/^\d{1,2}$/.test(i.s) && !HEADER.test(i.s); });
+        if (!words.length && pn !== loc.start.page) return null;
+        var xs = inside.map(function (i) { return i.x; });
+        var left = Math.max(0, (xs.length ? Math.min.apply(null, xs) : 40) - 12);
+        // right edge: the widest line of text (dotted answer lines included), not the page edge with its margin bar
+        var rights = inside.filter(function (i) { return i.w; }).map(function (i) { return i.x + i.w; });
+        var right = Math.min(P.w, rights.length ? Math.max(Math.max.apply(null, rights) + 14, left + P.w * 0.5) : P.w - left);
+        var dots = inside.filter(function (i) { return DOTS.test(i.s); }).map(function (i) { return i.y; }).sort(function (a, b) { return a - b; });
+        if (words.length) bot = Math.min(bot, Math.max.apply(null, words.map(function (i) { return i.y; })) + 10);
+        var cuts = [];
+        dots.forEach(function (y) { var last = cuts[cuts.length - 1]; if (last && y - last[1] < 40) last[1] = y; else cuts.push([y, y]); });
+        // big empty gaps between lines of words (boxes for working) go too, unless a picture is in them
+        var ys = words.map(function (i) { return i.y; }).concat([top + 14]).sort(function (a, b) { return a - b; });
+        for (var g = 1; g < ys.length; g++) {
+          var a0 = ys[g - 1] + 14, b0 = ys[g] - 26;
+          if (b0 - a0 > 60 && !imgs.some(function (bx) { return bx[1] > a0 && bx[0] < b0; })) cuts.push([a0 + 16, b0 - 8]);
+        }
+        cuts.sort(function (p, q) { return p[0] - q[0]; });
+        var keep = [], from = top;
+        cuts.forEach(function (c) {
+          var a = c[0] - 16, b = c[1] + 8;
+          var wordsIn = words.some(function (i) { return i.y > a && i.y < b; });
+          if (wordsIn || b <= from || a >= bot) return;
+          if (a - from > 4) keep.push([from, a]); from = b;
+        });
+        if (bot - from > 4) keep.push([from, bot]);
+        if (!keep.length) return null;
+        var scale = width / (right - left), vp = pg.getViewport({ scale: scale * dpr });
+        var full = document.createElement('canvas'); full.width = Math.ceil(vp.width); full.height = Math.ceil(vp.height);
+        return pg.render({ canvasContext: full.getContext('2d'), viewport: vp }).promise.then(function () {
+          var k = scale * dpr, c = document.createElement('canvas'), x = c.getContext('2d');
+          c.width = Math.ceil((right - left) * k);
+          c.height = Math.ceil(keep.reduce(function (s, r) { return s + (r[1] - r[0]); }, 0) * k + (keep.length - 1) * 6 * dpr);
+          x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+          var at = 0;
+          keep.forEach(function (r, i) {
+            var h = Math.ceil((r[1] - r[0]) * k);
+            x.drawImage(full, left * k, r[0] * k, c.width, h, 0, at, c.width, h); at += h;
+            if (i < keep.length - 1) { x.fillStyle = '#e4e6eb'; x.fillRect(0, at + 2 * dpr, c.width, dpr); at += 6 * dpr; }
+          });
+          c.style.width = '100%'; c.style.display = 'block';
+          return c;
+        });
+      });
+    })).then(function (cs) { return cs.filter(Boolean); });
+  }
+
+  var css = document.createElement('style');
+  css.textContent = '.ttc{border:1px solid rgba(128,128,128,.28);border-radius:14px;overflow:hidden}' +
+    '.ttc-strip{background:#fff;padding:10px 6px}.ttc-strip canvas+canvas{border-top:1px dashed #d5d8de;margin-top:6px;padding-top:6px}' +
+    '.ttc-wait{padding:30px;text-align:center;opacity:.7;font-size:.9rem}' +
+    '.ttc-f{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:.8rem;border-top:1px solid rgba(128,128,128,.22)}' +
+    '.ttc-f span{opacity:.7}.ttc-f a{font-weight:600;color:inherit}';
+  document.head.appendChild(css);
+
+  function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
+  function mount(el, o) {
+    var card = Object.assign({}, o.card || {}, { url: o.url, page: o.page, q: o.card && o.card.q || o.q });
+    var fallback = function () { el.innerHTML = window.ttLive.card(card); };
+    if (!o.url || !(CORS_OK.test(host(o.url)) || PROXIED.test(host(o.url)))) return fallback();
+    el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
+    var token = el.ttcToken = {};
+    open(o.url).then(function (doc) {
+      // a mark scheme at the back of the question PDF: start looking where the mark scheme starts
+      var from = !o.combined ? Promise.resolve(o.from || 1) : (function find(p) {
+        if (p > doc.numPages) return Promise.resolve(doc.numPages + 1);
+        return pageText(doc, o.url, p).then(function (P) { return P.items.some(function (i) { return /^(Mark\s*Scheme|Question\s+Number|Qu(estion)?\s+Scheme\s+Marks)/i.test(i.s) || /^Scheme$/i.test(i.s); }) ? p : find(p + 1); });
+      })(2);
+      return from.then(function (f) { return locate(doc, o.url, o.q, o.page, o.kind, f); }).then(function (loc) {
+        if (!loc) throw new Error('not found');
+        return render(doc, o.url, loc, el).then(function (canvases) {
+          if (el.ttcToken !== token) return;
+          if (!canvases.length) throw new Error('empty');
+          var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; canvases.forEach(function (c) { strip.appendChild(c); });
+          var link = window.ttLive.at(o.url, loc.start.page);
+          strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>' + (o.kind === 'ms' ? 'Mark scheme' : 'Question ' + window.ttLive.esc(o.q)) + ' · page ' + loc.start.page + ' · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(link) + '" target="_blank" rel="noopener">Whole paper ↗</a>' +
+            (card.alt ? ' · <a href="' + window.ttLive.esc(window.ttLive.at(card.alt.url, loc.start.page)) + '" target="_blank" rel="noopener">' + window.ttLive.esc(card.alt.label) + ' ↗</a>' : '') + '</span></div>');
+        });
+      });
+    }).catch(function () { if (el.ttcToken === token) fallback(); });
+  }
+  /* Apps just write ttCrop.html({...}); anything like that added to the page is filled in automatically. */
+  function html(o) { return '<div class="ttcrop" data-ttcrop="' + window.ttLive.esc(JSON.stringify(o)) + '"></div>'; }
+  function scan(root) {
+    if (!root || root.nodeType !== 1) return;
+    var list = root.matches && root.matches('[data-ttcrop]') ? [root] : [].slice.call(root.querySelectorAll ? root.querySelectorAll('[data-ttcrop]') : []);
+    list.forEach(function (el) { if (el.ttcDone) return; el.ttcDone = 1; try { mount(el, JSON.parse(el.getAttribute('data-ttcrop'))); } catch (e) {} });
+  }
+  new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(scan); }); }).observe(document.documentElement, { childList: true, subtree: true });
+  window.ttCrop = { mount: mount, html: html, scan: scan, _locate: locate, _open: open };
+})();
