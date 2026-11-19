@@ -42,7 +42,7 @@
       '<span class="ttl-b"><a class="p" href="' + esc(qp) + '" target="_blank" rel="noopener">Open paper ↗</a>' +
       (ms ? '<a href="' + esc(ms) + '" target="_blank" rel="noopener">' + esc(o.msLabel || 'Mark scheme') + ' ↗</a>' : '') +
       (o.alt ? '<a href="' + esc(at(o.alt.url, o.page)) + '" target="_blank" rel="noopener">' + esc(o.alt.label) + ' ↗</a>' : '') + '</span></div>';
-    if (embed) h += '<iframe loading="lazy" src="' + esc(qp + (o.page ? '&' : '#') + 'view=FitH') + '" title="' + esc(label) + ' from ' + esc(src) + '"></iframe>';
+    if (embed) h += '<iframe loading="lazy" src="' + esc(qp + (o.page ? '&' : '#') + 'navpanes=0&view=FitH') + '" title="' + esc(label) + ' from ' + esc(src) + '"></iframe>';
     else if (o.embed === false) h += '<div class="ttl-n">' + esc(src) + ' doesn\'t let other sites show its papers, so it opens in a new tab' + (o.page ? ' at page ' + o.page : '') + '.</div>';
     else h += '<a class="ttl-tap" href="' + esc(qp) + '" target="_blank" rel="noopener">Tap to open ' + (o.q ? 'question ' + esc(o.q) : 'the paper') + (o.page ? ' (page ' + o.page + ')' : '') + '</a>';
     return h + '</div>';

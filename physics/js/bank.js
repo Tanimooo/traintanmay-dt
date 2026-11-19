@@ -17,7 +17,7 @@ const unitOf=q=>q.grp||[q];
 const unitMarks=u=>u.reduce((a,q)=>a+(q.m||0),0);
 /* "f" = marks for the whole original question when only its first part(s) are included here */
 const partialNote=q=>{ const u=unitOf(q); const full=Math.max(...u.map(x=>x.f||0)); const have=unitMarks(u); if(!full||full<=have) return '';
-  return `<div class="psw" style="margin:0"><p><b>Only part of this exam question is here</b> (${have} of its ${full} marks). The official mark scheme on the right also covers later parts that are not shown, so mark just the part${have===1?'':'s'} above out of ${q.m}.</p></div>`; };
+  return `<div class="psw" style="margin:0"><p><b>Only the first part${have===1?'':'s'} of this question count${have===1?'s':''} here</b> (${have} of its ${full} marks). The paper and mark scheme go on to later parts too: do and mark just those first part${have===1?'':'s'}, out of ${q.m}.</p></div>`; };
 const partNote=(q,lab)=>{ if(!q.grp) return ''; const first=q.pi===0; return `<div class="psw" style="margin:0;border-color:var(--accent)"><p><b>Part ${L_(q.pi)} of a ${q.grp.length}-part question.</b> ${first?'The later parts follow straight after this one.':'It uses the same set-up as part a, which comes just before it'+(lab?' ('+lab+')':'')+'.'}</p></div>`; };
 /* labels like 1, 2a, 2b, 3 for a list of questions */
 const labelsFor=qs=>{ const out=[]; let n=0, prev=null, k=0; qs.forEach(q=>{ if(q.grp&&q.grp===prev){ k++; } else { n++; k=0; prev=q.grp||null; } out.push(q.grp?n+L_(k):String(n)); }); return {lab:out,count:n}; };
