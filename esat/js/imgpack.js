@@ -1,6 +1,6 @@
 /* ESAT questions, live from UAT-UK.
    No question images are stored on this site any more. Each question is shown from the official
-   ENGAA / NSAA / TMUA paper on UAT-UK's own website (esat-tmua.ac.uk), opened in the page.
+   ENGAA / NSAA / TMUA paper on UAT-UK's own website (esat-tmua.ac.uk), cropped live to just that question by crop.js.
    window.esatLive(q) returns the HTML for a question; answers and worked solutions are ours. */
 (function () {
   const S3 = 'https://uat-wp.s3.eu-west-2.amazonaws.com/wp-content/uploads/';
@@ -39,9 +39,12 @@
   window.esatLive = function (q, opts) {
     const p = paperOf(q);
     const part = /Part B/.test(q.source) ? ' (Part B)' : /Part A/.test(q.source) ? ' (Part A)' : '';
-    return window.ttLive.card({
-      url: p && S3 + p[0], ms: p && S3 + p[1], msLabel: q.exam === 'TMUA' ? 'Worked answers' : 'Answer key',
+    const card = {
+      ms: p && S3 + p[1], msLabel: q.exam === 'TMUA' ? 'Worked answers' : 'Answer key',
       q: q.qno + part, title: q.exam + ' ' + q.year, source: 'UAT-UK (esat-tmua.ac.uk)', embed: !(opts && opts.noEmbed)
-    });
+    };
+    // crop just this question out of the official paper (crop.js); falls back to the paper card if it can't
+    if (window.ttCrop && p) return window.ttCrop.html({ url: S3 + p[0], q: String(q.qno), kind: 'qp', typeset: true, card: card });
+    return window.ttLive.card(Object.assign({ url: p && S3 + p[0] }, card));
   };
 })();
