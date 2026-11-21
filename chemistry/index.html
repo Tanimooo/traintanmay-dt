@@ -167,10 +167,10 @@ textarea{width:100%;min-height:130px;resize:vertical;line-height:1.55}
 a.hero-scope{display:block;height:188px;min-height:0;overflow:hidden;text-decoration:none;cursor:pointer}
 .hero-scope>.hs-art{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hero-scope .sh-cta{bottom:9px}
-/* the flask (data sheet) and the featured 3D shapes lab sit side by side */
-.hero-scopewrap.hs-two{flex-direction:row;align-items:stretch}
-.hs-two>a.hero-scope{flex:1 1 0;min-width:0}
-.hs-lab .sh-cta{text-shadow:0 1px 6px #12060c}
+/* the featured-lab scene (canvas, labs-b.js): words on the left, the bubbling flask, then the molecule it brews */
+.hs-lab{container-type:inline-size}
+.hs-lab .sh-cta{left:16px;right:auto;text-align:left;text-shadow:0 1px 6px #12060c}
+@container (max-width:419px){.hs-lab .sh-cta{left:auto;right:14px;text-align:right}}
 .featlab.fl-mol{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;align-items:center;padding:14px 18px 14px 22px}
 .featlab.fl-mol canvas{width:100%;height:170px;display:block}
 @media (max-width:640px){.featlab.fl-mol{grid-template-columns:1fr}.featlab.fl-mol canvas{height:140px;order:-1}}
@@ -651,7 +651,7 @@ details.rv .rv-s{margin-left:auto}
 <script src="data/media.js" charset="utf-8"></script>
 <script src="js/labkit.js?v=20261122" charset="utf-8"></script>
 <script src="js/labs-a.js?v=20261122" charset="utf-8"></script>
-<script src="js/labs-b.js?v=20261123t" charset="utf-8"></script>
+<script src="js/labs-b.js?v=20261123u" charset="utf-8"></script>
 <script src="js/lab-guides.js?v=20261123s" charset="utf-8"></script>
 <script src="../live.js?v=20261119e" charset="utf-8"></script>
 <script src="../crop.js?v=20261121b" charset="utf-8"></script>
@@ -664,7 +664,7 @@ details.rv .rv-s{margin-left:auto}
 <script src="js/extras.js?v=20261122" charset="utf-8"></script>
 <script src="data/bank.js?v=20261122" charset="utf-8"></script>
 <script src="js/bank.js?v=20261122b" charset="utf-8"></script>
-<script src="js/app.js?v=20261123t" charset="utf-8"></script>
+<script src="js/app.js?v=20261123u" charset="utf-8"></script>
 <script src="../datasheet.js?v=20261122b" charset="utf-8"></script>
 
 <script src="../switcher.js?v=20261121d"></script>
