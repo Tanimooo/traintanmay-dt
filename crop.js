@@ -71,14 +71,21 @@
     return best;
   }
   var DOTS = /^[.…_\s]{5,}$/;
+  // exam-paper furniture around the answer space: not part of any question
+  var FURNITURE = /^(Leave|blank|Leave blank|Question \d{1,2} continued|DO NOT WRITE IN THIS AREA|Turn over)$/i;
   var HEADER = /^(Q|Qu|Question( Number)?|Answers?|Expected Answers|Marks?|Guidance|Additional [Gg]uidance|Scheme|Notes|AOs?|Acceptable answers|Mark scheme)$/i;
   // a question number at the left margin: "4", "4.", "Q4", "Question 4", "4 (a)"; returns n or null.
   // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
   function numAt(it, P, kind) {
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
-    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
     if (!m) return null;
     if (P.mh && it.h < P.mh * 0.75) return null; // a superscript or index, not a label
+    // in a mark scheme table the numbers sit in the first column: a number further in is part of the working
+    if (kind === 'ms') {
+      if (P.left == null) P.left = Math.min.apply(null, P.items.filter(function (o) { return !isChrome(o, P); }).map(function (o) { return o.x; }).concat([P.w]));
+      if (it.x > P.left + 50) return null;
+    }
     // a question number is the first thing on its line: a bare "5" after "A" is an answer option ("A  5 μA"), not question 5
     if (!/^(?:Q|Question|M)/i.test(it.s) && P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < Math.max(3, Math.min(o.h, it.h) * 0.8) && o.x < it.x - 2 && !isChrome(o, P); })) return null; // (a fraction's numerator or denominator sits a little off the line)
     if (/^\d{1,2}\.?$/.test(it.s)) {
@@ -115,7 +122,42 @@
     });
   }
   function locate(doc, url, label, hint, kind, from) {
-    return isScanned(doc, url).then(function (sc) { return sc ? null : locate2(doc, url, label, hint, kind, from); });
+    return isScanned(doc, url).then(function (sc) {
+      if (sc) return null;
+      if (kind !== 'ms' || (from || 1) > 1) return locate2(doc, url, label, hint, kind, from);
+      return tableStart(doc, url).then(function (f) { return locate2(doc, url, label, hint, kind, f); });
+    });
+  }
+  /* Mark schemes often open with pages of general marking guidance whose numbered points ("1. The total number
+     of marks…", "2. …") look just like question numbers. The marking itself is a table headed "Question | Scheme |
+     Marks" (or "Answer", "Guidance"…): start looking at the first page that has that header. None found: page 1. */
+  var tStart = {};
+  function tableStart(doc, url) {
+    if (url in tStart) return Promise.resolve(tStart[url]);
+    var last = Math.min(doc.numPages, 12);
+    return (function look(p) {
+      if (p > last) return Promise.resolve(1);
+      return pageText(doc, url, p).then(function (P) {
+        // Header cells are whole words on their own ("Question" / "Number" on two lines, "Scheme" and "Marks"
+        // centred between them), so match exact pieces near each other, never words inside a sentence
+        // like "question to obtain this mark". "Question" can also come in pieces: "Q" "uestion".
+        var hit = P.items.some(function (a) {
+          // (some schemes put the question's own number in that first header cell: "1 | Expected Answers | Marks")
+          if (!/^(Q\.?|Qu|Question)(\s*Number)?$/i.test(a.s) && !/^\d{1,2}$/.test(a.s)) return false;
+          return P.items.some(function (b) { return b.x > a.x + 30 && Math.abs(b.y - a.y) < 16 && /^(Scheme|Marks?|Answers?|Expected Answers|Guidance|Mark scheme)$/i.test(b.s); });
+        });
+        // or the scheme's own title page, where question 1 starts straight under the title without column headers
+        if (!hit && P.items.some(function (i) { return /^Mark Scheme$/i.test(i.s); }))
+          hit = P.items.some(function (i) { return i.x < P.w * 0.2 && !isChrome(i, P) && /^1\.?(\s*\(a\))?$/.test(i.s); });
+        if (!hit) return look(p + 1);
+        if (p === 1) return p;
+        // the table can begin a page earlier without its header row: take that page if question 1's first part
+        // ("1a", "1 (a)", "1. (a)") is already in its margin. Guidance lists number their points "1.", which doesn't count.
+        return pageText(doc, url, p - 1).then(function (Q) {
+          return Q.items.some(function (i) { return i.x < Q.w * 0.2 && !isChrome(i, Q) && /^1\.?\s*(\(\s*a\s*\)|a)(\s*\(\s*i\s*\))?$/i.test(i.s); }) ? p - 1 : p;
+        });
+      });
+    })(1).then(function (f) { return (tStart[url] = f); });
   }
   function locate2(doc, url, label, hint, kind, from) {
     var L = parseLabel(label); if (!L) return Promise.resolve(null);
@@ -202,7 +244,7 @@
           if (hdr.length >= 2) top = Math.max(top, Math.max.apply(null, hdr.map(function (i) { return i.y; })) + 6);
         }
         if (bot - top < 12) return null;
-        var inside = P.items.filter(function (i) { return i.y > top && i.y < bot + 4 && !isChrome(i, P); });
+        var inside = P.items.filter(function (i) { return i.y > top && i.y < bot + 4 && !isChrome(i, P) && !FURNITURE.test(i.s); });
         // trim to the text actually there, left and right, so the strip isn't mostly margin
         // Keep the question, drop the answer space: bands of dotted answer lines are cut out, and so is the
         // empty space after the last words (figures always have a caption or labels, so they stay).
