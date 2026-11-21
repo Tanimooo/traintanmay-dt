@@ -397,6 +397,13 @@ function viewPapers(v){
 
 /* ---------- DATA SHEET ---------- */
 window.TT_SHEET=v=>viewSheet(v);
+/* live data sheet (../datasheet.js): button bottom-right on question pages. The official OCR Data Sheet for
+   Chemistry A (PMT's copy, drawn live): pages 2–3 are the data, IR and NMR tables, page 4 the periodic table */
+window.TT_DS_CFG={
+  match:h=>/^(bank|pq-|mock|quiz|papers$|t-|drill|spec)/.test(h),
+  sheets:()=>[{label:'OCR Data Sheet',url:SP.booklet,pages:[2,3,4],turn:{4:90}},{label:'Periodic table',url:SP.booklet,pages:[4],turn:{4:90}},
+    {label:'Quick reference',render:el=>{ viewSheet(el); el.querySelectorAll('a[href^="#"]').forEach(a=>{ a.removeAttribute('href'); a.style.textDecoration='none'; a.style.color='inherit'; }); }}]
+};
 function viewSheet(v){
   v.innerHTML=`<span class="eyebrow">Data, formulae and relationships</span><h1>Data sheet</h1><p class="muted" style="max-width:72ch">Constants, prefixes and every equation in the course, grouped by topic. The official OCR Data Sheet (with the periodic table, IR and NMR data) is linked on the <a href="#papers">Past papers</a> page.</p>
   <div class="grid g2 sheetg" style="margin-top:12px"><div class="card"><h3 style="margin-bottom:8px">Physical constants</h3><div class="tbl fit" style="margin:0"><table><tr><th>Quantity</th><th>Symbol</th><th>Value</th></tr>${SP.constants.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td><td style="font-family:var(--f-mono)">${c[2]}</td></tr>`).join('')}</table></div></div>

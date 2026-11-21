@@ -6,7 +6,7 @@
 
    Each app sets window.TT_DS_CFG = {
      match(hash)  -> true on pages with questions (the button also shows whenever a paper is open in exam mode)
-     sheets(hash) -> [{label, url}  (a PDF)  |  {label, render(el)}  (HTML)], first one opens by default
+     sheets(hash) -> [{label, url, pages}  (a PDF; optional pages: [4] shows just those pages, turn: {4: 90} rotates a sideways page clockwise)  |  {label, render(el)}  (HTML)], first one opens by default
    } */
 (function () {
   if (window.ttSheet) return;
@@ -61,7 +61,7 @@
     if (!on && panel) close();
   }
 
-  function drawPdf(box, url, noFrame) {
+  function drawPdf(box, url, noFrame, pages, turn) {
     box.innerHTML = '<div class="ttds-msg">Fetching the official sheet…</div>';
     var fallback = noFrame ? function () {
       box.innerHTML = '<div class="ttds-msg" style="opacity:1"><p style="margin:0 0 12px">This booklet’s website doesn’t let it be shown inside TrainTanmay.</p><a href="' + esc(url) + '" target="_blank" rel="noopener" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#14161b;color:#fff;font-weight:600;text-decoration:none">Open the official booklet ↗</a></div>';
@@ -76,14 +76,17 @@
           if (!en.isIntersecting || en.target.dataset.done) return; en.target.dataset.done = 1;
           doc.getPage(+en.target.dataset.p).then(function (pg) {
             var w = Math.max(280, box.clientWidth - 28), dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-            var vp0 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: w / vp0.width * dpr });
+            var rot = ((pg.rotate || 0) + ((turn || {})[en.target.dataset.p] || 0)) % 360;
+            var vp0 = pg.getViewport({ scale: 1, rotation: rot }), vp = pg.getViewport({ scale: w / vp0.width * dpr, rotation: rot });
             var c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
             c.setAttribute('aria-label', 'Data sheet page ' + en.target.dataset.p);
             return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { en.target.replaceWith(c); });
           });
         });
       }, { root: box, rootMargin: '1200px' });
-      for (var i = 1; i <= doc.numPages; i++) { var ph = document.createElement('div'); ph.className = 'ttds-ph'; ph.dataset.p = i; box.appendChild(ph); io.observe(ph); }
+      var want = (pages || []).filter(function (p) { return p >= 1 && p <= doc.numPages; });
+      if (!want.length) for (var i = 1; i <= doc.numPages; i++) want.push(i);
+      want.forEach(function (p) { var ph = document.createElement('div'); ph.className = 'ttds-ph'; ph.dataset.p = p; box.appendChild(ph); io.observe(ph); });
     }).catch(function () { delete docs[url]; fallback(); });
   }
 
@@ -94,7 +97,7 @@
     [].forEach.call(panel.querySelectorAll('.ttds-tabs button'), function (b, j) { b.setAttribute('aria-selected', j === cur ? 'true' : 'false'); });
     if (ext) { ext.hidden = !s.url; if (s.url) ext.href = s.url; }
     body.scrollTop = 0;
-    if (s.url) drawPdf(body, s.url, s.noFrame);
+    if (s.url) drawPdf(body, s.url, s.noFrame, s.pages, s.turn);
     else { body.innerHTML = ''; try { s.render(body); } catch (e) { body.innerHTML = '<div class="ttds-msg">This sheet could not be shown.</div>'; } }
   }
 
