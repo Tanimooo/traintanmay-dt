@@ -76,6 +76,8 @@
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
     var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
     if (!m) return null;
+    // a question number is the first thing on its line: a bare "5" after "A" is an answer option ("A  5 μA"), not question 5
+    if (!/^(?:Q|Question|M)/i.test(it.s) && P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < 3 && o.x < it.x - 2 && !isChrome(o, P); })) return null;
     if (/^\d{1,2}\.?$/.test(it.s)) {
       var nx = nextOnLine(it, P);
       if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s))) return null;
@@ -103,7 +105,9 @@
     if (url in scanned) return Promise.resolve(scanned[url]);
     var n = Math.min(4, doc.numPages), ps = []; for (var p = 1; p <= n; p++) ps.push(pageText(doc, url, p));
     return Promise.all(ps).then(function (all) {
-      var words = 0; all.forEach(function (P) { P.items.forEach(function (i) { if (/\b[a-z]{4,}\b/i.test(i.s)) words++; }); });
+      // count real words, not text pieces: a page of multiple-choice questions is mostly short pieces ("A", "C m", "–1")
+      // with a few long lines, which once made a typed paper look like a scan
+      var words = 0; all.forEach(function (P) { P.items.forEach(function (i) { words += (i.s.match(/\b[a-z]{4,}\b/gi) || []).length; }); });
       return (scanned[url] = words < 12 * n);
     });
   }
