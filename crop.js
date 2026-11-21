@@ -8,7 +8,8 @@
    ttCrop.mount(el, {url, q, page, kind, card})
      url   PDF address                q     question label: "4", "4(c)", "12"
      page  page to start looking (optional)   kind  'qp' or 'ms'
-     card  options for ttLive.card, used as the fallback and for the "open paper" links */
+     card  options for ttLive.card, used as the fallback and for the "open paper" links
+     typeset  true when the PDF is known to be typed, not scanned (skips the scanned-paper check) */
 (function () {
   if (window.ttCrop) return;
   var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
@@ -33,6 +34,9 @@
       .catch(function (e) { delete docs[url]; throw e; }));
   }
   var textCache = {};
+  /* some papers (e.g. older UAT-UK TMUA ones) use a maths font whose digits come out as U+0372–U+037B
+     ("ͳ" for 1, "͵" for 3…) and whose spaces come out as U+0003: read them as the digits and spaces they are */
+  function fixGlyphs(t) { return String(t || '').replace(/[\u0372-\u037B]/g, function (c) { return String(c.charCodeAt(0) - 0x372); }).replace(/\u0003/g, ' '); }
   /* every text item on a page, as {s, x, y (from top), h} in PDF points */
   function pageText(doc, url, n) {
     var k = url + '#' + n;
@@ -40,7 +44,7 @@
       var vp = pg.getViewport({ scale: 1 });
       return pg.getTextContent().then(function (tc) {
         // viewport coordinates, so rotated (landscape) pages such as mark schemes read the right way up
-        var items = tc.items.filter(function (i) { return i.str && i.str.trim(); }).map(function (i) {
+        var items = tc.items.map(function (i) { return Object.assign({}, i, { str: fixGlyphs(i.str) }); }).filter(function (i) { return i.str && i.str.trim(); }).map(function (i) {
           var pt = vp.convertToViewportPoint(i.transform[4], i.transform[5]);
           return { s: i.str.trim(), x: pt[0], y: pt[1], h: Math.hypot(i.transform[2], i.transform[3]) || i.height || 10, w: i.width || 0 };
         });
@@ -68,6 +72,10 @@
     for (var i = 0; i < P.items.length; i++) { var o = P.items[i]; if (o !== it && Math.abs(o.y - it.y) < 3 && o.x > it.x && (!best || o.x < best.x)) best = o; }
     return best;
   }
+  // a lone option letter (A–H) just before this item, on its line or beside a fraction it tops
+  function prevOnLine(it, P) {
+    return P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < 12 && o.x < it.x && it.x - o.x < 60 && /^[A-H]$/.test(o.s); });
+  }
   var DOTS = /^[.…_\s]{5,}$/;
   var HEADER = /^(Q|Qu|Question( Number)?|Answers?|Expected Answers|Marks?|Guidance|Additional [Gg]uidance|Scheme|Notes|AOs?|Acceptable answers|Mark scheme)$/i;
   // a question number at the left margin: "4", "4.", "Q4", "Question 4", "4 (a)"; returns n or null.
@@ -77,6 +85,7 @@
     var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
     if (!m) return null;
     if (/^\d{1,2}\.?$/.test(it.s)) {
+      if (prevOnLine(it, P)) return null; // e.g. the "12" in a multiple-choice option "G   12"
       var nx = nextOnLine(it, P);
       if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s))) return null;
     }
@@ -99,8 +108,12 @@
   /* scanned PDFs (e.g. handwritten worked solutions) have no real text, only scanning noise:
      a "match" there would be a guess, so they aren't cropped at all */
   var scanned = {};
+  /* papers the app knows are typeset (ttCrop.html({typeset: true, ...})), e.g. UAT-UK's ESAT papers, whose
+     cover, blank pages and maths-heavy first questions hold too few words for the check below */
+  var typeset = {};
   function isScanned(doc, url) {
     if (url in scanned) return Promise.resolve(scanned[url]);
+    if (url in typeset) return Promise.resolve(scanned[url] = false);
     var n = Math.min(4, doc.numPages), ps = []; for (var p = 1; p <= n; p++) ps.push(pageText(doc, url, p));
     return Promise.all(ps).then(function (all) {
       var words = 0; all.forEach(function (P) { P.items.forEach(function (i) { if (/\b[a-z]{4,}\b/i.test(i.s)) words++; }); });
@@ -429,6 +442,7 @@
     var fallback = function () { el.innerHTML = window.ttLive.card(card); };
     if (!o.url || !(CORS_OK.test(host(o.url)) || PROXIED.test(host(o.url)))) return fallback();
     el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
+    if (o.typeset) typeset[o.url] = 1;
     var token = el.ttcToken = {};
     open(o.url).then(function (doc) {
       return isScanned(doc, o.url).then(function (sc) {
