@@ -235,7 +235,7 @@
     if (sdkP) return sdkP;
     sdkP = new Promise(function (ok, no) {
       if (window.ttCloudSDK) return ok();
-      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121f'; sc.async = true;
+      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121g'; sc.async = true;
       sc.onload = ok; sc.onerror = function () { no(new Error('load')); };
       document.head.appendChild(sc);
     }).then(function () {
@@ -343,8 +343,65 @@
   /* clearing progress on purpose: the cloud copy is replaced by what is left, instead of being merged back in */
   function cloudClearing() { if (flag(CLOUD_ON)) { flag(CLOUD_CLEAR, '1'); setTimeout(sync, 1500); } }
 
+  var GLOGO = '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
   function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  /* start Google sign-in. Call it straight from a tap, so the Google window is allowed to open. */
+  function signIn() {
+    if (!cloud.ready || !window.ttCloudSDK) { open(); return; } // still loading: the panel shows progress and the button
+    cloud.err = ''; cloud.fresh = true; flag(CLOUD_ON, 'pending'); // so the page picks the sign-in up if Google sends us back here
+    nudgeClose();
+    ttCloudSDK.signIn().catch(function (e) {
+      var c = (e && e.code) || '';
+      if (/popup-closed|cancelled-popup/.test(c)) { if (!cloud.user) flag(CLOUD_ON, null); return; }
+      cloud.err = /unauthorized-domain/.test(c) ? 'Sign-in is not switched on for this web address yet.'
+        : /network/.test(c) ? 'Could not reach Google. Check your connection.'
+        : 'Sign-in did not work (' + c + ').';
+      if (!back) open(); else drawCloud();
+    });
+  }
+
+  /* account buttons: any element with data-tt-account shows "Sign in with Google", or your picture once signed in */
+  function drawAccount() {
+    var u = cloud.user, on = flag(CLOUD_ON) === '1';
+    [].forEach.call(document.querySelectorAll('[data-tt-account]'), function (b) {
+      if (u) {
+        var first = (u.name || u.email || '').split(/[\s@]/)[0];
+        b.innerHTML = (u.photo ? '<img src="' + esc(u.photo) + '" alt="" referrerpolicy="no-referrer" style="width:24px;height:24px;border-radius:50%;margin-left:-6px">' : '') + '<span>' + esc(first) + '</span><span class="txt"> · synced</span>';
+        b.title = 'Syncing as ' + (u.email || u.name) + '. Open to sign out or sync now.';
+      } else if (on && !cloud.ready) {
+        b.innerHTML = '<span>Syncing…</span>'; b.title = 'Connecting to your Google account';
+      } else {
+        b.innerHTML = GLOGO.replace('width="18" height="18"', 'width="18" height="18" style="background:#fff;border-radius:50%;padding:2px;box-sizing:content-box"') + '<span style="white-space:nowrap">Sign in<span class="txt"> with Google</span></span>';
+        b.title = 'Sign in with Google to sync your progress across devices';
+      }
+      b.hidden = false;
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-tt-account],[data-tt-signin]'); if (!b) return;
+    e.preventDefault();
+    if (cloud.user || b.hasAttribute('data-tt-account') && cloud.err) open(); else signIn();
+  });
+
+  /* when an app opens signed out: a small card suggests signing in. "Not now" hides it for 3 days. */
+  var NUDGE = 'tt-cloud-nudge', nudge = null;
+  function nudgeClose() { if (nudge) { nudge.remove(); nudge = null; } }
+  function nudgeShow() {
+    var ss = null; try { ss = window.sessionStorage; } catch (e) {}
+    if (cloud.user || flag(CLOUD_ON) || back || nudge || !cloud.ready || window.top !== window) return;
+    if (Date.now() - +(flag(NUDGE) || 0) < 3 * 864e5 || (ss && ss.getItem(NUDGE))) return;
+    try { ss && ss.setItem(NUDGE, '1'); } catch (e) {} // once per visit
+    nudge = document.createElement('div'); nudge.className = 'tts tts-nudge'; nudge.setAttribute('role', 'dialog'); nudge.setAttribute('aria-labelledby', 'tts-nh');
+    nudge.innerHTML = '<button class="x" type="button" aria-label="Close" data-nx>&times;</button><h2 id="tts-nh">Keep your progress on every device</h2>' +
+      '<p class="mu">Sign in with Google once, and everything you do here follows you to your phone, laptop and school computer. You can keep using TrainTanmay without signing in.</p>' +
+      '<div class="row" style="margin:0"><button type="button" class="pr" data-tt-signin>' + GLOGO + 'Sign in with Google</button><button type="button" data-nn>Not now</button></div>';
+    document.body.appendChild(nudge);
+    nudge.querySelector('[data-nx]').onclick = nudgeClose;
+    nudge.querySelector('[data-nn]').onclick = function () { flag(NUDGE, String(Date.now())); nudgeClose(); };
+  }
+
   function drawCloud() {
+    drawAccount();
     if (!back) return;
     var box = back.querySelector('#tts-cloud'); if (!box) return;
     var u = cloud.user, h;
@@ -364,22 +421,12 @@
         '<div class="row" style="margin:0"><button type="button" id="tts-sync"' + (cloud.busy ? ' disabled' : '') + '>Sync now</button><button type="button" id="tts-out">Sign out</button></div>';
     } else {
       h = '<b>Sync with Google</b><p class="mu" style="margin:4px 0 10px">Sign in once on each device and your progress follows you automatically. We keep your progress and your Google name and email, nothing else.</p>' +
-        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-in-g"' + (cloud.ready ? '' : ' disabled') + '><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>' + (cloud.ready ? 'Sign in with Google' : 'Loading…') + '</button></div>';
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-in-g"' + (cloud.ready ? '' : ' disabled') + '>' + GLOGO + '' + (cloud.ready ? 'Sign in with Google' : 'Loading…') + '</button></div>';
     }
     if (cloud.err) h += '<p class="msg bad" style="margin:8px 0 0">' + esc(cloud.err) + '</p>';
     box.innerHTML = h;
     var g = box.querySelector('#tts-in-g');
-    if (g) g.onclick = function () {
-      cloud.err = ''; cloud.fresh = true; flag(CLOUD_ON, 'pending'); // so the page picks the sign-in up if Google sends us back here
-      ttCloudSDK.signIn().catch(function (e) {
-        var c = (e && e.code) || '';
-        if (/popup-closed|cancelled-popup/.test(c)) return;
-        cloud.err = /unauthorized-domain/.test(c) ? 'Sign-in is not switched on for this web address yet.'
-          : /network/.test(c) ? 'Could not reach Google. Check your connection.'
-          : 'Sign-in did not work (' + c + ').';
-        drawCloud();
-      });
-    };
+    if (g) g.onclick = signIn;
     var sn = box.querySelector('#tts-sync'); if (sn) sn.onclick = function () { sync(); };
     function on(id, fn) { var b = box.querySelector(id); if (b) b.onclick = fn; }
     on('#tts-out', function () { cloud.out = true; drawCloud(); });
@@ -407,8 +454,9 @@
       }, 'Use this if someone else used this device. Their progress stays in their own Google account if it was synced.');
     });
   }
-  // signed in on this device before: connect a moment after the page opens
-  if (flag(CLOUD_ON)) setTimeout(function () { sdk().catch(function () {}); }, 1200);
+  // connect a moment after the page opens: straight away if signed in before, otherwise so the sign-in card and buttons work
+  drawAccount();
+  setTimeout(function () { sdk().then(function () { setTimeout(nudgeShow, 1200); }, function () {}); }, flag(CLOUD_ON) ? 1200 : 1800);
 
   /* ---- the panel ---- */
   var css = document.createElement('style');
@@ -436,6 +484,8 @@
     '.tts .cl-h{display:flex;gap:10px;align-items:center}.tts .cl-h img{width:34px;height:34px;border-radius:50%}.tts .cl-h small{display:block;opacity:.65;font-size:.8rem}' +
     '.tts-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 24px);background:#14161b;color:#fff;padding:10px 12px 10px 16px;border-radius:12px;box-shadow:0 14px 40px -10px rgba(0,0,0,.5);font-size:.92rem;animation:ttsU .28s ease both}' +
     '.tts-toast button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;background:#fff;color:#14161b}.tts-toast button[data-c]{background:none;color:#aaa;font-size:1.2rem;padding:2px 6px}' +
+    '.tts.tts-nudge{position:fixed;right:16px;bottom:16px;z-index:99998;width:min(380px,calc(100vw - 24px));padding:18px 18px 16px;border-top:5px solid #5b9cff}.tts-nudge h2{font-size:1.1rem;padding-right:24px}.tts-nudge p{font-size:.92rem}' +
+    '@media (max-width:460px){.tts.tts-nudge{right:12px;bottom:12px}}' +
     '@media (max-width:460px){.tts .apps{grid-template-columns:1fr}}' +
     '@media (prefers-reduced-motion:reduce){.tts-back,.tts{animation:none}}';
   document.head.appendChild(css);
@@ -446,7 +496,7 @@
   function msg(t, kind) { var m = el('#tts-msg'); m.textContent = t; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 
   function open() {
-    close(); lastFocus = document.activeElement;
+    close(); nudgeClose(); lastFocus = document.activeElement;
     var data = collect(), any = Object.keys(data).some(function (k) { return appOf(k) !== 'shared'; });
     var hasUndo = false; try { hasUndo = !!(ls() && ls().getItem(UNDO)); } catch (e) {}
     back = document.createElement('div'); back.className = 'tts-back';

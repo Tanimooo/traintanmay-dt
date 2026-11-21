@@ -147,6 +147,16 @@ footer a{text-underline-offset:3px}
   .pill{padding:0 13px}
   .dock{padding-top:30px}
 }
+@media (max-width:480px){
+  /* room for the sign-in button: Help keeps just its icon */
+  .top{gap:8px}.top-links{gap:6px}
+  .top-links .pill{padding:0 11px}
+  .top-links a.solid[data-go=help]{font-size:0;gap:0}
+  .mark b{font-size:1.15rem}
+}
+@media (max-width:370px){
+  .mark b{display:none}
+}
 </style>
 </head>
 <body>
@@ -163,9 +173,10 @@ footer a{text-underline-offset:3px}
       <b>TrainTanmay</b>
     </a>
     <nav class="top-links" aria-label="Help and settings">
+      <button class="pill" type="button" data-tt-account hidden>Sign in</button>
       <button class="pill" id="btnDys" type="button" aria-pressed="false" title="Dyslexia-friendly font" aria-label="Dyslexia-friendly font">Aa</button>
       <a class="pill" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" aria-label="Report a bug or mistake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span class="txt">Report a bug</span></a>
-      <a class="pill solid" href="help.html" data-go="help" data-c="#f6f1e7" data-name="How it works"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.5-1.5 1.1-1.5 2.3M12 17.5v.1"/><circle cx="12" cy="12" r="9"/></svg>Help</a>
+      <a class="pill solid" href="help.html" data-go="help" data-c="#f6f1e7" data-name="How it works" aria-label="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.5-1.5 1.1-1.5 2.3M12 17.5v.1"/><circle cx="12" cy="12" r="9"/></svg>Help</a>
     </nav>
   </header>
 
@@ -306,7 +317,7 @@ footer a{text-underline-offset:3px}
 </div>
 
 <script src="features.js?v=20261121"></script>
-<script src="save.js?v=20261121f"></script>
+<script src="save.js?v=20261121g"></script>
 <script>
 (function(){
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){});
