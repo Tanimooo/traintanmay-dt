@@ -133,15 +133,16 @@
     { h: 'Are you double sure?', p: 'It cannot be undone unless you have a save file or save code.', yes: 'Yes, double sure', pos: 'bottom:24px;right:24px' },
     { h: 'Are you triple sure?', p: 'Last chance. Press the button below and WHAT is gone.', yes: 'Yes, delete it', pos: 'top:24px;right:24px' }
   ];
-  function confirm3(what, onYesRaw) {
+  /* clearing progress in an app: if synced, the cloud copy is replaced too, instead of being merged back in */
+  function confirm3(what, onYes) { confirmRaw(what, function () { cloudClearing(); return onYes.apply(this, arguments); }); }
+  function confirmRaw(what, onYes, note) {
     what = what || 'all your progress';
-    var onYes = function () { cloudClearing(); return onYesRaw.apply(this, arguments); };
     var step = 0, prev = document.activeElement;
     function show() {
       var c = SURE[step], w = document.createElement('div');
       w.className = 'tts-sure-back';
       w.innerHTML = '<div class="tts tts-sure" role="alertdialog" aria-modal="true" aria-labelledby="tts-sh" aria-describedby="tts-sp" style="' + c.pos + '">' +
-        '<p class="mu" style="margin:0 0 2px">Step ' + (step + 1) + ' of 3</p><h2 id="tts-sh">' + c.h + '</h2><p id="tts-sp">' + c.p.replace('WHAT', what) + '</p>' +
+        '<p class="mu" style="margin:0 0 2px">Step ' + (step + 1) + ' of 3</p><h2 id="tts-sh">' + c.h + '</h2><p id="tts-sp">' + (step === 1 && note ? note : c.p.replace('WHAT', what)) + '</p>' +
         '<div class="row" style="margin:0"><button type="button" class="pr" data-no>No, keep it</button><button type="button" class="danger" data-yes>' + c.yes + '</button></div></div>';
       document.body.appendChild(w);
       var no = w.querySelector('[data-no]'), yes = w.querySelector('[data-yes]');
@@ -224,7 +225,7 @@
     messagingSenderId: '157913586959',
     appId: '1:157913586959:web:357b108d0677c5cd55327a'
   };
-  var CLOUD_ON = 'tt-cloud-on', CLOUD_CLEAR = 'tt-cloud-replace', CLOUD_MAX = 900000;
+  var CLOUD_ON = 'tt-cloud-on', CLOUD_CLEAR = 'tt-cloud-replace', CLOUD_UID = 'tt-cloud-uid', CLOUD_HASH = 'tt-cloud-hash', CLOUD_MAX = 900000;
   var cloud = { user: null, ready: false, busy: false, again: false, last: 0, err: '', seen: '' };
   var sdkP = null, loadedAt = Date.now(), touched = false;
   ['pointerdown', 'keydown'].forEach(function (t) { document.addEventListener(t, function () { touched = true; }, { capture: true, once: true }); });
@@ -234,7 +235,7 @@
     if (sdkP) return sdkP;
     sdkP = new Promise(function (ok, no) {
       if (window.ttCloudSDK) return ok();
-      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121e'; sc.async = true;
+      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121f'; sc.async = true;
       sc.onload = ok; sc.onerror = function () { no(new Error('load')); };
       document.head.appendChild(sc);
     }).then(function () {
@@ -242,8 +243,14 @@
       ttCloudSDK.onUser(function (u) {
         var was = cloud.user && cloud.user.uid;
         cloud.user = u; cloud.ready = true;
-        if (u) { flag(CLOUD_ON, '1'); if (u.uid !== was) sync(); }
-        else flag(CLOUD_ON, null);
+        if (u && u.uid !== was) {
+          var fresh = flag(CLOUD_ON) === 'pending', prev = flag(CLOUD_UID);
+          flag(CLOUD_ON, '1');
+          // just signed in with a different account from the one this device last synced with: ask first
+          if (fresh && prev && prev !== u.uid && hasProgress()) { cloud.choice = true; cloud.fresh = false; if (!back) open(); }
+          else sync();
+        }
+        if (!u) { flag(CLOUD_ON, null); cloud.choice = false; cloud.out = false; }
         drawCloud();
       });
       return ttCloudSDK;
@@ -261,10 +268,21 @@
     });
     return changed;
   }
+  function hasProgress() { return Object.keys(collect()).some(function (k) { return appOf(k) !== 'shared'; }); }
+  function hash(t) { var h = 5381; for (var i = 0; i < t.length; i++) h = (h * 33 + t.charCodeAt(i)) | 0; return t.length + '.' + (h >>> 0).toString(36); }
+  /* take this device's progress off it (settings like theme and language stay). Also drops the daily safety copies. */
+  function wipeLocal() {
+    var s = ls(); if (!s) return;
+    Object.keys(collect()).forEach(function (k) { if (appOf(k) !== 'shared') s.removeItem(k); });
+    s.removeItem(UNDO); s.removeItem(CLOUD_HASH);
+    try { indexedDB.deleteDatabase(SAFE_DB); } catch (e) {}
+  }
+  /* wait for any sync in progress, run one more, and say whether it worked */
+  function settle() { return cloud.busy ? new Promise(function (r) { setTimeout(r, 250); }).then(settle) : sync().then(function () { return cloud.ok; }); }
   function same(a, b) { var ka = Object.keys(a), kb = Object.keys(b); return ka.length === kb.length && ka.every(function (k) { return a[k] === b[k]; }); }
 
   function sync() {
-    if (!cloud.user || !window.ttCloudSDK) return Promise.resolve();
+    if (!cloud.user || !window.ttCloudSDK || cloud.choice) { cloud.ok = false; return Promise.resolve(); }
     if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
     cloud.busy = true; cloud.err = ''; drawCloud();
     var clearing = !!flag(CLOUD_CLEAR), pulled = false, uid = cloud.user.uid;
@@ -282,10 +300,12 @@
       });
     }).then(function () {
       if (clearing) flag(CLOUD_CLEAR, null);
-      cloud.last = Date.now(); cloud.seen = JSON.stringify(collect()); stamp();
+      cloud.last = Date.now(); cloud.seen = JSON.stringify(collect()); cloud.ok = true; stamp();
+      flag(CLOUD_UID, uid); flag(CLOUD_HASH, hash(cloud.seen));
       if (pulled) arrived();
     }).catch(function (e) {
       var c = (e && (e.code || e.message)) || '';
+      cloud.ok = false;
       cloud.err = c === 'big' ? 'Your progress is too big to sync in one go. Use a save file instead, and tell us via "Report a bug".'
         : /permission/.test(c) ? 'The sync database refused this. Its rules may not be set up yet.'
         : /unavailable|network|offline|load/.test(c) ? 'Offline: it will sync when you are back online.'
@@ -328,7 +348,17 @@
     if (!back) return;
     var box = back.querySelector('#tts-cloud'); if (!box) return;
     var u = cloud.user, h;
-    if (u) {
+    if (u && cloud.choice) {
+      var unsynced = flag(CLOUD_HASH) !== hash(JSON.stringify(collect()));
+      h = '<b>Signed in as ' + esc(u.email || u.name) + '</b><p class="mu" style="margin:4px 0 10px">The progress on this device came from a <b>different Google account</b>.' +
+        (unsynced ? ' Some of it was never synced to that account.' : ' It is safe in that account.') + ' What should happen to it?</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-add">Add it to this account</button><button type="button" id="tts-fresh">Start fresh with this account</button></div>' +
+        '<p class="mu" style="margin:8px 0 0">Add it if both accounts are yours. Start fresh if someone else used this device: their progress is removed from it' + (unsynced ? ', and the unsynced part is lost' : '') + '.</p>';
+    } else if (u && cloud.out) {
+      h = '<b>Sign out of ' + esc(u.email || u.name) + '?</b><p class="mu" style="margin:4px 0 10px">Your progress is synced to your Google account first. What should happen to the copy on this device?</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-keep">Keep it on this device</button><button type="button" class="danger" id="tts-rm">Remove it from this device</button><button type="button" id="tts-back">Cancel</button></div>' +
+        '<p class="mu" style="margin:8px 0 0">Remove it on a shared or school computer. Signing in again brings it all back.</p>';
+    } else if (u) {
       h = '<div class="cl-h">' + (u.photo ? '<img src="' + esc(u.photo) + '" alt="" referrerpolicy="no-referrer">' : '') + '<span><b>Syncing as ' + esc(u.name || u.email) + '</b><small>' + esc(u.email) + '</small></span></div>' +
         '<p class="mu" style="margin:8px 0">' + (cloud.busy ? 'Syncing…' : cloud.last ? 'Last synced ' + ago(cloud.last) + '. Your progress syncs by itself while you work.' : 'Your progress syncs by itself while you work.') + '</p>' +
         '<div class="row" style="margin:0"><button type="button" id="tts-sync"' + (cloud.busy ? ' disabled' : '') + '>Sync now</button><button type="button" id="tts-out">Sign out</button></div>';
@@ -351,10 +381,31 @@
       });
     };
     var sn = box.querySelector('#tts-sync'); if (sn) sn.onclick = function () { sync(); };
-    var so = box.querySelector('#tts-out'); if (so) so.onclick = function () {
-      syncIfChanged();
-      ttCloudSDK.signOut().then(function () { cloud.last = 0; cloud.seen = ''; cloud.err = ''; if (back) msg('Signed out. Your progress stays on this device, and is no longer synced.', 'ok'); });
-    };
+    function on(id, fn) { var b = box.querySelector(id); if (b) b.onclick = fn; }
+    on('#tts-out', function () { cloud.out = true; drawCloud(); });
+    on('#tts-back', function () { cloud.out = false; drawCloud(); });
+    function signedOut() { cloud.last = 0; cloud.seen = ''; cloud.err = ''; cloud.out = false; }
+    on('#tts-keep', function () {
+      box.innerHTML = '<p class="mu" style="margin:0">Syncing, then signing out…</p>';
+      settle().then(function () { return ttCloudSDK.signOut(); }).then(function () { signedOut(); if (back) msg('Signed out. Your progress stays on this device, and is no longer synced.', 'ok'); });
+    });
+    on('#tts-rm', function () {
+      confirmRaw('your progress in every app', function () {
+        box.innerHTML = '<p class="mu" style="margin:0">Syncing, then signing out…</p>';
+        settle().then(function (ok) {
+          if (!ok) { cloud.out = false; cloud.err = 'Could not reach your Google account, so nothing was removed. Try again when you are online.'; drawCloud(); return; }
+          return ttCloudSDK.signOut().then(function () { signedOut(); wipeLocal(); if (back) msg('Signed out and removed from this device. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 700); });
+        });
+      }, 'It stays safe in your Google account: signing in again on any device brings it back.');
+    });
+    on('#tts-add', function () { cloud.choice = false; cloud.fresh = true; sync(); });
+    on('#tts-fresh', function () {
+      confirmRaw('the other account’s progress', function () {
+        cloud.choice = false; cloud.fresh = false; wipeLocal();
+        box.innerHTML = '<p class="mu" style="margin:0">Fetching this account’s progress…</p>';
+        sync().then(function () { if (back) msg('Done. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 600); });
+      }, 'Use this if someone else used this device. Their progress stays in their own Google account if it was synced.');
+    });
   }
   // signed in on this device before: connect a moment after the page opens
   if (flag(CLOUD_ON)) setTimeout(function () { sdk().catch(function () {}); }, 1200);
