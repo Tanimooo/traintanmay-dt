@@ -25,8 +25,8 @@ S.bank=S.bank||{}; S.mocks=S.mocks||[]; S.exam=S.exam||{};
 WQ.forEach(q=>{ const e=S.exam[q.wr.id]; if(e&&e.got!=null&&!(S.bank[q.id]&&S.bank[q.id].got!=null)) S.bank[q.id]={got:e.got,ts:e.ts||Date.now(),rev:1}; });
 const saveNow=()=>{ save(); try{ localStorage.setItem('tt-chem-progress-v1',JSON.stringify(S)); }catch(e){} }; // write straight away as well as via the app's short debounce
 const save=()=>{ WQ.forEach(q=>{ const r=S.bank[q.id]; if(r&&r.got!=null) S.exam[q.wr.id]=Object.assign(S.exam[q.wr.id]||{},{got:r.got,ts:r.ts,rev:1}); }); C.save(); };
-const SRC={N:'cur',O:'cur',M:'old',A:'ext',B:'ext',C:'ext',D:'ext'};
-const SRCL={cur:'OCR A current spec',old:'OCR A earlier papers',ext:'Extra practice',tt:'TrainTanmay exam-style questions'};
+const SRC={J:'cur',G:'old',GM:'ext'};
+const SRCL={cur:'OCR A 2022–24 papers (Set J)',old:'OCR A 2016–21 papers (Set G)',ext:'Multiple-choice packs (Set G)',tt:'TrainTanmay exam-style questions'};
 const srcOf=q=>q.wr?'tt':(SRC[B.packs[q.p].set]||'ext');
 const pk=q=>q.wr?{title:'Exam-style question'}:B.packs[q.p];
 const qLabel=q=>q.wr?`Exam-style ${q.wr.id} · ${q.wr.style}`:`${pk(q).title} · Q${q.n}`;
@@ -38,7 +38,7 @@ const minsFor=m=>Math.max(1,Math.round(m*1.2));
    No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
 const live=(q,kind)=>{ const p=pk(q); return kind==='m'
-  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
+  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
   : ttCrop.html({url:p.qp_url,q:String(q.n),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
   return live(q,kind); };
@@ -84,7 +84,7 @@ function filterQs(f){
 function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
   v.innerHTML=`<span class="eyebrow">Past paper and exam-style questions</span><h1>Practice questions</h1>
-  <p class="muted" style="max-width:78ch">${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H432. Filtering by a topic or module only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
+  <p class="muted" style="max-width:78ch">${WQ.length?`${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H432.`:`${B.q.length.toLocaleString()} real OCR A exam questions with mark schemes, from ${B.packs.length} PMT topic packs (${B.q.filter(q=>q.mcq).length} of them multiple choice, marked for you).`} Filtering by a topic or module only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
   <div class="filters bkfilters"><label class="field">Module<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
   <label class="field">Topic<select id="bt"><option value="">All topics</option>${topicOpts(pre.t)}</select></label>
   <label class="field">Source<select id="bs"><option value="">All sources</option>${Object.entries(SRCL).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
