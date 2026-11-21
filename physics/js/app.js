@@ -427,7 +427,7 @@ function viewProgress(v){
    <p class="muted" id="expMsg" style="margin:10px 0 0;font-size:.85rem" aria-live="polite"></p></div>
   <div class="row" style="margin-top:16px"><button class="btn ghost" id="reset">Reset all progress</button><span id="rmsg" class="muted"></span></div>`;
   const replaceS=n=>{ Object.keys(S).forEach(k=>delete S[k]); Object.assign(S,n); };
-  let armed=false; $('#reset').onclick=()=>{ if(!armed){ armed=true; $('#rmsg').textContent='Press again to confirm. This cannot be undone.'; $('#reset').textContent='Confirm reset'; return; } const keep=S.settings; replaceS({revised:{},conf:{},flash:{},quiz:[],exam:{},answers:{},days:[],bank:{},mocks:[],settings:keep}); save(); route(); toast('Progress reset'); };
+  $('#reset').onclick=()=>ttSure3('all your Physics progress',()=>{ const keep=S.settings; replaceS({revised:{},conf:{},flash:{},quiz:[],exam:{},answers:{},days:[],bank:{},mocks:[],settings:keep}); save(); route(); toast('Progress reset'); });
   const msg=t=>{ $('#expMsg').textContent=t; };
   const stamp=new Date().toISOString().slice(0,10);
   const backup=()=>JSON.stringify({app:'TrainTanmay Physics',version:1,exported:new Date().toISOString(),progress:S},null,1);
@@ -446,7 +446,7 @@ function viewProgress(v){
   $('#expCsv').onclick=()=>saveFile('traintanmay-physics-report-'+stamp+'.csv',report(),'text/csv');
   $('#expCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(backup()); msg('Backup copied. Paste it into a note or email to keep it.'); }catch(e){ msg('Copying is blocked here: use "Save backup file" instead.'); } };
   $('#impFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); const p=d&&d.progress; if(!p||typeof p!=='object'||!p.settings) throw 0;
-      const base={revised:{},conf:{},flash:{},quiz:[],exam:{},answers:{},days:[],bank:{},mocks:[]}; replaceS(Object.assign(base,p)); S.settings=Object.assign({theme:'system',dys:false},p.settings); save(); applyTheme(); applyDys(); route(); toast('Progress restored from '+f.name); }
+      replaceS(ttAddIn(S,p)); save(); route(); toast('Backup from '+f.name+' added to your progress'); }
     catch(err){ msg('That file is not a TrainTanmay Physics backup.'); } e.target.value=''; };
 }
 

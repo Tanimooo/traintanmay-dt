@@ -1768,7 +1768,7 @@ function viewData() {
       try {
         Store.importJSON(r.result);
         migrateIds();
-        Toast('Backup restored.');
+        Toast('Backup added to your progress.');
         applyTheme();
         if (typeof applyDys === "function") applyDys();
         render();
@@ -1779,12 +1779,13 @@ function viewData() {
     r.readAsText(f);
   };
   document.getElementById('d-reset').onclick = () => {
-    if (!confirm('Erase all answers, tests and settings on this device? This cannot be undone.')) return;
-    Store.reset();
-    applyTheme();
-    if (typeof applyDys === "function") applyDys();
-    Toast('All progress erased.');
-    render();
+    window.ttSure3('all your ESAT answers, tests and settings', () => {
+      Store.reset();
+      applyTheme();
+      if (typeof applyDys === "function") applyDys();
+      Toast('All progress erased.');
+      render();
+    });
   };
   document.getElementById('d-pacedot').onchange = (e) => {
     Store.setSetting('paceDot', e.target.checked);

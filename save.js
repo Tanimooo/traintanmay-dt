@@ -79,12 +79,85 @@
     try { return Promise.resolve(normalise(JSON.parse(text))); } catch (e) { return Promise.reject(e); }
   }
 
+  /* ---- add-only merge ----
+     Loading a save never takes anything away: lists gain the entries they were missing, records gain
+     the keys they were missing, counts keep the bigger number, ticks stay ticked. Your settings stay as
+     they are. Loading the same save twice changes nothing the second time. */
+  var TS = ['t', 'at', 'ts', 'time', 'date', 'when'];
+  function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+  function tsOf(v) { if (!isObj(v)) return null; for (var i = 0; i < TS.length; i++) { var x = v[TS[i]]; if (typeof x === 'number') return x; if (typeof x === 'string' && !isNaN(Date.parse(x))) return Date.parse(x); } return null; }
+  function sortedAsc(a) { for (var i = 1; i < a.length; i++) if (a[i - 1] > a[i]) return false; return true; }
+  function mergeArr(a, b) {
+    var out = a.slice(), seen = {}, ids = {};
+    a.forEach(function (x) { seen[JSON.stringify(x)] = 1; if (isObj(x) && x.id != null) ids[x.id] = 1; });
+    b.forEach(function (x) {
+      var j = JSON.stringify(x);
+      if (seen[j]) return;
+      if (isObj(x) && x.id != null) { if (ids[x.id]) return; ids[x.id] = 1; }
+      seen[j] = 1; out.push(x);
+    });
+    if (out.length === a.length) return a;
+    // keep logs in time order, and sorted lists (like study days) sorted
+    if (out.every(function (x) { return tsOf(x) !== null; })) out.sort(function (p, q) { return tsOf(p) - tsOf(q); });
+    else if (out.every(function (x) { return typeof x === 'string' || typeof x === 'number'; }) && sortedAsc(a) && sortedAsc(b)) out.sort();
+    return out;
+  }
+  function mergeVal(a, b, key) {
+    if (a === undefined || a === null) return b;
+    if (b === undefined || b === null) return a;
+    if (key === 'settings') return a; // your current settings win
+    if (Array.isArray(a) && Array.isArray(b)) return mergeArr(a, b);
+    if (isObj(a) && isObj(b)) { var o = {}; Object.keys(a).forEach(function (k) { o[k] = a[k]; }); Object.keys(b).forEach(function (k) { o[k] = mergeVal(a[k], b[k], k); }); return o; }
+    if (typeof a === 'number' && typeof b === 'number') return Math.max(a, b);
+    if (typeof a === 'boolean' && typeof b === 'boolean') return a || b;
+    return a; // text and anything mismatched: keep what is here
+  }
+  function mergeStr(cur, inc) {
+    if (cur === null || cur === undefined) return inc;
+    var a, b; try { a = JSON.parse(cur); b = JSON.parse(inc); } catch (e) { return cur; }
+    return JSON.stringify(mergeVal(a, b));
+  }
+
   function restore(data) {
     var s = ls(); if (!s) throw new Error('storage');
     var before = {};
     Object.keys(data).forEach(function (k) { before[k] = s.getItem(k); });
     try { s.setItem(UNDO, JSON.stringify({ at: Date.now(), before: before })); } catch (e) {}
-    Object.keys(data).forEach(function (k) { if (INCLUDE.test(k) && !EXCLUDE.test(k) && typeof data[k] === 'string') s.setItem(k, data[k]); });
+    Object.keys(data).forEach(function (k) { if (INCLUDE.test(k) && !EXCLUDE.test(k) && typeof data[k] === 'string') s.setItem(k, mergeStr(s.getItem(k), data[k])); });
+  }
+
+  /* ---- clearing progress: three separate "are you sure?" boxes, each somewhere different ---- */
+  var SURE = [
+    { h: 'Are you sure?', p: 'This deletes WHAT from this browser.', yes: 'Yes, I’m sure', pos: 'top:24px;left:24px' },
+    { h: 'Are you double sure?', p: 'It cannot be undone unless you have a save file or save code.', yes: 'Yes, double sure', pos: 'bottom:24px;right:24px' },
+    { h: 'Are you triple sure?', p: 'Last chance. Press the button below and WHAT is gone.', yes: 'Yes, delete it', pos: 'top:24px;right:24px' }
+  ];
+  function confirm3(what, onYes) {
+    what = what || 'all your progress';
+    var step = 0, prev = document.activeElement;
+    function show() {
+      var c = SURE[step], w = document.createElement('div');
+      w.className = 'tts-sure-back';
+      w.innerHTML = '<div class="tts tts-sure" role="alertdialog" aria-modal="true" aria-labelledby="tts-sh" aria-describedby="tts-sp" style="' + c.pos + '">' +
+        '<p class="mu" style="margin:0 0 2px">Step ' + (step + 1) + ' of 3</p><h2 id="tts-sh">' + c.h + '</h2><p id="tts-sp">' + c.p.replace('WHAT', what) + '</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" data-no>No, keep it</button><button type="button" class="danger" data-yes>' + c.yes + '</button></div></div>';
+      document.body.appendChild(w);
+      var no = w.querySelector('[data-no]'), yes = w.querySelector('[data-yes]');
+      function done(ok) {
+        document.removeEventListener('keydown', key, true); w.remove();
+        if (!ok) { prev && prev.focus && prev.focus(); return; }
+        step++; if (step < SURE.length) show(); else onYes();
+      }
+      function key(e) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+        if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === no ? yes : no).focus(); }
+      }
+      document.addEventListener('keydown', key, true);
+      no.onclick = function () { done(false); }; yes.onclick = function () { done(true); };
+      w.addEventListener('click', function (e) { if (e.target === w) done(false); });
+      no.focus();
+    }
+    show();
   }
   function undo() {
     var s = ls(); if (!s) return false;
@@ -155,6 +228,10 @@
     '.tts .x{float:right;border:0!important;background:none!important;font-size:1.4rem!important;padding:0 4px!important;line-height:1}' +
     '.tts .cf{border:1px solid #e1e4ea;border-radius:12px;padding:12px;margin-top:10px;background:#fbfbfd}' +
     '.tts .drop{outline:2px dashed #5b9cff;outline-offset:4px}' +
+    '.tts-sure-back{position:fixed;inset:0;z-index:100001;background:rgba(8,10,20,.35);animation:ttsF .2s ease both}' +
+    '.tts.tts-sure{position:fixed;width:min(360px,calc(100vw - 48px));border-top:5px solid #b23a33}' +
+    '.tts button.danger{background:none;color:#b23a33;border-color:#b23a33}.tts button.danger:hover{background:#b23a3314}' +
+    '@media (prefers-color-scheme:dark){.tts button.danger{color:#ff8a80;border-color:#ff8a80}}' +
     '@media (prefers-color-scheme:dark){.tts{background:#1c1e24;color:#eceef2}.tts .ap,.tts .cf{border-color:#363a44}.tts .cf{background:#22252c}.tts button,.tts label.b{background:#2a2d35;border-color:#424754}.tts button:hover,.tts label.b:hover{background:#333743}.tts button.pr{background:#eceef2;color:#14161b;border-color:#eceef2}.tts textarea{background:#15171b;border-color:#424754}.tts .msg.ok{color:#5fd39a}.tts .msg.bad{color:#ff8a80}}' +
     '@media (max-width:460px){.tts .apps{grid-template-columns:1fr}}' +
     '@media (prefers-reduced-motion:reduce){.tts-back,.tts{animation:none}}';
@@ -178,7 +255,7 @@
       '<div class="apps">' + APPS.map(function (a) { var d = describe(a.id, data); return '<div class="ap"><i style="background:' + a.col + '"></i><span><b>' + a.name + '</b><small>' + (d || 'nothing yet') + '</small></span></div>'; }).join('') + '</div>' +
       '<h3>Save</h3><div class="row"><button class="pr" type="button" id="tts-file"' + (any ? '' : ' disabled') + '>Download save file</button><button type="button" id="tts-copy"' + (any ? '' : ' disabled') + '>Copy save code</button></div>' +
       '<p class="mu">The save code is text you can email to yourself or paste into a note. Use it if downloads are blocked (e.g. on school computers).</p>' +
-      '<h3>Load</h3><p class="mu">Choose a save file, or paste a save code. Older one-app backups work too.</p>' +
+      '<h3>Load</h3><p class="mu">Choose a save file, or paste a save code. Loading only <b>adds</b> to what you have: nothing here is removed or overwritten. Older one-app backups work too.</p>' +
       '<div class="row"><label class="b" tabindex="0" id="tts-pick">Choose save file<input type="file" id="tts-in" accept=".json,application/json,text/plain" hidden></label></div>' +
       '<textarea id="tts-paste" placeholder="…or paste a save code here" aria-label="Paste a save code"></textarea>' +
       '<div id="tts-cf"></div><div id="tts-msg" class="msg" role="status" aria-live="polite"></div>' +
@@ -213,12 +290,12 @@
         if (!r || !Object.keys(r.data).length) throw 0;
         var names = APPS.filter(function (a) { return Object.keys(r.data).some(function (k) { return appOf(k) === a.id; }); }).map(function (a) { return a.name; });
         var when = r.saved ? new Date(r.saved).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
-        el('#tts-cf').innerHTML = '<div class="cf"><b>' + r.from + (when ? ' from ' + when : '') + '</b><p class="mu" style="margin:4px 0 10px">Contains: ' + (names.join(', ') || 'settings only') + '. This replaces the progress on this device for ' + (names.length === 1 ? 'that app' : 'those apps') + '. Other apps are left alone.</p><div class="row" style="margin:0"><button class="pr" type="button" id="tts-go">Load it</button><button type="button" id="tts-no">Cancel</button></div></div>';
+        el('#tts-cf').innerHTML = '<div class="cf"><b>' + r.from + (when ? ' from ' + when : '') + '</b><p class="mu" style="margin:4px 0 10px">Contains: ' + (names.join(', ') || 'settings only') + '. It is added to what this device already has: anything missing is filled in, and nothing here is removed.</p><div class="row" style="margin:0"><button class="pr" type="button" id="tts-go">Load it</button><button type="button" id="tts-no">Cancel</button></div></div>';
         msg('');
         el('#tts-go').focus();
         el('#tts-no').onclick = function () { el('#tts-cf').innerHTML = ''; };
         el('#tts-go').onclick = function () {
-          try { restore(r.data); msg('Loaded. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 500); }
+          try { restore(r.data); msg('Added to your progress. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 500); }
           catch (e) { msg('Could not save to this browser (storage may be full or blocked).', 'bad'); }
         };
       }).catch(function () { msg('That is not a TrainTanmay save. Check you copied the whole code, starting with TT1.', 'bad'); });
@@ -248,5 +325,5 @@
   /* any element with data-tt-save opens the panel */
   document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-tt-save]'); if (t) { e.preventDefault(); open(); } });
 
-  window.ttSave = { open: open, collect: collect, parse: parseAny, _normalise: normalise, _toCode: toCode };
+  window.ttSave = { open: open, collect: collect, parse: parseAny, merge: mergeVal, confirm3: confirm3, _normalise: normalise, _toCode: toCode };
 })();

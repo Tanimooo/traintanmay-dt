@@ -125,8 +125,9 @@ const Store = (() => {
       const d = JSON.parse(text);
       if (!d || !Array.isArray(d.attempts) || !Array.isArray(d.sessions))
         throw new Error('That file is not a TrainTanmay backup.');
-      state = Object.assign(blank(), d);
-      state.settings = Object.assign(blank().settings, d.settings || {});
+      // add-only: anything in the backup that is missing here is added; nothing here is removed
+      state = Object.assign(blank(), window.ttAddIn ? window.ttAddIn(state, d) : d);
+      state.settings = Object.assign(blank().settings, state.settings || {});
       mem = state;
       save();
       return true;

@@ -105,7 +105,7 @@ const Extras = (() => {
       delete Store.state.extras;
     } catch (e) {}
     if (d && d.extras && typeof d.extras === 'object') {
-      state = normalise(d.extras); // new-style backup: restore the practice data too
+      state = normalise(window.ttAddIn ? window.ttAddIn(state, d.extras) : d.extras); // new-style backup: add its practice data too
       save();
     } // old-style backup: leave current extras exactly as they are
     return ok;
