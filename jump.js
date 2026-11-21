@@ -47,7 +47,7 @@
       PAGES[a].forEach(function (p) { add(p[1], NAMES[a], base + HOMES[a] + (p[0] === 'home' ? '' : '#' + p[0]), 'app'); });
     });
     add('Start screen', 'All apps', base, 'app'); add('How to use TrainTanmay', 'Help', base + 'help.html', 'app');
-    add('Plan your revision', 'revisedesk.com (new tab)', 'https://revisedesk.com', 'app');
+    if (window.ttFeature && ttFeature('revisedesk')) add('Plan your revision', 'revisedesk.com (new tab)', 'https://revisedesk.com', 'app');
     return L;
   }
   var IDX = null;
