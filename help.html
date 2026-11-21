@@ -7,8 +7,8 @@
 <title>How to use TrainTanmay</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrainTanmay">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f7f6f1;--surface:#fff;--ink:#16181d;--muted:#5d6270;--line:#e1ded3;--navy:#0b2545;--dt:#1f5fbf;--ph:#c81e66;--es:#e0a800;--ma:#15803d;--grid:rgba(11,37,69,.05)}
-@media (prefers-color-scheme:dark){:root{--bg:#101217;--surface:#181b22;--ink:#eef0f4;--muted:#a3a9b6;--line:#2c313b;--navy:#9fc3ff;--dt:#5b9cff;--ph:#ff5c9e;--es:#ffd23f;--ma:#4ade80;--grid:rgba(159,195,255,.04)}}
+:root{--bg:#f7f6f1;--surface:#fff;--ink:#16181d;--muted:#5d6270;--line:#e1ded3;--navy:#0b2545;--dt:#1f5fbf;--ph:#c81e66;--ch:#c2410c;--es:#e0a800;--ma:#15803d;--grid:rgba(11,37,69,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#101217;--surface:#181b22;--ink:#eef0f4;--muted:#a3a9b6;--line:#2c313b;--navy:#9fc3ff;--dt:#5b9cff;--ph:#ff5c9e;--ch:#ff8a4c;--es:#ffd23f;--ma:#4ade80;--grid:rgba(159,195,255,.04)}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'IBM Plex Sans',system-ui,sans-serif;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5}
@@ -60,7 +60,7 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 
   <div class="card">
     <h3 style="margin-top:0">Switching between apps</h3>
-    <p>Click the <b>TrainTanmay logo in the top left</b> of any page. A menu opens with the four apps (Design &amp; Technology, Physics, ESAT and Maths) and this help page. The logo colour tells you which app you're in: <b style="color:var(--dt)">blue</b> for D&amp;T, <b style="color:var(--ph)">pink</b> for Physics, <b style="color:var(--es)">yellow</b> for ESAT, <b style="color:var(--ma)">green</b> for Maths.</p>
+    <p>Click the <b>TrainTanmay logo in the top left</b> of any page. A menu opens with the five apps (Design &amp; Technology, Physics, Chemistry, ESAT and Maths) and this help page. The logo colour tells you which app you're in: <b style="color:var(--dt)">blue</b> for D&amp;T, <b style="color:var(--ph)">pink</b> for Physics, <b style="color:var(--ch)">orange</b> for Chemistry, <b style="color:var(--es)">yellow</b> for ESAT, <b style="color:var(--ma)">green</b> for Maths.</p>
     <p style="margin-bottom:0">To get back to the home page of the app you're in, open the same menu and choose <b>"Go to … home"</b> at the bottom.</p>
   </div>
 
@@ -107,6 +107,24 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
     <a class="go" href="physics/">Open Physics</a>
   </div>
 
+  <div class="card app" style="--c:var(--ch)">
+    <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#c2410c"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#fff"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#ffd3b5"/></svg>Chemistry</h2>
+    <p>For OCR A level Chemistry A (H432) and AS (H032). It brings together full topic notes, questions from Physics &amp; Maths Tutor, past papers and tools built for chemistry.</p>
+    <ul>
+      <li><b>Topics:</b> every spec topic in modules 1–6, with a spec checklist, full lesson notes with worked examples and check-yourself questions, key definitions and equations, plus <b>Flashcards</b> and a <b>Quiz</b>.</li>
+      <li><b>Past paper packs:</b> on each topic page, the Physics &amp; Maths Tutor topic questions with mark schemes (2022–24 and 2016–21 sets, plus multiple choice).</li>
+      <li><b>Past papers:</b> every H432 and H032 paper with its mark scheme, plus the old-spec F321, F322, F324 and F325 papers with notes on which modules they match. Sit one with a timer.</li>
+      <li><b>Videos:</b> over 300 videos sorted by topic, from full topic revision to quick recaps, worked examples and GCSE refreshers.</li>
+      <li><b>Calculation drills:</b> 26 kinds of calculation, from moles to Born–Haber cycles and pH, with new numbers every time, instant marking and a worked solution.</li>
+      <li><b>Reaction map:</b> every organic reaction on one map, with reagents, conditions and reaction type, and a quiz.</li>
+      <li><b>Spectroscopy practice:</b> identify compounds from IR, mass spectra and NMR data.</li>
+      <li><b>Practicals:</b> method, safety and evaluation points for each PAG.</li>
+      <li><b>Data sheet:</b> the constants and every equation you need to learn.</li>
+    </ul>
+    <p><b>About the notes:</b> the topic notes are full lessons with worked examples, but they were written with AI, so they may contain mistakes. Check anything that looks wrong against your textbook or a video.</p>
+    <a class="go" href="chemistry/">Open Chemistry</a>
+  </div>
+
   <div class="card app es" style="--c:var(--es)">
     <h2><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#ffc917"/><path d="M8 10h22v6h-7.6v24h-6.8V16H8z" fill="#1d1600"/><path d="M33.2 19.5h5.2v4.6h4.2v4.3h-4.2v6.4c0 1.4.6 1.9 1.9 1.9.8 0 1.6-.1 2.3-.3v4.3c-1 .3-2.3.5-3.6.5-3.9 0-5.8-1.9-5.8-5.6v-7.2H30.6v-4.3h2.6z" fill="#9a6200"/></svg>ESAT</h2>
     <p>For the Engineering and Science Admissions Test. It uses real ENGAA, NSAA and TMUA questions, filtered to what's on the current ESAT content specification.</p>
@@ -150,6 +168,6 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 function sync(){b.setAttribute('aria-pressed',r.classList.contains('dys'))}
 b.onclick=function(){r.classList.toggle('dys');try{localStorage.setItem('tt-help-dys',r.classList.contains('dys')?'1':'0')}catch(e){}sync()};sync();})();
 </script>
-<script src="switcher.js?v=20261121"></script>
+<script src="switcher.js?v=20261121c"></script>
 </body>
 </html>

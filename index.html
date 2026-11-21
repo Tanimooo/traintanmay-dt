@@ -6,18 +6,18 @@
 if(location.hash.length>1)location.replace('dt.html'+location.hash);</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TrainTanmay</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="TrainTanmay"><meta name="theme-color" content="#0e0b22">
-<meta name="description" content="TrainTanmay: free A level revision apps for Design &amp; Technology, Physics, Maths and the ESAT. Pick an app to start.">
-<link rel="icon" href="esat/favicon.svg" type="image/svg+xml">
+<meta name="description" content="TrainTanmay: free A level revision apps for Design &amp; Technology, Physics, Chemistry, Maths and the ESAT. Pick an app to start.">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout concept: an orrery. Four subject-worlds hang on one orbit under the headline;
+/* Layout concept: an orrery. Five subject-worlds hang on one orbit under the headline;
    the sky is hand-drawn flat shapes with ink outlines. Pick a world and its colour floods the screen. */
 :root{
   color-scheme:dark;
   --sky:#0e0b22; --sky-2:#1d1548; --haze:#3a2a86;
   --paper:#f6f1e7; --muted:#b3acd6; --ink:#07051a;
-  --dt:#4a8dff; --ph:#ff4f96; --ma:#3ddc84; --es:#ffc917;
+  --dt:#4a8dff; --ph:#ff4f96; --ch:#ff8a3d; --ma:#3ddc84; --es:#ffc917;
   --f-display:"Bricolage Grotesque","Arial Narrow",Arial,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -70,20 +70,20 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2.3rem,min(7vw,1
 h1 .w{display:inline-block}
 h1 em{font-style:normal;position:relative;white-space:nowrap}
 h1 em::after{content:"";position:absolute;left:-2%;right:-2%;bottom:.04em;height:.16em;border-radius:99px;z-index:-1;
-  background:linear-gradient(90deg,var(--dt),var(--ph),var(--es),var(--ma));background-size:300% 100%;animation:slide 9s linear infinite}
+  background:linear-gradient(90deg,var(--dt),var(--ph),var(--ch),var(--es),var(--ma));background-size:300% 100%;animation:slide 9s linear infinite}
 @keyframes slide{to{background-position:300% 0}}
 .lead{margin:0;color:var(--muted);font-size:clamp(1rem,1.5vw,1.15rem);max-width:46ch}
 
 /* the worlds */
-.worlds{position:relative;flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,2vw,28px);align-items:start;
+.worlds{position:relative;flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(6px,1.6vw,22px);align-items:start;
   max-width:1180px;width:100%;margin:clamp(14px,3vh,40px) auto 0;padding-bottom:10px}
 .orbit{position:absolute;left:-6%;right:-6%;top:-34px;height:300px;pointer-events:none;overflow:visible}
 .orbit path{fill:none;stroke:rgba(246,241,231,.28);stroke-width:1.5;stroke-dasharray:3 11;stroke-linecap:round;animation:dash 40s linear infinite}
 @keyframes dash{to{stroke-dashoffset:-560}}
 .world{--c:var(--dt);position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;text-decoration:none;padding:6px 4px 14px;border-radius:26px;
   transform:translateY(var(--drop,0px));-webkit-tap-highlight-color:transparent}
-.world:nth-child(2){--drop:0px}.world:nth-child(3){--drop:44px}.world:nth-child(4){--drop:44px}.world:nth-child(5){--drop:0px}
-.planet{position:relative;width:clamp(120px,min(17vw,22vh),196px);aspect-ratio:1;display:block;
+.world:nth-child(2){--drop:0px}.world:nth-child(3){--drop:34px}.world:nth-child(4){--drop:52px}.world:nth-child(5){--drop:34px}.world:nth-child(6){--drop:0px}
+.planet{position:relative;width:clamp(110px,min(14.5vw,21vh),180px);aspect-ratio:1;display:block;
   translate:calc(var(--px)*var(--depth,10)*1px) calc(var(--py)*var(--depth,10)*1px);
   transition:scale .5s var(--spring),filter .4s ease}
 .planet svg{width:100%;height:100%;display:block;overflow:visible;animation:bob var(--bob,7s) ease-in-out infinite;animation-delay:var(--bd,0s)}
@@ -138,6 +138,8 @@ footer a{text-underline-offset:3px}
 @media (max-width:760px){
   .worlds{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 8px;margin-top:26px}
   .world{--drop:0px!important}
+  /* five apps in two columns: the odd one out sits in the middle of its own row */
+  .world:last-child:nth-child(even){grid-column:1/-1;justify-self:center;width:calc(50% - 4px)}
   .orbit{display:none}
   .planet{width:clamp(112px,36vw,170px)}
   .w-key{display:none}
@@ -169,7 +171,7 @@ footer a{text-underline-offset:3px}
 
   <main>
     <div class="intro">
-      <p class="eyebrow">A level revision · four apps · free</p>
+      <p class="eyebrow">A level revision · five apps · free</p>
       <h1 id="h1">What are we revising <em>today?</em></h1>
       <p class="lead">Pick a world to open its app. Your progress in each one is saved on this device.</p>
     </div>
@@ -228,7 +230,25 @@ footer a{text-underline-offset:3px}
         <span class="w-tag">Question bank, simulated practicals and labs</span>
       </a>
 
-      <a class="world" href="maths/" data-go="maths" data-name="Maths" style="--c:var(--ma);--i:2;--depth:18;--bob:8.4s;--bd:-4s">
+      <a class="world" href="chemistry/" data-go="chemistry" data-name="Chemistry" style="--c:var(--ch);--i:2;--depth:16;--bob:7.1s;--bd:-3s">
+        <span class="planet"><svg viewBox="0 0 200 200" aria-hidden="true">
+          <!-- an atom: an orange nucleus-planet with two tilted electron orbits -->
+          <g stroke="#07051a" stroke-width="3" stroke-linejoin="round">
+            <circle cx="100" cy="100" r="58" fill="#ff8a3d"/>
+            <path d="M100 42a58 58 0 0 1 0 116a80 80 0 0 0 0-116Z" fill="#e8651c"/>
+            <circle cx="80" cy="82" r="11" fill="#ffc29c"/><circle cx="118" cy="120" r="8" fill="#ffc29c"/><circle cx="116" cy="78" r="6" fill="#c84f10"/>
+            <circle cx="100" cy="100" r="58" fill="none"/>
+          </g>
+          <g fill="none" stroke="#f6f1e7" stroke-width="2.4" opacity=".85"><ellipse cx="100" cy="100" rx="94" ry="30" transform="rotate(28 100 100)"/><ellipse cx="100" cy="100" rx="94" ry="30" transform="rotate(-28 100 100)"/></g>
+          <g class="spin"><circle cx="100" cy="8" r="8" fill="#f6f1e7" stroke="#07051a" stroke-width="3"/></g>
+        </svg></span>
+        <span class="w-key">3</span>
+        <span class="w-name">Chemistry</span>
+        <span class="w-sub">OCR A H432</span>
+        <span class="w-tag">Topic notes, PMT questions, past papers and videos</span>
+      </a>
+
+      <a class="world" href="maths/" data-go="maths" data-name="Maths" style="--c:var(--ma);--i:3;--depth:18;--bob:8.4s;--bd:-4s">
         <span class="planet"><svg viewBox="0 0 200 200" aria-hidden="true">
           <!-- a coordinate globe -->
           <g stroke="#07051a" stroke-width="3" fill="none" stroke-linejoin="round">
@@ -241,13 +261,13 @@ footer a{text-underline-offset:3px}
           </g>
           <g class="spin"><path d="M100 4 l7 12 h-14z" fill="#f6f1e7" stroke="#07051a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="196" r="5" fill="#f6f1e7" stroke="#07051a" stroke-width="2.5"/></g>
         </svg></span>
-        <span class="w-key">3</span>
+        <span class="w-key">4</span>
         <span class="w-name">Maths</span>
         <span class="w-sub">Edexcel 9MA0 · 9FM0</span>
         <span class="w-tag">Exam questions, drills and 3D visualisers</span>
       </a>
 
-      <a class="world" href="esat/" data-go="esat" data-name="ESAT" style="--c:var(--es);--i:3;--depth:12;--bob:6.8s;--bd:-1s">
+      <a class="world" href="esat/" data-go="esat" data-name="ESAT" style="--c:var(--es);--i:4;--depth:12;--bob:6.8s;--bd:-1s">
         <span class="planet"><svg viewBox="0 0 200 200" aria-hidden="true">
           <!-- a sun that is also a stopwatch dial -->
           <g class="spin slow" stroke="#ffc917" stroke-width="7" stroke-linecap="round">
@@ -262,7 +282,7 @@ footer a{text-underline-offset:3px}
           </g>
           <g class="spin rev"><path d="M100 100V58" stroke="#07051a" stroke-width="5" stroke-linecap="round"/></g>
         </svg></span>
-        <span class="w-key">4</span>
+        <span class="w-key">5</span>
         <span class="w-name">ESAT</span>
         <span class="w-sub">ENGAA · NSAA · TMUA</span>
         <span class="w-tag">Timed mocks, topic drills and analytics</span>
@@ -325,7 +345,7 @@ footer a{text-underline-offset:3px}
 /* Your subjects: pick the apps you actually use. The others fade back here and drop out of the
    subject bar and logo menu inside the apps. Stored as tt-profile, so it travels with "Save progress". */
 (function(){
-  var ALL=[['dt','Design & Technology','Edexcel 9DT0'],['physics','Physics','OCR A H556'],['maths','Maths','Edexcel 9MA0 · 9FM0'],['esat','ESAT','ENGAA · NSAA · TMUA']];
+  var ALL=[['dt','Design & Technology','Edexcel 9DT0'],['physics','Physics','OCR A H556'],['chemistry','Chemistry','OCR A H432'],['maths','Maths','Edexcel 9MA0 · 9FM0'],['esat','ESAT','ENGAA · NSAA · TMUA']];
   function get(){try{return JSON.parse(localStorage.getItem('tt-profile')||'null')}catch(e){return null}}
   function apply(){var p=get(),s=p&&p.subjects&&p.subjects.length?p.subjects:null;
     [].forEach.call(document.querySelectorAll('.world'),function(w){var on=!s||s.indexOf(w.getAttribute('data-go'))>=0;w.classList.toggle('w-off',!on);if(on)w.removeAttribute('title');else w.title='Not one of your subjects (change this with “Your subjects”)';});}
@@ -350,8 +370,8 @@ footer a{text-underline-offset:3px}
 <script>
 (function(){
   var root=document.documentElement, reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var NAMES={dt:'Design & Technology',physics:'Physics',maths:'Maths',esat:'ESAT'};
-  var COL={dt:'#4a8dff',physics:'#ff4f96',maths:'#3ddc84',esat:'#ffc917',help:'#f6f1e7'};
+  var NAMES={dt:'Design & Technology',physics:'Physics',chemistry:'Chemistry',maths:'Maths',esat:'ESAT'};
+  var COL={dt:'#4a8dff',physics:'#ff4f96',chemistry:'#ff8a3d',maths:'#3ddc84',esat:'#ffc917',help:'#f6f1e7'};
 
   /* headline: split into words so each can rise in */
   var h1=document.getElementById('h1'), i=0;
@@ -430,7 +450,7 @@ footer a{text-underline-offset:3px}
   document.addEventListener('keydown',function(e){
     if(e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
     var k=e.key.toLowerCase(), a=null;
-    if(k>='1'&&k<='4')a=document.querySelectorAll('.world')[+k-1];
+    if(k>='1'&&k<='5')a=document.querySelectorAll('.world')[+k-1];
     else if(k==='h'||k==='?')a=document.querySelector('.dock a[data-go="help"]');
     if(a){var b=(a.querySelector('.planet')||a).getBoundingClientRect();launch(a,b.left+b.width/2,b.top+b.height/2);}
   });
@@ -443,7 +463,7 @@ footer a{text-underline-offset:3px}
 
   /* the sky: stars plus slow flat-shaded shards with ink outlines */
   var cv=document.getElementById('stars'), g=cv.getContext('2d'), W,H,dpr, stars=[], shards=[];
-  var PAL=['#2a1f66','#3a2a86','#241a57','#4b38a8','#1b1444'], HOT=['#4a8dff','#ff4f96','#3ddc84','#ffc917'];
+  var PAL=['#2a1f66','#3a2a86','#241a57','#4b38a8','#1b1444'], HOT=['#4a8dff','#ff4f96','#ff8a3d','#3ddc84','#ffc917'];
   function rnd(a,b){return a+Math.random()*(b-a);}
   function build(){
     dpr=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; g.setTransform(dpr,0,0,dpr,0,0);

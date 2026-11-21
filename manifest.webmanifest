@@ -1,7 +1,7 @@
 {
   "name": "TrainTanmay",
   "short_name": "TrainTanmay",
-  "description": "Free A level revision apps for Design & Technology, Physics, Maths and the ESAT.",
+  "description": "Free A level revision apps for Design & Technology, Physics, Chemistry, Maths and the ESAT.",
   "id": "./",
   "start_url": "./?source=app",
   "scope": "./",
@@ -56,6 +56,17 @@
       "icons": [
         {
           "src": "icons/physics-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Chemistry",
+      "url": "chemistry/",
+      "icons": [
+        {
+          "src": "icons/chemistry-96.png",
           "sizes": "96x96",
           "type": "image/png"
         }

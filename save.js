@@ -1,5 +1,5 @@
 /* TrainTanmay: one save for every app.
-   Backs up D&T, Physics, Maths (incl. SketchGuessr) and ESAT progress together as one file or one
+   Backs up D&T, Physics, Chemistry, Maths (incl. SketchGuessr) and ESAT progress together as one file or one
    copy-and-paste save code, and restores it on any device. Also reads the older one-app backups.
    Open it with window.ttSave.open() (the logo menu, the start screen and each Progress page do). */
 (function () {
@@ -8,6 +8,7 @@
   var APPS = [
     { id: 'dt', name: 'Design & Technology', col: '#1f5fbf', keys: [/^tt-dt-/] },
     { id: 'physics', name: 'Physics', col: '#c81e66', keys: [/^tt-phys-/, /^tt-mockcfg$/] },
+    { id: 'chemistry', name: 'Chemistry', col: '#c2410c', keys: [/^tt-chem-/] },
     { id: 'maths', name: 'Maths', col: '#1a7f45', keys: [/^tt-maths-/, /^sketchguessr-/] },
     { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] }
   ];
@@ -65,6 +66,7 @@
     var str = function (v) { return JSON.stringify(v); };
     if (o.kind === 'all-apps' && o.data && typeof o.data === 'object') return { data: o.data, saved: o.saved, from: 'All apps backup' };
     if (o.app === 'TrainTanmay Physics' && o.progress) return { data: { 'tt-phys-progress-v1': str(o.progress) }, saved: o.exported, from: 'Physics backup' };
+    if (o.app === 'TrainTanmay Chemistry' && o.progress) return { data: { 'tt-chem-progress-v1': str(o.progress) }, saved: o.exported, from: 'Chemistry backup' };
     if (o.S && typeof o.S === 'object') { var d = { 'tt-maths-v1': str(o.S) }; if (o.D) d['tt-maths-drills-v1'] = str(o.D); return { data: d, from: 'Maths backup' }; }
     if (Array.isArray(o.attempts) && Array.isArray(o.sessions)) return { data: { 'esat.trainer.v1': str(o) }, from: 'ESAT backup' };
     if ('flash' in o) return { data: { 'tt-dt-progress-v1': str(o) }, from: 'D&T backup' };

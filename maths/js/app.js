@@ -823,6 +823,26 @@ function draw(h){
   if (!h.startsWith('drill-') || !V) window.scrollTo({top: 0});
   const t = $('h1', app); document.title = (t && h !== 'home' ? t.textContent + ' – ' : '') + 'TrainTanmay Maths';
 }
+/* live data sheet (../datasheet.js): the button sits bottom-right on every page with questions */
+const dsCourse = h => {
+  let m;
+  if ((m = h.match(/^(?:c|cp|cx|cr|px)-(\w+?)(?:-|$)/)) || (m = h.match(/^t-(\w+?)-/))) return m[1];
+  if ((m = h.match(/^q-(\w+-\d+)$/)) && PQBY[m[1]]) return (IBY[PQBY[m[1]].pk] || {}).c || '';
+  if ((m = h.match(/^run-(\w+)$/)) && IBY[m[1]]) return IBY[m[1]].c;
+  return h.startsWith('drill') ? 'pure' : '';
+};
+window.TT_DS_CFG = {
+  match: h => /^(t-|px-|q-|run-|drill|cp-|papers$|practice$|pset)/.test(h),
+  sheets: h => {
+    const cid = dsCourse(h), mod = CAT.ref.find(r => r.c === cid && /A-level/.test(r.n));
+    const maths = {label: 'A level Maths formulae', render: el => window.TT_MATHS_FORMULAE ? TT_MATHS_FORMULAE(el) : (el.innerHTML = '<p>The formula sheet could not load.</p>')};
+    /* Pearson blocks other sites from loading its PDFs, so the site keeps its own copy of the official booklet
+       (from qualifications.pearson.com, ".../pearson-edexcel-a-level-gce-in-mathematics-formulae-book.pdf") */
+    const book = {label: 'Official Pearson booklet', url: new URL('../files/formulae/edexcel-a-level-maths-formulae-book.pdf', location.href).href};
+    maths.label = 'Typed copy (quick)';
+    return mod ? [{label: mod.n.replace(' A-level Formula Sheet', '') + ' formula sheet (official)', url: url(mod.u)}, book, maths] : [book, maths];
+  }
+};
 window.addEventListener('hashchange', route);
 route();
 /* an exam still running when the page closed or crashed: offer to carry on with the same clock */

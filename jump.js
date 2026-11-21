@@ -1,4 +1,4 @@
-/* TrainTanmay: get where you need to go, fast. Loaded by D&T, Physics and Maths.
+/* TrainTanmay: get where you need to go, fast. Loaded by D&T, Physics, Chemistry and Maths.
    1. Jump search: Ctrl+K (or /) anywhere opens one box that finds any topic, paper, question, lab or page
       in this app, plus the other apps. Enter goes there.
    2. Continue strip: at the top of each app's home, your last few places and your weakest topic, one tap each.
@@ -6,7 +6,7 @@
    3. Smaller headers: the big home banners and page titles are trimmed so content starts higher up. */
 (function () {
   if (window.ttJump) return;
-  var app = /\/physics\//.test(location.pathname) ? 'physics' : /\/maths\//.test(location.pathname) ? 'maths' : 'dt';
+  var app = /\/physics\//.test(location.pathname) ? 'physics' : /\/chemistry\//.test(location.pathname) ? 'chemistry' : /\/maths\//.test(location.pathname) ? 'maths' : 'dt';
   var base = (document.currentScript && document.currentScript.src || '').replace(/jump\.js.*$/, '');
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function ls(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
@@ -15,10 +15,11 @@
   var PAGES = {
     dt: [['home', 'Home'], ['topics', 'All topics'], ['exam', 'Exam questions'], ['papers', 'Past papers'], ['flashcards', 'Flashcards'], ['quiz', 'Quizzes'], ['labs', 'Labs'], ['videos', 'Videos'], ['downloads', 'Downloads'], ['progress', 'Progress'], ['search', 'Search the notes']],
     physics: [['home', 'Home'], ['topics', 'All topics'], ['bank', 'Practice questions'], ['mock', 'Practice tests'], ['papers', 'Past papers'], ['flash', 'Flashcards'], ['quiz', 'Quiz'], ['labs', 'Labs'], ['pags', 'Practicals (PAGs)'], ['videos', 'Videos'], ['sheet', 'Data sheet'], ['progress', 'Progress']],
+    chemistry: [['home', 'Home'], ['topics', 'All topics'], ['drills', 'Calculation drills'], ['rxmap', 'Reaction map'], ['spec', 'Spectroscopy practice'], ['videos', 'Videos'], ['papers', 'Past papers'], ['flash', 'Flashcards'], ['quiz', 'Quiz'], ['pags', 'Practicals (PAGs)'], ['sheet', 'Data sheet'], ['progress', 'Progress']],
     maths: [['home', 'Home'], ['courses', 'All courses'], ['papers', 'Past papers'], ['practice', 'Practice questions'], ['drills', 'Skill drills'], ['vis', 'Visualisers'], ['videos', 'Videos'], ['progress', 'Progress'], ['mycourses', 'My courses']]
   };
-  var NAMES = { dt: 'Design & Technology', physics: 'Physics', maths: 'Maths' };
-  var HOMES = { dt: 'dt.html', physics: 'physics/', maths: 'maths/' };
+  var NAMES = { dt: 'Design & Technology', physics: 'Physics', chemistry: 'Chemistry', maths: 'Maths' };
+  var HOMES = { dt: 'dt.html', physics: 'physics/', chemistry: 'chemistry/', maths: 'maths/' };
   function index() {
     var L = [], add = function (t, sub, h, kind) { L.push({ t: t, sub: sub, h: h, k: kind || '' }); };
     PAGES[app].forEach(function (p) { add(p[1], NAMES[app], '#' + p[0], 'page'); });
@@ -28,7 +29,7 @@
         var ys = {}; DATA.pp.forEach(function (q) { ys[q.year] = 1; add(q.year + ' Q' + q.q, 'Past paper question · ' + q.marks + ' marks', '#q-' + q.id.replace(/[()]/g, ''), 'question'); });
         Object.keys(ys).forEach(function (y) { add('Paper 1 · ' + y, 'Sit the whole paper', '#paper-' + y, 'paper'); });
       }
-      if (app === 'physics' && window.SPEC) {
+      if ((app === 'physics' || app === 'chemistry') && window.SPEC) {
         SPEC.topics.forEach(function (t) { add(t.id + ' ' + t.title, 'Topic · Module ' + String(t.id).split('.')[0], '#t-' + t.id, 'topic'); });
         (SPEC.papers || []).forEach(function (p) { add(p.code + ' ' + p.name, 'Past papers · ' + (p.level || ''), '#papers', 'paper'); });
         if (window.PAGS && PAGS.list) PAGS.list.forEach(function (p) { add('PAG ' + p.pag + ': ' + p.title, 'Practical', '#pag-' + p.id, 'lab'); });
@@ -155,8 +156,8 @@
   function weakest() {
     try {
       if (app === 'dt' && window.DATA) { var S = ls('tt-dt-progress-v1') || {}, c = S.conf || {}; var t = DATA.topics.find(function (x) { return c[x.id] === 'r'; }); if (t) return { h: '#t-' + t.id, t: t.id + ' ' + t.title }; }
-      if (app === 'physics' && window.SPEC) {
-        var P = ls('tt-phys-progress-v1') || {}, pc = P.conf || {}; var pt = SPEC.topics.find(function (x) { return pc[x.id] === 'r'; }); if (pt) return { h: '#t-' + pt.id, t: pt.id + ' ' + pt.title };
+      if ((app === 'physics' || app === 'chemistry') && window.SPEC) {
+        var P = ls(app === 'chemistry' ? 'tt-chem-progress-v1' : 'tt-phys-progress-v1') || {}, pc = P.conf || {}; var pt = SPEC.topics.find(function (x) { return pc[x.id] === 'r'; }); if (pt) return { h: '#t-' + pt.id, t: pt.id + ' ' + pt.title };
         if (window.BANK && P.bank) { var by = {}; BANK.q.forEach(function (q) { var r = P.bank[q.id]; if (!r || r.got == null || !q.m) return; var k = q.t[0], x = by[k] || (by[k] = { g: 0, m: 0 }); x.g += r.got; x.m += q.m; });
           var w = Object.keys(by).filter(function (k) { return by[k].m >= 6; }).sort(function (a, b) { return by[a].g / by[a].m - by[b].g / by[b].m; })[0];
           var wt = w && SPEC.topics.find(function (x) { return x.id === w; }); if (wt) return { h: '#t-' + wt.id, t: wt.id + ' ' + wt.title + ' · ' + Math.round(100 * by[w].g / by[w].m) + '%' }; }

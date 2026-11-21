@@ -2,10 +2,11 @@
 (function () {
   var me = document.currentScript && document.currentScript.src || '';
   var base = me.replace(/switcher\.js.*$/, '');
-  var here = /help\.html$/.test(location.pathname) ? 'help' : /\/physics\//.test(location.pathname) ? 'physics' : /\/esat\//.test(location.pathname) ? 'esat' : /\/maths\//.test(location.pathname) ? 'maths' : 'dt';
+  var here = /help\.html$/.test(location.pathname) ? 'help' : /\/physics\//.test(location.pathname) ? 'physics' : /\/chemistry\//.test(location.pathname) ? 'chemistry' : /\/esat\//.test(location.pathname) ? 'esat' : /\/maths\//.test(location.pathname) ? 'maths' : 'dt';
   var APPS = [
     { id: 'dt', name: 'Design & Technology', sub: 'Edexcel 9DT0', tile: '#1f5fbf', ink: '#fff', t: '#bcd4ff', href: base + 'dt.html' },
     { id: 'physics', name: 'Physics', sub: 'OCR A H556', tile: '#c81e66', ink: '#fff', t: '#ffd0e4', href: base + 'physics/' },
+    { id: 'chemistry', name: 'Chemistry', sub: 'OCR A H432', tile: '#c2410c', ink: '#fff', t: '#ffd3b5', href: base + 'chemistry/' },
     { id: 'maths', name: 'Maths', sub: 'Edexcel 9MA0 · 9FM0', tile: '#1a7f45', ink: '#fff', t: '#c4f0d4', href: base + 'maths/' },
     { id: 'esat', name: 'ESAT', sub: 'ENGAA · NSAA · TMUA', tile: '#ffc917', ink: '#1d1600', t: '#9a6200', href: base + 'esat/' },
     { id: 'help', name: 'How to use TrainTanmay', sub: 'What each app is for · tips', tile: '#3b3f48', ink: '#fff', t: '#c9ccd3', href: base + 'help.html' }
@@ -57,7 +58,7 @@
     '@keyframes ttSwIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}' +
     '.tt-sw a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;color:inherit;text-decoration:none;transition:background .18s ease,transform .18s ease}' +
     '.tt-sw a svg{transition:transform .25s cubic-bezier(.2,.9,.25,1.4)}.tt-sw a:hover svg{transform:scale(1.08) rotate(-4deg)}.tt-sw a:active{transform:scale(.98)}' +
-    '.tt-all{margin-bottom:2px}.tt-orb{width:34px;height:34px;flex:none;border-radius:10px;background:#14122b;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:7px}.tt-orb i{border-radius:50%}.tt-orb i:nth-child(1){background:#5b9cff}.tt-orb i:nth-child(2){background:#ff5c9e}.tt-orb i:nth-child(3){background:#4ade80}.tt-orb i:nth-child(4){background:#ffc917}' +
+    '.tt-all{margin-bottom:2px}.tt-orb{width:34px;height:34px;flex:none;border-radius:10px;background:#14122b;display:grid;place-items:center}.tt-orb svg{width:26px;height:26px;transition:transform .5s cubic-bezier(.2,.9,.25,1.4)}.tt-sw a:hover .tt-orb svg{transform:rotate(72deg)}' +
     '@media (prefers-reduced-motion:reduce){.tt-sw{animation:none}.tt-sw a,.tt-sw a svg{transition:none}}' +
     '.tt-sw a:hover,.tt-sw a:focus-visible{background:#f0f2f6}.tt-sw a[aria-current]{background:#eef3fc}' +
     '.tt-sw b{display:block}.tt-sw small{opacity:.65;font-size:12px}.tt-sw .h{padding:6px 10px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.6}' +
@@ -77,7 +78,7 @@
     var cur = APPS.filter(function (a) { return a.id === here; })[0] || APPS[0];
     menu.innerHTML = '<div class="h">Language</div><div class="tt-lang">' + LANGS.map(function (l) {
       return '<button type="button" data-lang="' + l[0] + '"' + (l[0] === curLang() ? ' aria-pressed="true"' : '') + ' lang="' + l[0] + '">' + l[1] + '</button>';
-    }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Your subjects</div>' + mySubjects().concat(APPS.filter(function (a) { return a.id === 'help'; })).map(function (a) {
+    }).join('') + '</div><a class="tt-all" role="menuitem" href="' + base + '"><span class="tt-orb" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="6" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width=".8"/><circle cx="10" cy="4" r="2.4" fill="#5b9cff"/><circle cx="15.71" cy="8.15" r="2.4" fill="#ff5c9e"/><circle cx="13.53" cy="14.85" r="2.4" fill="#ff8a4c"/><circle cx="6.47" cy="14.85" r="2.4" fill="#4ade80"/><circle cx="4.29" cy="8.15" r="2.4" fill="#ffc917"/></svg></span><span><b>All apps</b><small>Back to the start screen</small></span></a><div class="h">Your subjects</div>' + mySubjects().concat(APPS.filter(function (a) { return a.id === 'help'; })).map(function (a) {
       return '<a role="menuitem" href="' + a.href + '"' + (a.id === here ? ' aria-current="page"' : '') + '>' + logo(a) + '<span><b>' + a.name + '</b><small>' + a.sub + '</small></span></a>';
     }).join('').replace('<a role="menuitem" href="' + base + 'help.html"', '<div style="border-top:1px solid rgba(128,128,128,.25);margin:4px 0"></div><a role="menuitem" href="' + base + 'help.html"') + '<a role="menuitem" href="#" data-tt-save><span style="width:34px;height:34px;border-radius:9px;background:#14122b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg></span><span><b>Save or load progress</b><small>Every app at once, any device</small></span></a>' + '<a role="menuitem" href="https://revisedesk.com" data-feature="revisedesk" target="_blank" rel="noopener"><span style="width:34px;height:34px;border-radius:9px;background:#14161b;color:#fff;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span><span><b>Plan your revision</b><small>revisedesk.com · opens in a new tab</small></span></a>' + '<a role="menuitem" href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener" style="gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#b23a33;color:#fff;display:grid;place-items:center;font-weight:700;flex:none">!</span><span><b>Report a bug or mistake</b><small>Opens a short Google Form</small></span></a>' + (here === 'help' ? '' : '<a class="home" role="menuitem" href="#" data-home>Go to ' + cur.name + ' home</a>');
     menu.style.left = Math.max(8, r.left) + 'px';
@@ -108,7 +109,7 @@
   /* ---- your subjects: the apps you picked on the start screen (all of them until you pick) ---- */
   function mySubjects() {
     var p = null; try { p = JSON.parse(localStorage.getItem('tt-profile') || 'null'); } catch (e) {}
-    var ids = p && p.subjects && p.subjects.length ? p.subjects : ['dt', 'physics', 'maths', 'esat'];
+    var ids = p && p.subjects && p.subjects.length ? p.subjects : ['dt', 'physics', 'chemistry', 'maths', 'esat'];
     return APPS.filter(function (a) { return ids.indexOf(a.id) >= 0; });
   }
 
@@ -117,8 +118,14 @@
   if (here !== 'help') {
     var railCss = document.createElement('style');
     railCss.textContent =
-      '.tt-rail{position:fixed;left:10px;top:50%;transform:translateY(-50%);z-index:9000;display:none;flex-direction:column;gap:6px;padding:7px;border-radius:16px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(120,128,140,.25);box-shadow:0 10px 30px -12px rgba(10,15,30,.25);font:13px "IBM Plex Sans",system-ui,sans-serif}' +
+      '.tt-rail{position:fixed;left:10px;top:50%;transform:translate(calc(-100% - 16px),-50%);transition:transform .28s cubic-bezier(.2,.8,.2,1) .35s,box-shadow .28s;z-index:9000;display:none;flex-direction:column;gap:6px;padding:7px;border-radius:16px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(120,128,140,.25);box-shadow:0 10px 30px -12px rgba(10,15,30,.25);font:13px "IBM Plex Sans",system-ui,sans-serif}' +
       '@media (min-width:1280px) and (pointer:fine){.tt-rail{display:flex}}' +
+      /* hidden off the left edge until you point at that edge, so it never covers the page */
+      '.tt-rail-hot{display:none;position:fixed;left:0;top:0;bottom:0;width:14px;z-index:8999}' +
+      '.tt-rail-hot::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:56px;margin-top:-28px;border-radius:4px;background:rgba(120,128,140,.45);transition:opacity .2s}' +
+      '.tt-rail-hot:hover~.tt-rail,.tt-rail:hover,.tt-rail:focus-within{transform:translate(0,-50%);transition-delay:0s;box-shadow:0 16px 40px -12px rgba(10,15,30,.35)}' +
+      '.tt-rail-hot:hover::after{opacity:0}@media (min-width:1280px) and (pointer:fine){.tt-rail-hot{display:block}}' +
+      '@media (prefers-reduced-motion:reduce){.tt-rail{transition:none}}' +
       '.tt-rail a{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;text-decoration:none;color:#111;outline-offset:2px}' +
       '.tt-rail a:hover{background:rgba(120,128,140,.14)}.tt-rail a[aria-current]::before{content:"";position:absolute;left:-7px;top:9px;bottom:9px;width:3px;border-radius:3px;background:currentColor}' +
       '.tt-rail a span{position:absolute;left:46px;white-space:nowrap;padding:5px 9px;border-radius:8px;background:#14161b;color:#fff;font-size:12px;opacity:0;pointer-events:none;transform:translateX(-4px);transition:opacity .15s,transform .15s}' +
@@ -131,6 +138,7 @@
     var ico = function (d) { return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
     var buildRail = function () {
       if (document.querySelector('.tt-rail')) return;
+      var hot = document.createElement('div'); hot.className = 'tt-rail-hot'; hot.setAttribute('aria-hidden', 'true'); document.body.appendChild(hot);
       var nav = document.createElement('nav'); nav.className = 'tt-rail'; nav.setAttribute('aria-label', 'Your subjects');
       nav.innerHTML = '<a href="' + base + '">' + ico('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>') + '<span>Start screen</span></a>' +
         (here !== 'esat' ? '<a href="#" data-tt-jump>' + ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>') + '<span>Jump to anything (Ctrl K)</span></a>' : '') + '<hr>' +

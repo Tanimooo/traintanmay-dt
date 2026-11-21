@@ -138,7 +138,7 @@
   }
 
   /* An exam that was still running when the page went away: offer to carry on with the same clock. */
-  function appId() { return /\/physics\//.test(location.pathname) ? 'physics' : /\/maths\//.test(location.pathname) ? 'maths' : /\/esat\//.test(location.pathname) ? 'esat' : 'dt'; }
+  function appId() { return /\/physics\//.test(location.pathname) ? 'physics' : /\/chemistry\//.test(location.pathname) ? 'chemistry' :/\/maths\//.test(location.pathname) ? 'maths' : /\/esat\//.test(location.pathname) ? 'esat' : 'dt'; }
   function offerResume(start) {
     var a = active(); if (!a || document.querySelector('.tte-res') || root) return;
     if (a.app && a.app !== appId()) return; // it belongs to another app: that app will offer it

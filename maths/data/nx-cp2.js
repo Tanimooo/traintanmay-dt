@@ -153,7 +153,7 @@ Using $x=r\cos\theta$, $y=r\sin\theta$ with $r=f(\theta)$:
 N.hyper=String.raw`### Definitions
 The **hyperbolic functions** are built from exponentials:
 $$\sinh x=\frac{e^x-e^{-x}}2\qquad\cosh x=\frac{e^x+e^{-x}}2\qquad\tanh x=\frac{\sinh x}{\cosh x}=\frac{e^{2x}-1}{e^{2x}+1}$$
-(Pronounced "shine", "cosh", "than".) Their names come from the fact that $(\cosh t,\sinh t)$ lies on the hyperbola $x^2-y^2=1$, just as $(\cos t,\sin t)$ lies on the circle $x^2+y^2=1$.
+(Pronounced "shine", "cosh", "tanch".) Their names come from the fact that $(\cosh t,\sinh t)$ lies on the hyperbola $x^2-y^2=1$, just as $(\cos t,\sin t)$ lies on the circle $x^2+y^2=1$.
 ### Graphs
 {{svg1}}
 - $y=\cosh x$: U-shaped (a "catenary", the shape of a hanging chain), minimum $(0,1)$, even function. Range $y\ge1$.
