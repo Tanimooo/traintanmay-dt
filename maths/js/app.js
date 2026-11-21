@@ -319,26 +319,42 @@ function drillCard(d){
 }
 
 
+/* Notes markdown: "### " heading, "- " bullets, "1. " numbered steps, "> " lines grouped into a
+   worked-example box, a whole line "$$...$$" shown as displayed maths, a whole line "<svg" as a diagram. */
 function mdNotes(src){
   const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  let out = '', list = false;
-  const close = () => { if (list) { out += '</ul>'; list = false; } };
+  let out = '', list = '', box = false;
+  const close = () => { if (list) { out += `</${list}>`; list = ''; } };
+  const closeBox = () => { if (box) { close(); out += '</div>'; box = false; } };
   src.split('\n').forEach(l => {
+    if (l === '>' || l.startsWith('> ')) { if (!box) { close(); out += '<div class="nbox">'; box = true; } l = l.slice(2); }
+    else closeBox();
     if (l.startsWith('<svg')) { close(); out += `<figure class="ndiag">${l}</figure>`; return; }
     if (l.startsWith('### ')) { close(); out += `<h3>${inl(l.slice(4))}</h3>`; return; }
-    if (l.startsWith('- ')) { if (!list) { out += '<ul>'; list = true; } out += `<li>${inl(l.slice(2))}</li>`; return; }
-    if (!l.trim()) { close(); return; }
+    const t = l.trim();
+    if (t.length > 4 && t.startsWith('$$') && t.endsWith('$$')) { close(); out += `<div class="ndisp">$\\displaystyle ${esc(t.slice(2, -2))}$</div>`; return; }
+    const n = l.match(/^\d+\. (.*)/);
+    if (n) { if (list !== 'ol') { close(); out += '<ol>'; list = 'ol'; } out += `<li>${inl(n[1])}</li>`; return; }
+    if (l.startsWith('- ')) { if (list !== 'ul') { close(); out += '<ul>'; list = 'ul'; } out += `<li>${inl(l.slice(2))}</li>`; return; }
+    if (!t) { close(); return; }
     close(); out += `<p>${inl(l)}</p>`;
   });
-  close(); return out;
+  closeBox(); return out;
 }
+/* Full notes (data/nx-<course>.js, window.NOTES2) replace the short ones in data/notes.js. */
+const noteFor = (cid, tid) => {
+  const old = ((window.NOTES || {})[cid] || {})[tid], full = ((window.NOTES2 || {})[cid] || {})[tid];
+  if (!full) return old;
+  const svgs = typeof old === 'string' ? old.split('\n').filter(l => l.startsWith('<svg')) : [];
+  return full.replace(/^\{\{svg(\d)\}\}$/gm, (m, i) => svgs[i - 1] || '');  // {{svg1}} = first diagram of the short note
+};
 function notesHTML(cid, tid){
-  const N = (window.NOTES || {})[cid] || {}, L = N[tid]; if (!L) return '';
+  const L = noteFor(cid, tid); if (!L) return '';
   const body = Array.isArray(L) ? `<ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : mdNotes(L);
   const vids = (VID.by[cid] || []).filter(v => v.t === tid).slice(0, 4);
   return `<section class="notes card" id="snotes"><div class="sec-head"><h2>Topic notes</h2><span class="chip">AI generated</span></div>
   <p class="note" style="margin:6px 0 12px">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
-  <details><summary>Show notes</summary><div class="nbody">${body}</div></details>
+  <details open><summary>Notes (click to hide)</summary><div class="nbody">${body}</div></details>
   <p class="muted" style="font-size:.85rem;margin-top:10px">Need more help? ${vids.length ? `<a href="#" data-jump="sw">${vids.length} video${vids.length > 1 ? 's' : ''} for this topic</a> are further down the page.` : `See the <a href="#videos">videos page</a>.`}</p></section>`;
 }
 function pageTopic(cid, tid){
@@ -355,7 +371,7 @@ function pageTopic(cid, tid){
   app.innerHTML = `<div class="crumbs"><a href="#courses">Courses</a>›<a href="#c-${cid}">${esc(c.name)}</a>›<span>${esc(tname(cid, tid))}</span></div>
    <div class="tp-head"><div><p class="eyebrow">${esc(c.code)} · Topic ${idx + 1}</p><h1>${esc(tname(cid, tid))}</h1>${(() => { const e = (TOP[cid] || []).find(x => x[0] === tid); return e && e[2] ? `<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">${e[2].map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''; })()}</div>
      <div><div class="eyebrow" style="margin-bottom:6px">How confident are you?</div><div class="conf" role="group" aria-label="Confidence">${[['r', 'Not yet'], ['a', 'Getting there'], ['g', 'Confident']].map(([k, l]) => `<button class="${k}" data-conf="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div></div></div>
-   <div class="jump">${(window.NOTES || {})[cid]?.[tid] ? '<a class="btn sm" href="#" data-jump="snotes">Notes</a>' : ''}${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
+   <div class="jump">${noteFor(cid, tid) ?'<a class="btn sm" href="#" data-jump="snotes">Notes</a>' : ''}${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
    ${pcount(cid, tid) ? `<section><a class="pbanner" href="#px-${cid}-${tid}"><span class="ic">${ic('practice')}</span><span><b>${pcount(cid, tid)} practice questions</b><span>Whole exam questions with their mark schemes – mark yourself</span></span><span class="go">Start →</span></a></section>` : ''}
    ${vis.length ? `<section id="sv"><h2>Visualise it</h2><div class="grid g2">${vis.map(visCard).join('')}</div></section>` : ''}
    ${examS.length ? `<section id="sx"><div class="sec-head"><h2>Exam questions</h2><span class="muted">Real past-paper questions grouped by topic</span></div>${groupBlocks(examS, {openN: 2, sub: it => it.x?.yr ? esc(it.x.yr) : (it.x?.cat ? esc(it.x.cat) : '')})}</section>` : ''}
@@ -760,7 +776,7 @@ function needsOf(h){
   if (/^q-/.test(h)) n.push('plinks');   // PDF fallbacks for packs that aren't in the papers catalogue
   if (/^drills?$/.test(h) || /^drill-/.test(h)) n.push('drills');
   const t = h.match(/^t-(\w+?)-/);
-  if (t) { n.push('notes'); if (t[1] === 'pure') n.push('drills'); }  // only Pure has skill drills
+  if (t) { n.push('notes', 'nx-' + t[1]); if (t[1] === 'pure') n.push('drills'); }  // only Pure has skill drills; nx-<course> = full notes
   return n;
 }
 function afterLoad(name){
