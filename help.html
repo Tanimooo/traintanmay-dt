@@ -72,7 +72,8 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 
   <div class="card">
     <h3 style="margin-top:0">Where is my progress saved?</h3>
-    <p>Everything is saved in <b>your browser on this device</b>. There's no account and nothing is sent anywhere. Clearing your browser's history or website data will wipe it, and it won't appear automatically on another device or in a different browser.</p>
+    <p>Everything is saved in <b>your browser on this device</b>. You don't need an account, and unless you sign in, nothing is sent anywhere. Clearing your browser's history or website data will wipe it, and it won't appear automatically on another device or in a different browser.</p>
+    <p><b>Sync with Google (optional):</b> open the logo menu, choose <b>Save or load progress</b>, then <b>Sign in with Google</b>. Do the same on your other devices and your progress for every app follows you automatically. Syncing only ever adds progress: nothing on one device is removed by another. We store your progress and your Google name and email, nothing else. Choose <b>Sign out</b> to stop; your progress stays on the device.</p>
     <p style="margin-bottom:0"><b>Keep a backup:</b> go to <b>Progress</b> in each app (<b>Data</b> in ESAT) and either <b>download</b> your progress as a file or <b>copy</b> it as text and paste it somewhere safe, like your notes or an email to yourself. The backup holds your progress on every topic. To get it back, or to move it to another device, open the same page and choose <b>Restore</b>, then pick the file you downloaded. The downloaded file is the safest backup, because it can always be restored.</p>
   </div>
 
@@ -168,6 +169,6 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 function sync(){b.setAttribute('aria-pressed',r.classList.contains('dys'))}
 b.onclick=function(){r.classList.toggle('dys');try{localStorage.setItem('tt-help-dys',r.classList.contains('dys')?'1':'0')}catch(e){}sync()};sync();})();
 </script>
-<script src="switcher.js?v=20261121d"></script>
+<script src="switcher.js?v=20261121e"></script>
 </body>
 </html>
