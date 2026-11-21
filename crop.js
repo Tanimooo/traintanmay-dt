@@ -54,7 +54,9 @@
             p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
           } else merged.push(Object.assign({}, it)); // overlapping numbers (a renumbered pack) stay separate
         });
-        return { w: vp.width, h: vp.height, items: merged, page: n };
+        // the usual text size on the page, so small superscripts ("sin² t") aren't read as question numbers
+        var hs = merged.map(function (i) { return i.h; }).sort(function (a, b) { return a - b; });
+        return { w: vp.width, h: vp.height, items: merged, page: n, mh: hs.length ? hs[hs.length >> 1] : 0 };
       });
     }));
   }
@@ -74,10 +76,11 @@
   // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
   function numAt(it, P, kind) {
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
-    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?)?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
     if (!m) return null;
+    if (P.mh && it.h < P.mh * 0.75) return null; // a superscript or index, not a label
     // a question number is the first thing on its line: a bare "5" after "A" is an answer option ("A  5 μA"), not question 5
-    if (!/^(?:Q|Question|M)/i.test(it.s) && P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < 3 && o.x < it.x - 2 && !isChrome(o, P); })) return null;
+    if (!/^(?:Q|Question|M)/i.test(it.s) && P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < Math.max(3, Math.min(o.h, it.h) * 0.8) && o.x < it.x - 2 && !isChrome(o, P); })) return null; // (a fraction's numerator or denominator sits a little off the line)
     if (/^\d{1,2}\.?$/.test(it.s)) {
       var nx = nextOnLine(it, P);
       if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s))) return null;
@@ -86,7 +89,7 @@
   }
   function partAt(it, P) {
     if (it.x > P.w * 0.3) return null;
-    var m = /^(?:\d{1,2}\s*)?\(\s*([a-z]{1,2})\s*\)\.?(?:\s|$|\()/i.exec(it.s) || /^\d{1,2}\s*\(?([a-h])\)?$/i.exec(it.s);
+    var m = /^(?:\d{1,2}\.?\s*)?\(\s*([a-z]{1,2})\s*\)\.?(?:\s|$|\()/i.exec(it.s) || /^\d{1,2}\s*\(?([a-h])\)?$/i.exec(it.s);
     if (!m) return null;
     var p = m[1].toLowerCase();
     return romans.test(p) && p !== 'i' && p !== 'v' && p !== 'x' ? null : p; // (ii), (iii)… are sub-parts, not parts
