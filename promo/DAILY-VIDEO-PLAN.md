@@ -15,7 +15,7 @@ same question inside TrainTanmay.
 | 0:06 | **Working appears line by line**, whiteboard style, in the site's fonts and maths typesetting. The current line is highlighted; nothing else moves | Explains each line: *why* you'd do this step, not only *what* it is |
 | ~mid | **The trap:** the wrong option most people pick is crossed out | "Most people pick B because they forget the sign flip…" |
 | (optional, 5–10 s) | The site's matching **lab or visualiser** confirming the result (circuit sandbox reading, graph plot, molecule shape), used only when it actually adds something | "And you can see it here: …" |
-| end | **Answer** boxed in green, then 3 s of the same question open on TrainTanmay | "Every ESAT question since 2016, solved, free. TrainTanmay, link in bio." |
+| end | **Answer** boxed in green, then 3 s of TrainTanmay: the same ESAT question with its worked solution open, or for A-level the paper + mark scheme links on that topic | ESAT: "Every ESAT question since 2016, with worked solutions, free on TrainTanmay." A-level: "Every past paper and mark scheme, sorted by topic, free on TrainTanmay." |
 
 - **Length:** 45–90 s. A long multi-part A-level question is split into Part 1 / Part 2 (series hook).
 - **Audio:** voice only (Kokoro TTS, calm pace, ~150 wpm). No music, sound effects or transitions.
@@ -83,6 +83,11 @@ YouTube title pattern: *"ENGAA 2019 Q16: the circuits question everyone gets wro
 5 start. That way style problems are fixed once, not 35 times.
 
 ## 6. Access needed
+
+TrainTanmay already links every past paper + mark scheme (A-level → Physics & Maths Tutor) and has a
+worked solution for every ESAT question, so all source material comes *through the site*. The video
+shows viewers exactly where to find it.
+
 
 - **ESAT/TMUA papers** (esat-tmua.ac.uk downloads): ✅ reachable from the session.
 - **A-level papers + mark schemes:** ❌ blocked here (physicsandmathstutor.com, ocr.org.uk,
