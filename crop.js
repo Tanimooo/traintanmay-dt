@@ -221,7 +221,7 @@
     return imgCache[k] || (imgCache[k] = Promise.all([doc.getPage(n), lib()]).then(function (r) {
       var pg = r[0], O = r[1].OPS, vp = pg.getViewport({ scale: 1 });
       return pg.getOperatorList().then(function (ol) {
-        var ctm = [1, 0, 0, 1, 0, 0], stack = [], boxes = [];
+        var ctm = [1, 0, 0, 1, 0, 0], stack = [], boxes = [], paths = [];
         var mul = function (a, b) { return [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]]; };
         for (var i = 0; i < ol.fnArray.length; i++) {
           var f = ol.fnArray[i], a = ol.argsArray[i];
@@ -229,11 +229,27 @@
           else if (f === O.restore) ctm = stack.pop() || ctm;
           else if (f === O.transform) ctm = mul(ctm, a);
           else if (f === O.paintImageXObject || f === O.paintInlineImageXObject || f === O.paintJpegXObject || f === O.paintImageMaskXObject) {
-            var ys = [[0, 0], [1, 0], [0, 1], [1, 1]].map(function (u) { return vp.convertToViewportPoint(ctm[0] * u[0] + ctm[2] * u[1] + ctm[4], ctm[1] * u[0] + ctm[3] * u[1] + ctm[5])[1]; });
+            var cs = [[0, 0], [1, 0], [0, 1], [1, 1]].map(function (u) { return vp.convertToViewportPoint(ctm[0] * u[0] + ctm[2] * u[1] + ctm[4], ctm[1] * u[0] + ctm[3] * u[1] + ctm[5]); });
+            var ys = cs.map(function (q) { return q[1]; }), xs = cs.map(function (q) { return q[0]; });
             var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-            if (y1 - y0 > 12) boxes.push([y0, y1]);
+            if (y1 - y0 > 12) boxes.push([y0, y1, Math.min.apply(null, xs), Math.max.apply(null, xs)]);
+          } else if (f === O.constructPath && a && a[2]) {
+            // diagrams drawn as lines (circuits, graphs, force diagrams) aren't images: collect their paths too.
+            // Full-width boxes (answer space, page frames) don't count.
+            var m = a[2]; if (!isFinite(m[0]) || !isFinite(m[2])) continue;
+            var pts = [[m[0], m[2]], [m[1], m[2]], [m[0], m[3]], [m[1], m[3]]].map(function (u) { return vp.convertToViewportPoint(ctm[0] * u[0] + ctm[2] * u[1] + ctm[4], ctm[1] * u[0] + ctm[3] * u[1] + ctm[5]); });
+            var px = pts.map(function (q) { return q[0]; }), py = pts.map(function (q) { return q[1]; });
+            if (Math.max.apply(null, px) - Math.min.apply(null, px) < vp.width * 0.75) paths.push([Math.min.apply(null, py), Math.max.apply(null, py), Math.min.apply(null, px), Math.max.apply(null, px)]);
           }
         }
+        // merge paths that touch (within 6 pt) into figures; a figure taller than 12 pt counts as a picture
+        paths.sort(function (p, q) { return p[0] - q[0]; });
+        var fig = null;
+        paths.forEach(function (p) {
+          if (fig && p[0] <= fig[1] + 6) { fig[1] = Math.max(fig[1], p[1]); fig[2] = Math.min(fig[2], p[2]); fig[3] = Math.max(fig[3], p[3]); }
+          else { if (fig && fig[1] - fig[0] > 12) boxes.push(fig); fig = p.slice(); }
+        });
+        if (fig && fig[1] - fig[0] > 12) boxes.push(fig);
         return boxes;
       });
     }).catch(function () { return []; }));
@@ -265,6 +281,11 @@
         // right edge: the widest line of text (dotted answer lines included), not the page edge with its margin bar
         var rights = inside.filter(function (i) { return i.w; }).map(function (i) { return i.x + i.w; });
         var right = Math.min(P.w, rights.length ? Math.max(Math.max.apply(null, rights) + 14, left + P.w * 0.5) : P.w - left);
+        // and wide enough for any figure in the question (diagrams can reach past the longest line of text)
+        imgs.forEach(function (bx) {
+          if (bx.length < 4 || bx[1] < top || bx[0] > bot) return;
+          left = Math.max(0, Math.min(left, bx[2] - 12)); right = Math.min(P.w, Math.max(right, bx[3] + 14));
+        });
         var dots = inside.filter(function (i) { return DOTS.test(i.s); }).map(function (i) { return i.y; }).sort(function (a, b) { return a - b; });
         if (words.length) bot = Math.min(bot, Math.max.apply(null, words.map(function (i) { return i.y; })) + 10);
         var cuts = [];
