@@ -121,17 +121,15 @@ OCR A H556 · free · 🔗 link in bio
 
 ## Instagram Maths edit ("flow")
 
-`TrainTanmay-insta-maths.mp4`: a 30-second vertical Reel at 1080×1920 and 60 fps, **with its own original soundtrack** (149 BPM, generated in code, so it's yours to use). The camera glides along a plotted curve on graph paper; each shot sits on the curve, captions are torn-paper collages, and Madas Maths gets a comic-book "OH NO." moment.
+`TrainTanmay-insta-maths.mp4`: a 30-second vertical Reel at 1080×1920 and 60 fps, **with its own original piano and synth instrumental** (149 BPM, generated in code, so it's yours to use). The camera glides along a plotted curve on graph paper; each shot sits on the curve, captions are torn-paper collages, and Madas Maths gets a comic-book "OH NO." moment.
 
-The music is built on the same beat grid as the picture, so it's already in sync:
-- the drop hits as the first shot lands (0:03)
-- a whoosh plays on every glide between shots
-- a paper rip and slap plays as each caption scrap lands
-- a tap sound plays on each on-screen tap
-- at the Madas moment (0:09) the music cuts out, a record scratches, and dramatic "dun-dun-DUN" stabs play
-- the music filters down for the zoom-out, then a big hit lands on the logo (0:28)
+The music is built on the same beat grid as the picture:
+- a soft piano and arpeggio intro, with a piano glissando into the drop as the first shot lands (0:03)
+- bouncy piano chords, an original melody, warm pad, synth bass and light drums
+- at the Madas moment (0:09) everything stops for half a beat, then two big dark piano chords play
+- the music thins out for the zoom-out, then a final piano chord lands on the logo (0:28)
 
-Post it with its **original audio** (no need to add a song). The track on its own is `TrainTanmay-maths-soundtrack.mp3`. If you'd rather use a trending song instead, turn the original audio down to 0 in Instagram and add one.
+The only sound effects are soft whooshes on the glides. Post it with its **original audio**. The track on its own is `TrainTanmay-maths-soundtrack.mp3`.
 
 **Caption**
 ```
