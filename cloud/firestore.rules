@@ -2,7 +2,7 @@ rules_version = '2';
 // Firestore rules for TrainTanmay (project traintanmay26).
 // Paste the whole file into Firebase console → Firestore Database → Rules, and Publish.
 //   users/{uid}                 one synced save per person (save.js): only that person can read or write it
-//   leagues/{CODE}              study leagues (league.js): up to 5 members; the leader (owner) can rename, remove or promote members
+//   leagues/{CODE}              study leagues (league.js): no size limit; the leader (owner) can rename, remove or promote members
 //   leagues/{CODE}/scores/{uid} each member's minutes this week: members can read, only you can write yours
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -34,23 +34,23 @@ service cloud.firestore {
         && nu().names.keys().hasOnly([me()]) && okName(nu().names[me()], 2, 16)
         && nu().created == request.time;
 
-      // every name on the board stays 2-16 allowed characters (a league holds at most 5 people)
-      function nameOk(i) { return nu().members.size() <= i || okName(nu().names[nu().members[i]], 2, 16); }
-      function namesOk() { return nameOk(0) && nameOk(1) && nameOk(2) && nameOk(3) && nameOk(4); }
+      // a rename changes one name, recorded in 'edited', and that name must be 2-16 allowed characters
+      function renamedOk() { return nu().edited is string && nu().edited in old().members
+        && nu().names.diff(old().names).affectedKeys().hasOnly([nu().edited]) && okName(nu().names[nu().edited], 2, 16); }
       function sameMembers() { return added().size() == 0 && removed().size() == 0; }
 
       allow update: if signedIn()
-        && nu().diff(old()).affectedKeys().hasOnly(['members', 'names', 'owner'])
-        && nu().members is list && nu().members.size() <= 5
+        && nu().diff(old()).affectedKeys().hasOnly(['members', 'names', 'owner', 'edited'])
+        && nu().members is list
         && nu().names.keys().hasOnly(nu().members)
-        && namesOk()
         && (
           // join, with your name
-          (added() == [me()] && removed().size() == 0 && nu().owner == old().owner && onlyMyName())
+          (added() == [me()] && removed().size() == 0 && nu().owner == old().owner && onlyMyName() && okName(nu().names[me()], 2, 16)
+            && nu().get('edited', null) == old().get('edited', null))
           // rename: yourself, or anyone if you are the leader
-          || (me() in old().members && sameMembers() && nu().owner == old().owner && (onlyMyName() || old().owner == me()))
+          || (me() in old().members && sameMembers() && nu().owner == old().owner && renamedOk() && (nu().edited == me() || old().owner == me()))
           // the leader hands the league to another member
-          || (old().owner == me() && sameMembers() && nu().owner in old().members && nu().names == old().names)
+          || (old().owner == me() && sameMembers() && nu().owner in old().members && nu().names == old().names && nu().get('edited', null) == old().get('edited', null))
           // leave (if you lead it, it passes to someone still in it)
           || (removed() == [me()] && added().size() == 0 && onlyMyName()
               && (old().owner != me() ? nu().owner == old().owner : (nu().members.size() == 0 || nu().owner in nu().members)))

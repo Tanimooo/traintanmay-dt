@@ -1,16 +1,16 @@
 /* TrainTanmay study leagues: small weekly leaderboards for friends.
    Anyone signed in with Google can start a league (it gets a 6-letter code and a name) or join one with a code.
-   A league holds up to 5 people, and you can be in up to 5 leagues.
+   Leagues have no size limit; you can be in up to 5 of them.
    Every app page counts your active revision minutes: the tab is on screen and you have clicked, typed, scrolled or
    tapped in the last 2 minutes (8 minutes while you're inside an embedded paper). Minutes reset every Monday at
    00:00 UK time. Each device keeps its own count; the leaderboard adds your devices together.
    Open the board with window.ttLeague.open(), or any element with data-tt-league.
    Firestore layout (rules in cloud/firestore.rules):
-     leagues/{CODE}                 { name, owner, members: [uid ≤5], names: {uid: nickname}, created }
+     leagues/{CODE}                 { name, owner, members: [uid], names: {uid: nickname}, edited: uid last renamed, created }
      leagues/{CODE}/scores/{uid}    { dev: {deviceId: {w, s, pw, ps}}, updated }   w = week (Monday date), s = seconds */
 (function () {
   if (window.ttLeague || window.top !== window) return;
-  var MAX_PEOPLE = 5, MAX_LEAGUES = 5;
+  var MAX_LEAGUES = 5; // leagues per person; a league has no size limit
   var me = document.currentScript;
   var TRACK = !(me && me.hasAttribute('data-notrack')) && !/help\.html$/.test(location.pathname);
   var K_TIME = 'tt-league-time', K_MINE = 'tt-league-mine', K_BEAT = 'tt-league-beat', K_SEL = 'tt-league-sel', K_DEV = 'tt-league-dev';
@@ -113,7 +113,6 @@
   function errText(e) {
     var c = (e && (e.code || e.message)) || String(e || '');
     return c === 'nocode' ? 'No league has that code. Check it and try again.'
-      : c === 'full' ? 'That league is full (' + MAX_PEOPLE + ' people).'
       : c === 'many' ? 'You are already in ' + MAX_LEAGUES + ' leagues. Leave one first.'
       : /permission/.test(c) ? 'The leaderboard database refused this. Its rules may not be set up yet.'
       : /unavailable|network|offline/.test(c) ? 'You seem to be offline. Try again in a moment.'
@@ -176,7 +175,6 @@
     return fs().tx('leagues/' + code, function (cur) {
       if (!cur) throw new Error('nocode');
       if (cur.members.indexOf(uid) >= 0) return null;
-      if (cur.members.length >= MAX_PEOPLE) throw new Error('full');
       var names = Object.assign({}, cur.names); names[uid] = nick;
       return Object.assign({}, cur, { members: cur.members.concat([uid]), names: names });
     }).then(function () { return code; });
@@ -186,7 +184,7 @@
     return fs().tx('leagues/' + code, function (cur) {
       if (!cur || cur.members.indexOf(who) < 0) return null;
       var names = Object.assign({}, cur.names); names[who] = nick;
-      return Object.assign({}, cur, { names: names });
+      return Object.assign({}, cur, { names: names, edited: who });
     });
   }
   /* the leader hands the league to another member */
@@ -334,7 +332,7 @@
   function forms() {
     var nick = esc(nickDefault()), full = mine().length >= MAX_LEAGUES;
     return '<div class="grid">' +
-      '<form class="card" data-f="new"><h3>Start a league</h3><p>You lead it, and get a code to share with up to ' + (MAX_PEOPLE - 1) + ' friends.</p>' +
+      '<form class="card" data-f="new"><h3>Start a league</h3><p>You lead it, and get a code to share with your friends.</p>' +
         '<label for="ttlg-ln">League name</label><input id="ttlg-ln" name="lname" maxlength="24" placeholder="e.g. Physics Gang" autocomplete="off" required>' +
         '<label for="ttlg-n1">Your name on the board</label><input id="ttlg-n1" name="nick" maxlength="16" value="' + nick + '" autocomplete="off" required>' +
         '<button class="btn" type="submit"' + (full ? ' disabled' : '') + '>Create &amp; get code</button><div class="msg" role="status"></div></form>' +
@@ -349,12 +347,12 @@
     var L = leagues[code]; if (!L) return '';
     var rows = totals(code), top = rows.length ? Math.max(rows[0].s, 60) : 60, w = weekInfo(), isOwner = user && L.owner === user.uid;
     var champ = rows.slice().sort(function (a, b) { return b.last - a.last; })[0];
-    var h = '<div class="card"><div class="lh"><div><h3>' + esc(L.name) + '</h3><small>' + L.members.length + ' / ' + MAX_PEOPLE + ' people' + (L.members.length < MAX_PEOPLE ? ' · share the code to invite' : ' · full') + '</small></div>' +
+    var h = '<div class="card"><div class="lh"><div><h3>' + esc(L.name) + '</h3><small>' + L.members.length + (L.members.length === 1 ? ' person' : ' people') + ' · share the code to invite' + '</small></div>' +
       '<span class="code" title="League code">' + esc(code) + '<button type="button" data-copy="' + esc(code) + '">Copy</button></span></div><ol>';
     rows.forEach(function (r, i) {
       var place = r.s > 0 ? i + 1 : 0, cls = (place === 1 ? 'p1' : place === 2 ? 'p2' : '') + (r.me ? ' me' : '');
       var hu = hue(r.uid);
-      h += '<li class="' + cls + '" style="animation-delay:' + (i * 50) + 'ms">' +
+      h += '<li class="' + cls + '" style="animation-delay:' + Math.min(i, 10) * 40 + 'ms">' +
         '<span class="rk">' + (i + 1) + '</span>' +
         '<span class="av" style="background:linear-gradient(135deg,hsl(' + hu + ' 80% 62%),hsl(' + (hu + 30) + ' 75% 45%))">' + esc(r.name.charAt(0).toUpperCase()) + (place === 1 ? crown(1) : place === 2 ? crown(2) : '') + '</span>' +
         (editing === r.uid ? editor(r, isOwner) :
@@ -363,7 +361,7 @@
           '<span class="bar"><i style="width:' + Math.round(100 * r.s / top) + '%"></i></span></span>') +
         '<span class="tm">' + (r.s >= 60 ? hm(r.s) : '0m') + '<small>this week</small></span></li>';
     });
-    for (var k = rows.length; k < MAX_PEOPLE; k++) h += '<li class="empty" style="display:block;animation-delay:' + (k * 50) + 'ms">Open spot · share <b>' + esc(code) + '</b></li>';
+    if (rows.length < 2) h += '<li class="empty" style="display:block">Share <b>' + esc(code) + '</b> so friends can join</li>';
     h += '</ol>';
     if (champ && champ.last >= 60) h += '<div class="champ">' + crown(1) + '<span>Last week’s champion: <b>' + esc(champ.name) + '</b> · ' + hm(champ.last) + '</span></div>';
     h += '<div class="foot"><span>Week of ' + new Date(w.mon).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) + (busy ? ' · <span class="spin" aria-label="Updating"></span>' : '') + '</span><span>' +
@@ -387,7 +385,7 @@
     var notes = {}; [].forEach.call(box.querySelectorAll('.msg'), function (m, i) { if (m.textContent) notes[(m.id || m.closest('[data-f]') && m.closest('[data-f]').getAttribute('data-f') || i)] = [m.textContent, m.className]; });
     var h = header(), codes = mine().filter(function (c) { return leagues[c] || !loadedOnce; });
     if (!user) {
-      h += '<div class="card" style="margin-top:16px"><h3 style="margin:0 0 6px">Race your friends</h3><p class="sub" style="margin:0 0 4px">Start a league or join one with a code. Up to ' + MAX_PEOPLE + ' people per league, and it counts the minutes everyone actively revises across every TrainTanmay app. Top two get the crowns.</p>' +
+      h += '<div class="card" style="margin-top:16px"><h3 style="margin:0 0 6px">Race your friends</h3><p class="sub" style="margin:0 0 4px">Start a league or join one with a code (you can be in up to ' + MAX_LEAGUES + '). It counts the minutes everyone actively revises across every TrainTanmay app. Top two get the crowns.</p>' +
         '<button class="btn g" type="button" data-signin' + (sdkOK ? '' : ' disabled') + '>' + (sdkOK ? '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Sign in with Google to play' : '<span class="spin"></span> Loading…') + '</button>' +
         (err ? '<div class="msg">' + esc(err) + '</div>' : '') + '</div>' +
         '<p class="how">Your minutes this week on this device: <b>' + hm(local().s) + '</b>. They join the board once you sign in.</p>';
