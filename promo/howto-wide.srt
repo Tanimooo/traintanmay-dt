@@ -1,0 +1,180 @@
+1
+00:00:03,652 --> 00:00:07,253
+Hi! Welcome to TrainTanmay. I'm going to give you a quick tour,
+
+2
+00:00:07,203 --> 00:00:09,790
+so you can get the most out of your revision.
+
+3
+00:00:10,339 --> 00:00:15,650
+TrainTanmay is a set of free revision apps, made by an A level student, for other students.
+
+4
+00:00:16,200 --> 00:00:21,826
+Each world on the start screen is its own app: Design & Technology, Physics, Chemistry,
+
+5
+00:00:21,776 --> 00:00:23,108
+Maths, and the ESAT.
+
+6
+00:00:30,537 --> 00:00:33,687
+Just pick a world to jump in. Let's start with Chemistry.
+
+7
+00:00:36,559 --> 00:00:40,474
+Every app works in a similar way. The home page shows your progress,
+
+8
+00:00:40,424 --> 00:00:43,544
+the flashcards you've got due, and where you left off.
+
+9
+00:00:44,093 --> 00:00:48,779
+Along the top, you'll find the notes, practice questions, past papers, and the labs.
+
+10
+00:00:49,329 --> 00:00:52,875
+To switch apps, tap the TrainTanmay logo in the top corner.
+
+11
+00:00:52,825 --> 00:00:56,548
+Its colour tells you which app you're in: orange is Chemistry.
+
+12
+00:00:57,099 --> 00:01:01,583
+Looking for something specific? Use Jump to anything, and just type what you need.
+
+13
+00:01:02,132 --> 00:01:07,879
+Every topic has full notes with worked examples, plus key terms, equations, flashcards,
+
+14
+00:01:07,829 --> 00:01:08,599
+and videos.
+
+15
+00:01:09,150 --> 00:01:12,424
+The notes were written with AI, so if anything looks off,
+
+16
+00:01:12,374 --> 00:01:15,196
+double-check it against your textbook or a video.
+
+17
+00:01:15,746 --> 00:01:19,786
+The calculation drills give you new numbers every time. Type your answer,
+
+18
+00:01:19,736 --> 00:01:22,737
+and it's marked straight away, with a worked solution.
+
+19
+00:01:23,288 --> 00:01:27,863
+And in the labs, you can spin real 3D molecules, see every bond angle,
+
+20
+00:01:27,813 --> 00:01:30,448
+then flip it into an exam-style drawing.
+
+21
+00:01:31,718 --> 00:01:36,933
+Design & Technology covers the whole Edexcel Product Design course. Flip a flashcard,
+
+22
+00:01:36,883 --> 00:01:41,065
+then say whether you knew it, and it'll come back at the right time.
+
+23
+00:01:41,517 --> 00:01:45,782
+Physics has notes, practice tests, and nearly fifty labs, like this one,
+
+24
+00:01:45,732 --> 00:01:47,656
+which flies real space missions.
+
+25
+00:01:48,119 --> 00:01:53,063
+In Maths, you can search thousands of past papers, topic packs and worksheets,
+
+26
+00:01:53,013 --> 00:01:55,008
+all sorted by course and topic.
+
+27
+00:01:55,450 --> 00:01:59,528
+And the ESAT app has real admissions test questions, timed mocks,
+
+28
+00:01:59,478 --> 00:02:04,795
+and analytics that show your weak spots. Plus a few games, for when you need a break.
+
+29
+00:02:05,250 --> 00:02:10,064
+Your progress saves automatically, right here in your browser. You don't need an account.
+
+30
+00:02:10,614 --> 00:02:15,528
+From Save progress, you can download a backup file, and load it again on any device.
+
+31
+00:02:16,077 --> 00:02:20,632
+Or, sign in with Google, and your progress follows you to your phone, your laptop,
+
+32
+00:02:20,582 --> 00:02:22,006
+and your school computer.
+
+33
+00:02:22,555 --> 00:02:27,313
+Syncing only ever adds progress, so nothing on one device can wipe out another.
+
+34
+00:02:30,517 --> 00:02:35,329
+Now for the fun part. Study leagues are weekly leaderboards, for you and your friends.
+
+35
+00:02:35,878 --> 00:02:40,628
+They count your active revision minutes, whenever you're clicking, typing or scrolling,
+
+36
+00:02:40,578 --> 00:02:41,655
+in any of the apps.
+
+37
+00:02:42,205 --> 00:02:46,671
+Share your league code to invite people. You can be in up to five leagues at once.
+
+38
+00:02:48,104 --> 00:02:52,366
+Everyone's minutes reset on Monday, so there's a new crown to win every week.
+
+39
+00:02:52,915 --> 00:02:56,222
+To start your own league, or join a friend's, tap New or join.
+
+40
+00:02:58,051 --> 00:03:02,505
+Everyone reads differently. Tap the Aa button for a dyslexia-friendly font.
+
+41
+00:03:03,054 --> 00:03:08,569
+The menu next to it switches the colours. Try dark mode, or a softer, warmer background.
+
+42
+00:03:09,119 --> 00:03:13,420
+And in the logo menu, you can read everything in Welsh or Scottish Gaelic.
+
+43
+00:03:14,083 --> 00:03:19,016
+If you spot a mistake, or something's broken, tap Report a bug, and let Tanmay know.
+
+44
+00:03:18,966 --> 00:03:19,946
+It really helps.
+
+45
+00:03:20,495 --> 00:03:24,672
+That's everything! Good luck with your revision, and I'll see you on the leaderboard.
+

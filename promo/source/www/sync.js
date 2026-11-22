@@ -28,7 +28,7 @@
     };
   }
   addEventListener('click', e => {
-    const b = e.target.closest && e.target.closest('[data-tt-signin],[data-tt-account]');
+    const b = e.target.closest && e.target.closest('[data-tt-signin],[data-tt-account],#tts-in-g');
     if (!b) return; e.preventDefault(); e.stopImmediatePropagation(); run();
   }, true);
 })();

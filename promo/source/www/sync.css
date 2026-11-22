@@ -1,4 +1,4 @@
-#tt-sync{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:rgba(7,5,26,.78);opacity:0;transition:opacity .35s;font-family:"IBM Plex Sans",system-ui,sans-serif}
+#tt-sync{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:rgba(7,5,26,.78);opacity:0;transition:opacity .35s;font-family:"IBM Plex Sans",system-ui,sans-serif}
 #tt-sync.on{opacity:1}
 #tt-sync .card{width:560px;background:#f6f1e7;color:#07051a;border-radius:22px;padding:30px 34px 28px;border:3px solid #07051a;box-shadow:8px 8px 0 #07051a;transform:translateY(24px) scale(.94);transition:transform .5s cubic-bezier(.2,.9,.25,1.35)}
 #tt-sync.on .card{transform:none}

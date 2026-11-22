@@ -5,7 +5,8 @@
 | `TrainTanmay-ad.mp4` | Wide 1080p cut (79 s) with music, sound effects and subtitles |
 | `TrainTanmay-ad-phone.mp4` | Vertical 1080×1920 cut for phones (58 s) |
 | `*.srt` | The same captions as separate files, for YouTube, Instagram or TikTok |
-| `ad-wide.mp4`, `ad-tall.mp4`, `*.jpg` | Small copies and posters used by the pop-up on the start screen (`../promo.js`) |
+| `ad-wide.mp4`, `ad-tall.mp4`, `ad-*.jpg` | Small copies and posters used by the pop-up on the start screen (`../promo.js`) |
+| `howto-wide.mp4`, `howto-tall.mp4`, `howto-*.jpg`, `howto-*.srt` | The narrated "How to use TrainTanmay" tour (3 min 29 s wide, 3 min 16 s vertical) shown at the top of `help.html` |
 
 Running order: intro → home page → **NEW Chemistry** (the app and its 3D shapes lab) → **NEW Sign in** (the real sign-in card, then a staged "synced" moment) → **NEW Leaderboards** (the real study-league board, filmed with a stand-in signed-in user and sample friends) → the classics in use (D&T flashcards, Physics labs, Maths search, the ESAT launch game) → accessibility slide → end card.
 
@@ -25,3 +26,21 @@ cd promo/source/www && python3 -m http.server 8766           # in a second termi
 cd promo/source && node scenes2.js chem login league c_dt c_ph c_ma c_es && node render.js && python3 build2.py
 cd promo/source && MODE=phone node scenes2.js chem login league c_dt c_ph c_ma c_es && MODE=phone node render.js && MODE=phone python3 build2.py
 ```
+
+## The how-to video
+
+A narrated tour in 8 chapters: welcome, getting around, inside an app, the other apps, your progress, study leagues, reading and colours, help and bugs. The narration is generated with the open Kokoro text-to-speech model (voice "af_heart"), and each line is lined up with the step that shows it on screen. Subtitles and chapter labels are burned in; the `.srt` files hold the same captions.
+
+To rebuild it (from `promo/source`, with the two servers above running):
+
+```bash
+pip install kokoro-onnx soundfile scipy
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+mkdir -p ../tts && mv kokoro-v1.0.onnx voices-v1.0.bin ../tts/   # tts.py looks two folders up from howto/
+cd howto && python3 tts.py && cd ..
+node howto/scenes.js h_main h_dt h_ph h_ma h_es h_save h_league h_access h_end && python3 howto/build.py
+MODE=phone node howto/scenes.js h_main h_dt h_ph h_ma h_es h_save h_league h_access h_end && MODE=phone python3 howto/build.py
+```
+
+To change what she says, edit `howto/script.py` and run all three steps again (recordings wait for each line, so timings follow the new audio).
