@@ -25,3 +25,4 @@
 @keyframes ttsp{to{transform:rotate(360deg)}}
 .tt-avbtn{display:inline-flex!important;align-items:center;gap:8px}
 .tt-avbtn i{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ff8a3d,#ff4f96);display:grid;place-items:center;color:#fff;font:800 13px "Bricolage Grotesque",sans-serif;font-style:normal}
+@media (max-width:600px){#tt-sync .card{width:92vw;padding:22px 18px}#tt-sync h3{font-size:24px}#tt-sync .devs{gap:8px}#tt-sync .dev{padding:10px 4px}#tt-sync .dev .n{font-size:12px}#tt-sync .sub{font-size:14px}}

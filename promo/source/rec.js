@@ -4,10 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const W = 1280, H = 720, SCALE = 1.5; // frames come out at 1920x1080
+const PHONE = process.env.MODE === 'phone';
+const W = PHONE ? 360 : 1280, H = PHONE ? 640 : 720, SCALE = PHONE ? 3 : 1.5; // 1080x1920 or 1920x1080
+const OW = W * SCALE, OH = H * SCALE, SUF = PHONE ? '-phone' : '';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const CURSOR_JS = `
+const CURSOR_JS = `window.__ttPhone=${PHONE};
 (() => {
   if (window.__ttCursor) return; window.__ttCursor = 1;
   const add = () => {
@@ -26,6 +28,7 @@ const CURSOR_JS = `
     const halo = document.createElement('div'); halo.id = 'tthalo'; document.body.appendChild(halo);
     const c = document.createElement('div'); c.id = 'ttc';
     c.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30"><path d="M3 2 L3 19.5 L7.6 15.4 L10.6 22 L13.6 20.7 L10.7 14.2 L17 14.2 Z" fill="#fff" stroke="#0e0b22" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    if (window.__ttPhone) { c.innerHTML = ''; c.style.cssText = 'width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(255,255,255,.55);border:3px solid rgba(14,11,34,.75);box-shadow:0 0 0 2px rgba(255,255,255,.5)'; halo.style.display = 'none'; }
     document.body.appendChild(c);
     const set = (x, y) => { for (const el of [c, halo]) { el.style.setProperty('--x', x + 'px'); el.style.setProperty('--y', y + 'px'); } };
     const p = window.__ttPos || [-100, -100]; set(p[0], p[1]);
@@ -38,10 +41,12 @@ const CURSOR_JS = `
   add();
 })();`;
 
-async function startRecording(name, { url, seed = {}, prep } = {}) {
+async function startRecording(name, { url, seed = {}, prep, init = [] } = {}) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: SCALE });
   await ctx.addInitScript(CURSOR_JS);
+  for (const s of init) await ctx.addInitScript(s);
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   if (seed.cursor) await ctx.addInitScript(`window.__ttPos=${JSON.stringify(seed.cursor)}`);
   const page = await ctx.newPage();
   let mouse = seed.cursor ? [...seed.cursor] : [W * 0.55, H * 0.6];
@@ -49,7 +54,7 @@ async function startRecording(name, { url, seed = {}, prep } = {}) {
   if (prep) await prep(page);
   await page.mouse.move(mouse[0], mouse[1]);
 
-  const dir = path.join(__dirname, 'frames', name);
+  name += SUF; const dir = path.join(__dirname, 'frames', name);
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   const cdp = await ctx.newCDPSession(page);
   const frames = []; let t0 = null;
@@ -60,7 +65,7 @@ async function startRecording(name, { url, seed = {}, prep } = {}) {
     frames.push({ file, t: ts - t0 });
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
   });
-  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 90, maxWidth: W * SCALE, maxHeight: H * SCALE, everyNthFrame: 1 });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 90, maxWidth: OW, maxHeight: OH, everyNthFrame: 1 });
   const wall0 = Date.now();
   const clicks = [];
   const now = () => (Date.now() - wall0) / 1000;
@@ -98,6 +103,13 @@ async function startRecording(name, { url, seed = {}, prep } = {}) {
       requestAnimationFrame(f);
     }), [dy, ms]);
   }
+  async function type(text, ms = 70) { for (const ch of text) { await page.keyboard.type(ch); await sleep(ms); } }
+  async function reveal(target, ms = 850) {
+    const loc = typeof target === 'string' ? page.locator(target).first() : target;
+    const off = await loc.evaluate(el => { const b = el.getBoundingClientRect(); return b.top < 70 || b.bottom > innerHeight - 40; });
+    if (!off) return;
+    await loc.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })); await sleep(ms);
+  }
   async function stop() {
     const end = now();
     await sleep(200);
@@ -110,11 +122,11 @@ async function startRecording(name, { url, seed = {}, prep } = {}) {
     fs.writeFileSync(list, s);
     const out = path.join(__dirname, 'clips', name + '.mp4'); fs.mkdirSync(path.dirname(out), { recursive: true });
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list,
-      '-vf', 'fps=30,scale=1920:1080:flags=lanczos,format=yuv420p', '-t', end.toFixed(3), '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', out]);
+      '-vf', `fps=30,scale=${OW}:${OH}:flags=lanczos,format=yuv420p`, '-t', end.toFixed(3), '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', out]);
     fs.writeFileSync(path.join(__dirname, 'clips', name + '.json'), JSON.stringify({ duration: end, clicks, frames: frames.length }));
     console.log(name, 'duration', end.toFixed(2), 'frames', frames.length, 'fps~', (frames.length / end).toFixed(1), 'clicks', clicks.map(c => c.toFixed(2)).join(','));
   }
-  return { page, glide, moveTo, click, scrollBy, stop, sleep, now, centre };
+  return { page, glide, moveTo, click, scrollBy, stop, sleep, now, centre, type, reveal };
 }
 
-module.exports = { startRecording, sleep, W, H };
+module.exports = { startRecording, sleep, W, H, PHONE };
