@@ -6,7 +6,7 @@ import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from 'firebase/auth';
-import { getFirestore, doc, runTransaction, serverTimestamp } from 'firebase/firestore/lite';
+import { getFirestore, doc, collection, query, where, getDoc, getDocs, setDoc, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore/lite';
 
 let auth = null, db = null;
 
@@ -45,4 +45,29 @@ function update(uid, change) {
   });
 }
 
-window.ttCloudSDK = { init, signIn, signOut: () => signOut(auth), onUser, update };
+/* small Firestore helpers for the study leaderboards (league.js) */
+const fs = {
+  get: (path) => getDoc(doc(db, path)).then((s) => (s.exists() ? s.data() : null)),
+  del: (path) => deleteDoc(doc(db, path)),
+  set: (path, data, merge) => setDoc(doc(db, path), data, merge ? { merge: true } : {}),
+  list: (path) => getDocs(collection(db, path)).then((q) => q.docs.map((d) => ({ id: d.id, data: d.data() }))),
+  mine: (path, field, value) => getDocs(query(collection(db, path), where(field, 'array-contains', value))).then((q) => q.docs.map((d) => ({ id: d.id, data: d.data() }))),
+  /* change(current or null) returns the new record, or null to leave it */
+  tx: (path, change) => runTransaction(db, async (t) => {
+    const ref = doc(db, path), snap = await t.get(ref);
+    const next = await change(snap.exists() ? snap.data() : null);
+    if (next) t.set(ref, next);
+    return next;
+  }),
+  /* several records at once: change([current or null, ...]) returns [new record or null to leave it, ...] */
+  txMany: (paths, change) => runTransaction(db, async (t) => {
+    const refs = paths.map((p) => doc(db, p)), snaps = [];
+    for (const r of refs) snaps.push(await t.get(r));
+    const next = await change(snaps.map((s) => (s.exists() ? s.data() : null)));
+    next.forEach((n, i) => { if (n) t.set(refs[i], n); });
+    return next;
+  }),
+  now: serverTimestamp
+};
+
+window.ttCloudSDK = { init, signIn, signOut: () => signOut(auth), onUser, update, fs, uid: () => (auth && auth.currentUser ? auth.currentUser.uid : null) };
