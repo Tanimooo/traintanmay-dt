@@ -59,6 +59,14 @@ const fs = {
     if (next) t.set(ref, next);
     return next;
   }),
+  /* several records at once: change([current or null, ...]) returns [new record or null to leave it, ...] */
+  txMany: (paths, change) => runTransaction(db, async (t) => {
+    const refs = paths.map((p) => doc(db, p)), snaps = [];
+    for (const r of refs) snaps.push(await t.get(r));
+    const next = await change(snaps.map((s) => (s.exists() ? s.data() : null)));
+    next.forEach((n, i) => { if (n) t.set(refs[i], n); });
+    return next;
+  }),
   now: serverTimestamp
 };
 

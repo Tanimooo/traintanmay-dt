@@ -4,6 +4,7 @@ rules_version = '2';
 //   users/{uid}                 one synced save per person (save.js): only that person can read or write it
 //   leagues/{CODE}              study leagues (league.js): no size limit; the leader (owner) can rename, remove or promote members
 //   leagues/{CODE}/scores/{uid} each member's minutes this week: members can read, only you can write yours
+//   memberships/{uid}           the leagues you are in (at most 5): you must list a league here to start or join it
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -13,7 +14,26 @@ service cloud.firestore {
       allow read, write: if signedIn() && request.auth.uid == uid;
     }
 
+    match /memberships/{uid} {
+      function L(c) { return /databases/$(database)/documents/leagues/$(c); }
+      function before() { return resource == null ? [] : resource.data.codes; }
+      function after() { return request.resource.data.codes; }
+      function added() { return after().removeAll(before()); }
+      function removed() { return before().removeAll(after()); }
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['codes'])
+        && after() is list && after().size() <= 5
+        // add one league at a time, and only one you are in once this write is done
+        && (added().size() == 0 || (added().size() == 1 && uid in getAfter(L(added()[0])).data.members))
+        // drop one league at a time, and only one you are no longer in
+        && (removed().size() == 0 || (removed().size() == 1
+              && (!existsAfter(L(removed()[0])) || !(uid in getAfter(L(removed()[0])).data.members))));
+      allow delete: if false;
+    }
+
     match /leagues/{code} {
+      function listed() { return code in getAfter(/databases/$(database)/documents/memberships/$(request.auth.uid)).data.codes; }
       function me() { return request.auth.uid; }
       function nu() { return request.resource.data; }
       function old() { return resource.data; }
@@ -32,7 +52,8 @@ service cloud.firestore {
         && nu().owner == me()
         && nu().members == [me()]
         && nu().names.keys().hasOnly([me()]) && okName(nu().names[me()], 2, 16)
-        && nu().created == request.time;
+        && nu().created == request.time
+        && listed();
 
       // a rename changes one name, recorded in 'edited', and that name must be 2-16 allowed characters
       function renamedOk() { return nu().edited is string && nu().edited in old().members
@@ -45,7 +66,7 @@ service cloud.firestore {
         && nu().names.keys().hasOnly(nu().members)
         && (
           // join, with your name
-          (added() == [me()] && removed().size() == 0 && nu().owner == old().owner && onlyMyName() && okName(nu().names[me()], 2, 16)
+          (added() == [me()] && removed().size() == 0 && nu().owner == old().owner && onlyMyName() && okName(nu().names[me()], 2, 16) && listed()
             && nu().get('edited', null) == old().get('edited', null))
           // rename: yourself, or anyone if you are the leader
           || (me() in old().members && sameMembers() && nu().owner == old().owner && renamedOk() && (nu().edited == me() || old().owner == me()))

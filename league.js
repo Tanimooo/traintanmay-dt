@@ -146,7 +146,7 @@
       leagues = {}; list.forEach(function (d) { leagues[d.id] = d.data; });
       var codes = list.map(function (d) { return d.id; }).sort(function (a, b) { return ((leagues[a].created || {}).seconds || 0) - ((leagues[b].created || {}).seconds || 0); });
       setMine(codes);
-      return push().then(function () {
+      return tidySeats(codes).then(push).then(function () {
         return Promise.all(codes.map(function (c) {
           return fs().list('leagues/' + c + '/scores').then(function (rows) { var o = {}; rows.forEach(function (r) { o[r.id] = r.data; }); scores[c] = o; });
         }));
@@ -155,16 +155,33 @@
       .then(function () { busy = false; drawSoon(); });
   }
 
+  /* memberships/{uid} lists the leagues you are in, so the database can hold you to 5 */
+  function seat() { return 'memberships/' + user.uid; }
+  /* bring that list in line with the leagues you are really in, one change at a time (as the rules ask) */
+  function tidySeats(codes) {
+    var p = seat();
+    return fs().get(p).then(function (m) {
+      var have = (m && m.codes) || [], stale = have.filter(function (c) { return codes.indexOf(c) < 0; }), missing = codes.filter(function (c) { return have.indexOf(c) < 0; });
+      var steps = stale.map(function (c) { return function (cur) { return cur.filter(function (x) { return x !== c; }); }; })
+        .concat(missing.map(function (c) { return function (cur) { return cur.length < MAX_LEAGUES ? cur.concat([c]) : null; }; }));
+      var chain = Promise.resolve(have);
+      steps.forEach(function (step) { chain = chain.then(function (cur) { var next = step(cur); return next ? fs().set(p, { codes: next }).then(function () { return next; }) : cur; }); });
+      return chain;
+    }).catch(function () {});
+  }
+
   function newCode() { return rnd(6, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'); }
   function create(name, nick) {
     if (mine().length >= MAX_LEAGUES) return Promise.reject(new Error('many'));
     var uid = user.uid, tries = 0;
     function attempt() {
       var code = newCode();
-      return fs().tx('leagues/' + code, function (cur) {
-        if (cur) throw new Error('taken');
+      return fs().txMany(['leagues/' + code, seat()], function (cur) {
+        if (cur[0]) throw new Error('taken');
+        var codes = (cur[1] && cur[1].codes) || [];
+        if (codes.length >= MAX_LEAGUES) throw new Error('many');
         var names = {}; names[uid] = nick;
-        return { name: name, owner: uid, members: [uid], names: names, created: fs().now() };
+        return [{ name: name, owner: uid, members: [uid], names: names, created: fs().now() }, { codes: codes.concat([code]) }];
       }).then(function () { return code; }, function (e) { if (e && e.message === 'taken' && ++tries < 6) return attempt(); throw e; });
     }
     return attempt();
@@ -172,11 +189,13 @@
   function join(code, nick) {
     if (mine().length >= MAX_LEAGUES && mine().indexOf(code) < 0) return Promise.reject(new Error('many'));
     var uid = user.uid;
-    return fs().tx('leagues/' + code, function (cur) {
-      if (!cur) throw new Error('nocode');
-      if (cur.members.indexOf(uid) >= 0) return null;
-      var names = Object.assign({}, cur.names); names[uid] = nick;
-      return Object.assign({}, cur, { members: cur.members.concat([uid]), names: names });
+    return fs().txMany(['leagues/' + code, seat()], function (cur) {
+      var L = cur[0], codes = (cur[1] && cur[1].codes) || [];
+      if (!L) throw new Error('nocode');
+      if (L.members.indexOf(uid) >= 0) return [null, null];
+      if (codes.length >= MAX_LEAGUES) throw new Error('many');
+      var names = Object.assign({}, L.names); names[uid] = nick;
+      return [Object.assign({}, L, { members: L.members.concat([uid]), names: names }), { codes: codes.concat([code]) }];
     }).then(function () { return code; });
   }
   /* set someone's name on the board: your own, or anyone's if you lead the league */
@@ -199,12 +218,16 @@
     var uid = user.uid, self = who === uid;
     var first = self ? fs().del('leagues/' + code + '/scores/' + uid).catch(function () {}) : Promise.resolve();
     return first.then(function () {
-      return fs().tx('leagues/' + code, function (cur) {
-        if (!cur || cur.members.indexOf(who) < 0) return null;
+      return fs().txMany(['leagues/' + code, seat()], function (both) {
+        var cur = both[0];
+        if (!cur || cur.members.indexOf(who) < 0) return [null, null];
         var members = cur.members.filter(function (m) { return m !== who; }), names = Object.assign({}, cur.names);
         delete names[who];
         var owner = cur.owner === who ? (members[0] || who) : cur.owner;
-        return Object.assign({}, cur, { members: members, names: names, owner: owner });
+        // leaving frees one of your 5 places (someone you remove frees theirs the next time they open the board)
+        var codes = (both[1] && both[1].codes) || [];
+        var mineNext = self && codes.indexOf(code) >= 0 ? { codes: codes.filter(function (c) { return c !== code; }) } : null;
+        return [Object.assign({}, cur, { members: members, names: names, owner: owner }), mineNext];
       });
     });
   }
