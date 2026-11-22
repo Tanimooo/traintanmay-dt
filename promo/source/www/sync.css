@@ -1,0 +1,27 @@
+#tt-sync{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:rgba(7,5,26,.78);opacity:0;transition:opacity .35s;font-family:"IBM Plex Sans",system-ui,sans-serif}
+#tt-sync.on{opacity:1}
+#tt-sync .card{width:560px;background:#f6f1e7;color:#07051a;border-radius:22px;padding:30px 34px 28px;border:3px solid #07051a;box-shadow:8px 8px 0 #07051a;transform:translateY(24px) scale(.94);transition:transform .5s cubic-bezier(.2,.9,.25,1.35)}
+#tt-sync.on .card{transform:none}
+#tt-sync h3{font-family:"Bricolage Grotesque",sans-serif;font-size:30px;margin:0 0 4px;font-weight:800;letter-spacing:-.02em}
+#tt-sync .sub{margin:0 0 22px;color:#4a4566;font-size:16px}
+#tt-sync .who{display:flex;align-items:center;gap:14px;margin-bottom:22px;opacity:0;transform:translateY(8px);transition:.4s}
+#tt-sync .who.on{opacity:1;transform:none}
+#tt-sync .av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#ff8a3d,#ff4f96);display:grid;place-items:center;color:#fff;font:800 22px "Bricolage Grotesque",sans-serif;border:3px solid #07051a}
+#tt-sync .who b{display:block;font-size:18px}
+#tt-sync .who span{font-size:14px;color:#4a4566}
+#tt-sync .devs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+#tt-sync .dev{border:2px solid #07051a;border-radius:14px;padding:14px 10px 12px;text-align:center;background:#fff;opacity:.35;transition:.4s}
+#tt-sync .dev.on{opacity:1}
+#tt-sync .dev svg{width:44px;height:44px}
+#tt-sync .dev .n{font-weight:600;font-size:14px;margin:4px 0 8px}
+#tt-sync .bar{height:8px;border-radius:4px;background:#e6dfcf;overflow:hidden}
+#tt-sync .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4a8dff,#3ddc84);transition:width 1s ease}
+#tt-sync .dev.done .bar i{width:100%}
+#tt-sync .ok{font-size:13px;font-weight:600;color:#1a9e57;margin-top:6px;height:18px;opacity:0;transition:.3s}
+#tt-sync .dev.done .ok{opacity:1}
+#tt-sync button{margin-top:24px;width:100%;padding:14px;border-radius:12px;border:3px solid #07051a;background:#ffc917;font:800 18px "Bricolage Grotesque",sans-serif;cursor:pointer;box-shadow:4px 4px 0 #07051a;opacity:0;transition:.4s}
+#tt-sync button.on{opacity:1}
+#tt-sync .spin{width:22px;height:22px;border:3px solid #c9c1e8;border-top-color:#3a2a86;border-radius:50%;display:inline-block;vertical-align:-4px;margin-right:8px;animation:ttsp .8s linear infinite}
+@keyframes ttsp{to{transform:rotate(360deg)}}
+.tt-avbtn{display:inline-flex!important;align-items:center;gap:8px}
+.tt-avbtn i{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ff8a3d,#ff4f96);display:grid;place-items:center;color:#fff;font:800 13px "Bricolage Grotesque",sans-serif;font-style:normal}
