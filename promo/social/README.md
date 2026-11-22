@@ -141,3 +141,34 @@ Edexcel A level Maths & Further Maths · free · 🔗 link in bio
 
 #alevelmaths #alevels #furthermaths #studygram #maths
 ```
+
+## Quiz Short: Physics, braking distance
+
+`TrainTanmay-quiz-physics-braking.mp4`: a 34-second vertical Short (1080×1920, 60 fps) with narration, word-by-word captions, an original music bed and small sound cues. It's built on the short-form quiz formula:
+- **0:00 hook:** the question is on screen immediately, with options A–D
+- **0:04:** "pause and pick one" with a 3-2-1 countdown
+- **0:07 the trap:** "most people say it doubles" and A gets crossed out in red
+- **0:09–0:22:** the explanation revealed one line at a time: KE = ½mv² → (2v)² = 4v² → energy = F × d → skid bars showing d vs 4d
+- **0:23:** B is circled in green: four times
+- **0:25:** "Did you pick A? Be honest 👇" to get comments
+- **0:26:** "Send this to your friend who's cooked for physics. Or the one who drives like brakes are optional." to get shares, while the app slides in with "100s more like this · free · link in bio"
+- **0:32:** "And remember, if your car doubles its speed…" loops straight back into the opening question
+
+Everything sits in the middle of the frame, clear of the like/comment buttons and the caption bar. Post it with its **original audio**. Pin the comment below.
+
+**Caption**
+```
+Your car doubles its speed. What happens to the braking distance? 🚗💨
+Comment your answer BEFORE the reveal 👀
+
+Tag the friend who's cooked for physics 🍳
+
+Free A level Physics revision · 🔗 link in bio
+
+#alevelphysics #physics #alevels #studytok #physicsquiz
+```
+
+**Pinned comment**
+```
+Answer: B (4×) — KE = ½mv², so double v = 4× the energy = 4× the distance. Who picked A? 😭
+```

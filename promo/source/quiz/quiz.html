@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@500;700&display=swap">
+<style>html,body{margin:0;background:#0e0b22;overflow:hidden}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Physics quiz Short: "your car doubles its speed..." All timing comes from schedule.json (the narration).
+const W = 1080, H = 1920, PINK = '#ff4f96', YEL = '#ffc917', RED = '#ff4b4b', GRN = '#3ddc84', INK = '#07051a', PAPER = '#f6f1e7', MUTED = '#b3acd6';
+const c = document.getElementById('c').getContext('2d');
+let S = null, L = {};
+const clamp = v => Math.max(0, Math.min(1, v));
+const ease = t => 1 - Math.pow(1 - clamp(t), 3);
+const inout = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const back = t => { t = clamp(t); const a = 1.8, b = a + 1; return 1 + b * Math.pow(t - 1, 3) + a * Math.pow(t - 1, 2); };
+const since = (id, t, off = 0) => t - L[id].start - off;
+const between = (t, a, b) => t >= a && t < b;
+function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function txt(s, x, y, size, color = PAPER, align = 'center', weight = 800, font = 'Bricolage Grotesque') {
+  c.font = `${weight} ${size}px "${font}"`; c.textAlign = align; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(s, x, y); return c.measureText(s).width;
+}
+// rich line: segments [[text,color],...] centred
+function rich(segs, x, y, size, weight = 800) {
+  c.font = `${weight} ${size}px "Bricolage Grotesque"`; const ws = segs.map(s => c.measureText(s[0]).width), tot = ws.reduce((a, b) => a + b, 0);
+  let cx = x - tot / 2; c.textAlign = 'left'; c.textBaseline = 'middle';
+  segs.forEach((s, i) => { c.fillStyle = s[1]; c.fillText(s[0], cx, y); cx += ws[i]; });
+}
+function bg(t) {
+  const g = c.createRadialGradient(W * .5, H * .35, 80, W * .5, H * .5, H * .85);
+  g.addColorStop(0, '#2a1446'); g.addColorStop(.5, '#160d34'); g.addColorStop(1, '#0a0720');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.strokeStyle = 'rgba(255,255,255,.045)'; c.lineWidth = 2; const s = 72, o = (t * 18) % s;
+  c.beginPath(); for (let x = -o; x < W; x += s) { c.moveTo(x, 0); c.lineTo(x, H); } for (let y = -o; y < H; y += s) { c.moveTo(0, y); c.lineTo(W, y); } c.stroke();
+}
+// a simple original car, facing right
+function car(x, y, s, col = PINK, wheelSpin = 0) {
+  c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineWidth = 8; c.strokeStyle = INK;
+  rr(-120, -40, 240, 70, 26); c.fillStyle = col; c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(-70, -40); c.lineTo(-40, -92); c.lineTo(48, -92); c.lineTo(86, -40); c.closePath(); c.fillStyle = col; c.fill(); c.stroke();
+  c.fillStyle = '#bfe6ff'; c.beginPath(); c.moveTo(-50, -46); c.lineTo(-30, -80); c.lineTo(2, -80); c.lineTo(2, -46); c.closePath(); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(14, -46); c.lineTo(14, -80); c.lineTo(42, -80); c.lineTo(66, -46); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = YEL; c.beginPath(); c.arc(112, -12, 9, 0, 7); c.fill();
+  for (const wx of [-68, 70]) { c.save(); c.translate(wx, 34); c.rotate(wheelSpin); c.beginPath(); c.arc(0, 0, 30, 0, 7); c.fillStyle = '#222'; c.fill(); c.stroke(); c.strokeStyle = '#888'; c.lineWidth = 5; c.beginPath(); c.moveTo(-18, 0); c.lineTo(18, 0); c.moveTo(0, -18); c.lineTo(0, 18); c.stroke(); c.restore(); }
+  c.restore();
+}
+function speedLines(x, y, n, len, a) { c.save(); c.globalAlpha = a; c.strokeStyle = PAPER; c.lineWidth = 6; c.lineCap = 'round'; for (let i = 0; i < n; i++) { const yy = y - 70 + i * 34; c.beginPath(); c.moveTo(x - len - i * 14, yy); c.lineTo(x - 30 - i * 14, yy); c.stroke(); } c.restore(); }
+
+const OPTS = [['A', '2×'], ['B', '4×'], ['C', '√2×'], ['D', 'the same']];
+function options(t, y0, scale, mode) {
+  // mode: {appearAt, trap: time A crossed, answer: time B circled}
+  const w = 430 * scale, h = 140 * scale, gx = 40 * scale, gy = 34 * scale;
+  OPTS.forEach(([k, v], i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = W / 2 - w - gx / 2 + col * (w + gx), y = y0 + row * (h + gy);
+    const a = mode.appearAt != null ? back((t - mode.appearAt - i * .12) / .35) : 1; if (a <= 0) return;
+    c.save(); c.translate(x + w / 2, y + h / 2); c.scale(a, a); c.translate(-w / 2, -h / 2);
+    let fill = '#ffffff', stroke = INK, keyBg = INK, keyFg = PAPER, dim = 1;
+    if (mode.trap != null && i === 0 && t > mode.trap) { fill = '#ffd6d6'; keyBg = RED; }
+    if (mode.answer != null && t > mode.answer) { if (i === 1) { fill = '#d5ffe6'; keyBg = GRN; keyFg = INK; } else dim = .45; }
+    c.globalAlpha = dim;
+    c.fillStyle = 'rgba(0,0,0,.45)'; rr(8, 10, w, h, 26 * scale); c.fill();
+    rr(0, 0, w, h, 26 * scale); c.fillStyle = fill; c.fill(); c.lineWidth = 7 * scale; c.strokeStyle = stroke; c.stroke();
+    rr(18 * scale, 18 * scale, h - 36 * scale, h - 36 * scale, 18 * scale); c.fillStyle = keyBg; c.fill();
+    txt(k, 18 * scale + (h - 36 * scale) / 2, h / 2 + 3 * scale, 62 * scale, keyFg);
+    txt(v, h + (w - h) / 2 - 6 * scale, h / 2 + 3 * scale, (v.length > 4 ? 56 : 70) * scale, INK);
+    // the red cross on the trap
+    if (mode.trap != null && i === 0 && t > mode.trap) {
+      const p = ease((t - mode.trap) / .3); c.lineWidth = 16 * scale; c.lineCap = 'round'; c.strokeStyle = RED;
+      c.beginPath(); c.moveTo(20 * scale, 20 * scale); c.lineTo(20 * scale + (w - 40 * scale) * p, 20 * scale + (h - 40 * scale) * p); c.stroke();
+      if (p > .5) { const q = (p - .5) * 2; c.beginPath(); c.moveTo(w - 20 * scale, 20 * scale); c.lineTo(w - 20 * scale - (w - 40 * scale) * q, 20 * scale + (h - 40 * scale) * q); c.stroke(); }
+    }
+    // the green circle on the answer
+    if (mode.answer != null && i === 1 && t > mode.answer) {
+      const p = ease((t - mode.answer) / .45); c.lineWidth = 12 * scale; c.strokeStyle = GRN; c.lineCap = 'round';
+      c.beginPath(); c.ellipse(w / 2, h / 2, w / 2 + 26 * scale, h / 2 + 26 * scale, -.04, -1.3, -1.3 + Math.PI * 2.1 * p); c.stroke();
+    }
+    c.restore();
+  });
+}
+function chip(s, x, y, col, size = 40, fg = INK) {
+  c.font = `800 ${size}px "Bricolage Grotesque"`; const w = c.measureText(s).width + size * 1.1;
+  rr(x - w / 2, y - size * .78, w, size * 1.56, size * .78); c.fillStyle = col; c.fill(); txt(s, x, y + 2, size, fg); return w;
+}
+// word-by-word captions near the bottom, inside the safe zone
+function captions(t) {
+  const ln = S.lines.find(l => t >= l.start - .05 && t < l.end + .35); if (!ln) return;
+  const size = 60; c.font = `800 ${size}px "Bricolage Grotesque"`;
+  const words = ln.words, maxW = W * .78; const rows = [[]]; let rowW = 0;
+  words.forEach((w, i) => { const ww = c.measureText(w + ' ').width; if (rowW + ww > maxW && rows[rows.length - 1].length) { rows.push([]); rowW = 0; } rows[rows.length - 1].push(i); rowW += ww; });
+  // show the two rows around the current word
+  let cur = 0; ln.wordTimes.forEach((wt, i) => { if (t >= wt) cur = i; });
+  const ri = rows.findIndex(r => r.includes(cur)), show = rows.slice(Math.floor(ri / 2) * 2, Math.floor(ri / 2) * 2 + 2);
+  const y0 = 1470;
+  show.forEach((r, k) => {
+    const ws = r.map(i => c.measureText(words[i] + ' ').width), tot = ws.reduce((a, b) => a + b, 0); let x = W / 2 - tot / 2;
+    r.forEach((i, j) => {
+      const said = t >= ln.wordTimes[i], now = i === cur, y = y0 + k * size * 1.22;
+      const pop = now ? 1 + .12 * (1 - ease((t - ln.wordTimes[i]) / .18)) : 1;
+      c.save(); c.translate(x + ws[j] / 2, y); c.scale(pop, pop); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+      c.lineWidth = 13; c.strokeStyle = INK; c.strokeText(words[i], -c.measureText(' ').width / 2, 0);
+      c.fillStyle = now ? YEL : said ? PAPER : 'rgba(246,241,231,.55)'; c.fillText(words[i], -c.measureText(' ').width / 2, 0); c.restore();
+      x += ws[j];
+    });
+  });
+}
+const APP = new Image(); APP.src = 'app1.jpg';
+
+function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); bg(t);
+  // punch-in zoom: each line nudges the camera in a little, alternating
+  const li = S.lines.findIndex(l => t < l.end + .4); const ln = S.lines[Math.max(0, li)];
+  const z = 1 + .055 * inout((t - ln.start) / 2.2) * (li % 2 ? 1 : .6);
+  c.save(); c.translate(W / 2, 900); c.scale(z, z); c.translate(-W / 2, -900);
+  const T = L;
+  // brand chip
+  chip('TrainTanmay · PHYSICS', W / 2, 300, PINK, 34);
+  if (t < T.ke.start) {                                   // HOOK, PAUSE, TRAP
+    const a = ease(t / .25);
+    c.globalAlpha = a; rich([['Your car ', PAPER], ['doubles', PINK], [' its speed.', PAPER]], W / 2, 430, 74);
+    rich([['What happens to its', PAPER]], W / 2, 525, 66, 700); rich([['braking distance?', YEL]], W / 2, 605, 78); c.globalAlpha = 1;
+    // the car with v -> 2v
+    const wob = Math.sin(t * 9) * 3, sp = t * 8;
+    car(W / 2 + 40, 800 + wob, .95, PINK, sp); speedLines(W / 2 - 110, 800, 4, 150 + 60 * Math.sin(t * 6) ** 2, .8);
+    chip('v → 2v', W / 2 + 300, 700, YEL, 40);
+    options(t, 940, 1, { appearAt: .9, trap: T.trap.start + 1.05 });
+    if (between(t, T.pause.start, T.trap.start)) {        // countdown
+      const left = Math.max(0, T.trap.start - t), n = Math.ceil(left * 3 / (T.trap.start - T.pause.start));
+      const fr = 1 - (left % ((T.trap.start - T.pause.start) / 3)) / ((T.trap.start - T.pause.start) / 3);
+      c.save(); c.translate(W / 2, 1310); c.lineWidth = 12; c.strokeStyle = 'rgba(255,255,255,.2)'; c.beginPath(); c.arc(0, 0, 60, 0, 7); c.stroke();
+      c.strokeStyle = YEL; c.beginPath(); c.arc(0, 0, 60, -Math.PI / 2, -Math.PI / 2 + fr * Math.PI * 2); c.stroke(); txt(String(Math.max(1, n)), 0, 3, 64, YEL); c.restore();
+    }
+    if (t > T.trap.start + 1.05) { const p = back((t - T.trap.start - 1.05) / .4); c.save(); c.translate(W / 2, 1310); c.scale(p, p); chip('double speed ≠ double distance', 0, 0, RED, 44, PAPER); c.restore(); }
+  } else if (t < T.ans.start) {                           // THE BREAKDOWN
+    // the car braking, its kinetic energy draining
+    const kp = clamp((t - T.ke.start - .6) / 2.4), cx = 200 + 560 * ease(kp);
+    if (t < T.form.start + .2) {
+      car(cx, 520, .8, PINK, kp * 20); c.save(); c.globalAlpha = .6; c.strokeStyle = '#3a3150'; c.lineWidth = 10; c.beginPath(); c.moveTo(120, 556); c.lineTo(cx - 40, 556); c.stroke(); c.restore();
+      txt('kinetic energy', W / 2, 700, 44, MUTED, 'center', 700);
+      rr(190, 740, 700, 64, 32); c.fillStyle = 'rgba(255,255,255,.12)'; c.fill(); rr(190, 740, 700 * (1 - kp), 64, 32); c.fillStyle = YEL; c.fill();
+      txt(kp > .98 ? '0 J  — stopped' : 'brakes remove it all', W / 2, 860, 46, kp > .98 ? GRN : PAPER, 'center', 700);
+    }
+    // formula lines, revealed one at a time
+    const fy = t < T.form.start + .2 ? 1030 : 560;
+    const showLine = (at, y, draw) => { const p = ease((t - at) / .35); if (p <= 0) return; c.save(); c.globalAlpha = p; c.translate(0, (1 - p) * 30); draw(y); c.restore(); };
+    showLine(T.form.start + .3, fy, y => { rich([['KE = ½ m ', PAPER], ['v²', YEL]], W / 2, y, 110); if (t > T.form.start + 1.6) { c.strokeStyle = YEL; c.lineWidth = 8; rr(W / 2 + 128, y - 70, 140, 140, 24); c.stroke(); } });
+    showLine(T.four.start + .5, fy + 190, y => rich([['(2v)² = ', PAPER], ['4', YEL], ['v²', PAPER]], W / 2, y, 96));
+    showLine(T.four.start + 2.0, fy + 330, y => { chip('4× the energy', W / 2, y, YEL, 54); });
+    showLine(T.dist.start + .2, fy + 500, y => rich([['energy = ', PAPER], ['F', PINK], [' × ', PAPER], ['d', YEL]], W / 2, y, 84));
+    // skid bars: v -> d, 2v -> 4d
+    if (t > T.dist.start + 1.2) {
+      const p = ease((t - T.dist.start - 1.2) / 1.3), y = fy + 650;
+      txt('v', 120, y, 52, PAPER, 'left'); rr(190, y - 22, 180 * Math.min(1, p * 4), 44, 22); c.fillStyle = MUTED; c.fill(); txt('d', 190 + 180 + 30, y, 46, MUTED, 'left');
+      txt('2v', 110, y + 90, 52, PINK, 'left'); rr(190, y + 68, 720 * p, 44, 22); c.fillStyle = PINK; c.fill(); if (p > .95) txt('4d', 190 + 720 - 60, y + 90 - 52, 46, PINK, 'left');
+    }
+  } else if (t < T.share.start) {                          // ANSWER + "be honest"
+    rich([['Your car ', PAPER], ['doubles', PINK], [' its speed.', PAPER]], W / 2, 430, 64);
+    rich([['braking distance?', YEL]], W / 2, 515, 70);
+    options(t, 640, 1, { trap: -1, answer: T.ans.start + .35 });
+    if (t > T.ans.start + .35) { const p = back((t - T.ans.start - .35) / .5); c.save(); c.translate(W / 2, 1100); c.scale(p, p); chip('B. Four times. 4×', 0, 0, GRN, 62); c.restore();
+      // a few sparks
+      for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, r = 160 + 260 * ease((t - T.ans.start - .35) / .8); c.globalAlpha = 1 - clamp((t - T.ans.start - .6) / .8); c.fillStyle = [YEL, GRN, PINK][i % 3]; c.beginPath(); c.arc(W / 2 + 240 + Math.cos(a) * r * .5, 740 + Math.sin(a) * r * .35, 10, 0, 7); c.fill(); } c.globalAlpha = 1; }
+    if (t > T.honest.start) { const p = back((t - T.honest.start) / .4); c.save(); c.translate(W / 2, 1270); c.rotate(-.04); c.scale(p, p); chip('Picked A? 👀 Comment below', 0, 0, PAPER, 50); c.restore(); }
+  } else if (t < T.loop.start) {                           // SHARE + the app
+    const s0 = T.share.start, p = ease((t - s0) / .4);
+    c.save(); c.globalAlpha = p; txt('send this to', W / 2, 430, 60, MUTED, 'center', 700);
+    // the "cooked" friend card
+    const cardIn = back((t - s0 - .25) / .5); c.save(); c.translate(W / 2, 620); c.rotate(-.035); c.scale(cardIn, cardIn);
+    rr(-420, -110, 840, 220, 40); c.fillStyle = PAPER; c.fill(); c.lineWidth = 8; c.strokeStyle = INK; c.stroke();
+    txt('🍳', -320, 0, 110); txt('your friend who\'s', 60, -40, 50, INK); txt('cooked for physics', 60, 30, 64, PINK); c.restore();
+    const card2 = back((t - s0 - 2.6) / .5); if (card2 > 0) { c.save(); c.translate(W / 2, 880); c.rotate(.03); c.scale(card2, card2);
+      rr(-420, -100, 840, 200, 40); c.fillStyle = YEL; c.fill(); c.lineWidth = 8; c.strokeStyle = INK; c.stroke();
+      txt('🚗💨', -300, 0, 90); txt('or the one who drives', 70, -36, 48, INK); txt('like brakes are optional', 70, 30, 52, INK); c.restore(); }
+    // paper plane
+    const pp = clamp((t - s0 - .1) / 1.4); c.save(); c.translate(140 + 820 * pp, 1040 - 260 * Math.sin(pp * Math.PI)); c.rotate(-.3 + pp * .5); c.font = '90px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('📨', 0, 0); c.restore();
+    c.restore();
+    // the app, sliding up
+    const ap = ease((t - s0 - 1.2) / .6); if (ap > 0) { c.save(); c.globalAlpha = ap; c.translate(0, (1 - ap) * 120);
+      const pw = 230, ph = 409, px = W / 2 - pw / 2 - 170, py = 990;
+      rr(px - 10, py - 10, pw + 20, ph + 20, 40); c.fillStyle = INK; c.fill(); c.save(); rr(px, py, pw, ph, 32); c.clip(); if (APP.complete) c.drawImage(APP, px, py, pw, ph); c.restore();
+      txt('100s more', W / 2 + 140, py + 120, 58, PAPER); txt('like this', W / 2 + 140, py + 185, 58, PAPER); chip('free · link in bio', W / 2 + 140, py + 280, PINK, 40); c.restore(); }
+  } else {                                                // LOOP back into the hook
+    const a = ease((t - T.loop.start) / .5);
+    c.globalAlpha = a; rich([['Your car ', PAPER], ['doubles', PINK], [' its speed.', PAPER]], W / 2, 430, 74);
+    rich([['What happens to its', PAPER]], W / 2, 525, 66, 700); rich([['braking distance?', YEL]], W / 2, 605, 78); c.globalAlpha = 1;
+    car(W / 2 + 40, 800, .95, PINK, t * 8); speedLines(W / 2 - 110, 800, 4, 180, .8); chip('v → 2v', W / 2 + 300, 700, YEL, 40);
+  }
+  c.restore();
+  captions(t);
+}
+window.init = async () => {
+  S = await (await fetch('schedule.json')).json(); S.lines.forEach(l => L[l.id] = l);
+  await Promise.all(['800 60px "Bricolage Grotesque"', '700 60px "Bricolage Grotesque"'].map(f => document.fonts.load(f)));
+  await new Promise(r => APP.complete ? r() : APP.onload = r);
+  return { total: S.total };
+};
+
+
+</script></body></html>
