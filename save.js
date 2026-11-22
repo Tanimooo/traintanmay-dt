@@ -235,7 +235,7 @@
     if (sdkP) return sdkP;
     sdkP = new Promise(function (ok, no) {
       if (window.ttCloudSDK) return ok();
-      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121g'; sc.async = true;
+      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261122a'; sc.async = true;
       sc.onload = ok; sc.onerror = function () { no(new Error('load')); };
       document.head.appendChild(sc);
     }).then(function () {
@@ -383,21 +383,21 @@
     if (cloud.user || b.hasAttribute('data-tt-account') && cloud.err) open(); else signIn();
   });
 
-  /* when an app opens signed out: a small card suggests signing in. "Not now" hides it for 3 days. */
+  /* every time TrainTanmay is opened signed out, a small card asks you to sign in. "Not now" or × hides it until the next visit. */
   var NUDGE = 'tt-cloud-nudge', nudge = null;
   function nudgeClose() { if (nudge) { nudge.remove(); nudge = null; } }
   function nudgeShow() {
     var ss = null; try { ss = window.sessionStorage; } catch (e) {}
     if (cloud.user || flag(CLOUD_ON) || back || nudge || !cloud.ready || window.top !== window) return;
-    if (Date.now() - +(flag(NUDGE) || 0) < 3 * 864e5 || (ss && ss.getItem(NUDGE))) return;
-    try { ss && ss.setItem(NUDGE, '1'); } catch (e) {} // once per visit
+    if (ss && ss.getItem(NUDGE)) return; // already answered on this visit
     nudge = document.createElement('div'); nudge.className = 'tts tts-nudge'; nudge.setAttribute('role', 'dialog'); nudge.setAttribute('aria-labelledby', 'tts-nh');
     nudge.innerHTML = '<button class="x" type="button" aria-label="Close" data-nx>&times;</button><h2 id="tts-nh">Keep your progress on every device</h2>' +
       '<p class="mu">Sign in with Google once, and everything you do here follows you to your phone, laptop and school computer. You can keep using TrainTanmay without signing in.</p>' +
       '<div class="row" style="margin:0"><button type="button" class="pr" data-tt-signin>' + GLOGO + 'Sign in with Google</button><button type="button" data-nn>Not now</button></div>';
     document.body.appendChild(nudge);
-    nudge.querySelector('[data-nx]').onclick = nudgeClose;
-    nudge.querySelector('[data-nn]').onclick = function () { flag(NUDGE, String(Date.now())); nudgeClose(); };
+    var later = function () { try { ss && ss.setItem(NUDGE, '1'); } catch (e) {} nudgeClose(); };
+    nudge.querySelector('[data-nx]').onclick = later;
+    nudge.querySelector('[data-nn]').onclick = later;
   }
 
   function drawCloud() {
