@@ -394,6 +394,73 @@ function finishSession() {
   location.hash = '#/results/' + s.id;
 }
 
+/* ---------------- rough ESAT score estimate ----------------
+   UAT-UK doesn't publish a marks-to-score table: real scores are equated after each sitting. This is a rough guide.
+   Your share of right answers is placed among candidates (raw marks assumed normal around MID, with the spread
+   UAT-UK reports), and that percentile is read off the October 2026 score distribution. */
+const EST = {
+  // % of candidates at each score 1.0, 1.5 … 9.0: UAT-UK, ESAT Explanation of Results, October 2026 (read from its charts)
+  dist: {
+    maths1: [1.7, 1.5, 2.9, 5.7, 9.0, 11.4, 13.6, 10.6, 10.2, 11.2, 5.8, 5.4, 2.2, 2.4, 1.1, 2.1, 2.8],
+    maths2: [3.0, 3.0, 4.2, 4.7, 9.6, 8.5, 11.2, 14.0, 8.6, 11.2, 6.0, 4.1, 3.8, 2.7, 1.0, 0.9, 3.2],
+    physics: [4.2, 2.9, 3.9, 4.8, 8.2, 10.0, 10.1, 11.1, 10.8, 9.4, 6.7, 4.9, 3.8, 3.8, 1.4, 1.4, 2.5],
+  },
+  // spread of raw marks on a 27-question module, October sitting: SEM / sqrt(1 - reliability), UAT-UK ESAT Technical Report 2025–26
+  sd: { maths1: 4.9, maths2: 4.5, physics: 4.2 },
+  // share right of a typical (4.5) candidate: about 55% on ENGAA/NSAA questions, going by those tests' published conversions
+  mid: 0.55,
+  minQs: 8,
+};
+function normCdf(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp((-z * z) / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+function estScore(subject, frac) {
+  const d = EST.dist[subject], tot = d.reduce((a, b) => a + b, 0);
+  const pc = normCdf((frac - EST.mid) / (EST.sd[subject] / 27)) * 100;
+  let cum = 0;
+  for (let i = 0; i < d.length; i++) {
+    const w = (d[i] / tot) * 100;
+    if (w && cum + w >= pc) return Math.min(9, Math.max(1, 0.75 + i * 0.5 + ((pc - cum) / w) * 0.5));
+    cum += w;
+  }
+  return 9;
+}
+/* per subject in a finished set: { subject, right, n, score, lo, hi }; skipped questions count as wrong, as in the real test */
+function estimateSet(s) {
+  const by = {};
+  s.order.forEach((qid) => {
+    const q = BYID.get(qid), a = s.answers[qid];
+    const o = (by[q.subject] = by[q.subject] || { subject: q.subject, right: 0, n: 0 });
+    o.n++;
+    if (a.chosen && a.chosen === q.answer) o.right++;
+  });
+  return SUBJECTS.filter((k) => by[k] && EST.dist[k]).map((k) => {
+    const o = by[k], p = o.right / o.n, se = Math.sqrt((Math.min(0.95, Math.max(0.05, p)) * (1 - Math.min(0.95, Math.max(0.05, p)))) / o.n);
+    const r1 = (x) => Math.round(x * 10) / 10;
+    return Object.assign(o, { score: r1(estScore(k, p)), lo: r1(estScore(k, p - se)), hi: r1(estScore(k, p + se)) });
+  });
+}
+function estimateCard(s) {
+  const ests = estimateSet(s);
+  if (!ests.length) return '';
+  const rows = ests.map((e) => e.n < EST.minQs
+    ? `<div class="stat"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v" style="font-size:1.2rem">—</div>
+        <div class="s">needs ${EST.minQs}+ questions (this set had ${e.n})</div></div>`
+    : `<div class="stat"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v">≈ ${e.score.toFixed(1)}</div>
+        <div class="s">likely ${e.lo.toFixed(1)}–${e.hi.toFixed(1)} · ${e.right}/${e.n} right</div></div>`).join('');
+  return `<div class="card" style="margin-top:var(--space-6)" id="r-est">
+      <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:var(--space-4)">
+        <h2>Estimated ESAT score</h2><span class="badge badge-warn">rough guide</span></div>
+      <div class="grid" style="gap:var(--space-3);grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${rows}</div>
+      <p class="muted" style="font-size:var(--text-xs);margin-top:var(--space-4)">On the real 1.0–9.0 scale, where a typical candidate scores about 4.5.
+        UAT-UK doesn't publish a marks-to-score table, so this compares your share of right answers with how candidates scored in October 2026
+        (UAT-UK's published results), assuming a typical candidate gets about 55% of past ENGAA/NSAA questions right. Skipped questions count as wrong,
+        as in the real test. Short sets and untimed practice make it less reliable: a timed 27-question mock is closest to the real thing.</p>
+    </div>`;
+}
+
 function scoreOf(s) {
   let right = 0,
     answered = 0;
@@ -1309,6 +1376,8 @@ async function viewResults(id) {
           <div class="s">${slowest ? 'Q' + (s.order.indexOf(slowest.q.id) + 1) + ' · ' + esc(slowest.q.topic) : '—'}</div></div>
       </div>
     </div>
+
+    ${estimateCard(s)}
 
     <div class="card" style="margin-top:var(--space-6)">
       <div class="row" style="justify-content:space-between;margin-bottom:var(--space-4)">
