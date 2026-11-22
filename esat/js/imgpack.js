@@ -32,6 +32,7 @@
     'TMUA 2023': ['2024/04/30144109/TMUA-2023-paper-1.pdf', '2024/06/04105227/TMUA-2023-paper-1-worked-answers.pdf'],
     'TMUA specimen': ['2024/05/07141417/TMUA-early-specimen-paper-1.pdf', '2024/05/07141418/TMUA-early-specimen-paper-1-worked-answers.pdf']
   };
+  const NOCROP = { ENGAA_2016_S1_Q15: 1 };
   function paperOf(q) {
     const y = /specimen/i.test(q.year) || /specimen/i.test(q.img || '') ? 'specimen' : q.year;
     return P[q.exam + ' ' + y] || null;
@@ -43,8 +44,9 @@
       ms: p && S3 + p[1], msLabel: q.exam === 'TMUA' ? 'Worked answers' : 'Answer key',
       q: q.qno + part, title: q.exam + ' ' + q.year, source: 'UAT-UK (esat-tmua.ac.uk)', embed: !(opts && opts.noEmbed)
     };
-    // crop just this question out of the official paper (crop.js); falls back to the paper card if it can't
-    if (window.ttCrop && p) return window.ttCrop.html({ url: S3 + p[0], q: String(q.qno), kind: 'qp', typeset: true, card: card });
+    // crop just this question out of the official paper (crop.js); falls back to the paper card if it can't.
+    // NOCROP: questions checked against the papers where the crop lands on the wrong question, so the whole paper is shown instead.
+    if (window.ttCrop && p && !NOCROP[q.id]) return window.ttCrop.html({ url: S3 + p[0], q: String(q.qno), kind: 'qp', typeset: true, card: card });
     return window.ttLive.card(Object.assign({ url: p && S3 + p[0] }, card));
   };
 })();
