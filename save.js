@@ -13,8 +13,9 @@
     { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] }
   ];
   var INCLUDE = /^(tt-|esat\.|sketchguessr-)/;
-  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|esat\..*\.probe$)/;
+  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-lastbackup$|esat\..*\.probe$)/;
   var LAST = 'tt-lastbackup', UNDO = 'tt-restore-undo';
+  var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/save\.js[^/]*$/, '');
 
   function ls() { try { var s = window.localStorage; s.getItem('x'); return s; } catch (e) { return null; } }
   function appOf(k) { for (var i = 0; i < APPS.length; i++) for (var j = 0; j < APPS[i].keys.length; j++) if (APPS[i].keys[j].test(k)) return APPS[i].id; return 'shared'; }
@@ -132,14 +133,16 @@
     { h: 'Are you double sure?', p: 'It cannot be undone unless you have a save file or save code.', yes: 'Yes, double sure', pos: 'bottom:24px;right:24px' },
     { h: 'Are you triple sure?', p: 'Last chance. Press the button below and WHAT is gone.', yes: 'Yes, delete it', pos: 'top:24px;right:24px' }
   ];
-  function confirm3(what, onYes) {
+  /* clearing progress in an app: if synced, the cloud copy is replaced too, instead of being merged back in */
+  function confirm3(what, onYes) { confirmRaw(what, function () { cloudClearing(); return onYes.apply(this, arguments); }); }
+  function confirmRaw(what, onYes, note) {
     what = what || 'all your progress';
     var step = 0, prev = document.activeElement;
     function show() {
       var c = SURE[step], w = document.createElement('div');
       w.className = 'tts-sure-back';
       w.innerHTML = '<div class="tts tts-sure" role="alertdialog" aria-modal="true" aria-labelledby="tts-sh" aria-describedby="tts-sp" style="' + c.pos + '">' +
-        '<p class="mu" style="margin:0 0 2px">Step ' + (step + 1) + ' of 3</p><h2 id="tts-sh">' + c.h + '</h2><p id="tts-sp">' + c.p.replace('WHAT', what) + '</p>' +
+        '<p class="mu" style="margin:0 0 2px">Step ' + (step + 1) + ' of 3</p><h2 id="tts-sh">' + c.h + '</h2><p id="tts-sp">' + (step === 1 && note ? note : c.p.replace('WHAT', what)) + '</p>' +
         '<div class="row" style="margin:0"><button type="button" class="pr" data-no>No, keep it</button><button type="button" class="danger" data-yes>' + c.yes + '</button></div></div>';
       document.body.appendChild(w);
       var no = w.querySelector('[data-no]'), yes = w.querySelector('[data-yes]');
@@ -210,6 +213,251 @@
   function stamp() { var s = ls(); try { s && s.setItem(LAST, String(Date.now())); } catch (e) {} }
   function lastTime() { var s = ls(); return s ? +(s.getItem(LAST) || 0) : 0; }
 
+  /* ---- sync with Google (optional) ----
+     Sign in once and every app's progress is kept in one record in the cloud (Firebase), tied to your
+     Google account. Syncing works like loading a save: it only ever adds. This device's progress goes up,
+     progress from your other devices comes down, and nothing is removed. Signed out, nothing is sent. */
+  var FB = {
+    apiKey: 'AIzaSyBNfifatWZKZgy1zlhV46LoOw1V5_Jz4eA',
+    authDomain: 'traintanmay26.firebaseapp.com',
+    projectId: 'traintanmay26',
+    storageBucket: 'traintanmay26.firebasestorage.app',
+    messagingSenderId: '157913586959',
+    appId: '1:157913586959:web:357b108d0677c5cd55327a'
+  };
+  var CLOUD_ON = 'tt-cloud-on', CLOUD_CLEAR = 'tt-cloud-replace', CLOUD_UID = 'tt-cloud-uid', CLOUD_HASH = 'tt-cloud-hash', CLOUD_MAX = 900000;
+  var cloud = { user: null, ready: false, busy: false, again: false, last: 0, err: '', seen: '' };
+  var sdkP = null, loadedAt = Date.now(), touched = false;
+  ['pointerdown', 'keydown'].forEach(function (t) { document.addEventListener(t, function () { touched = true; }, { capture: true, once: true }); });
+
+  function flag(k, v) { var s = ls(); if (!s) return null; try { if (v === undefined) return s.getItem(k); if (v === null) s.removeItem(k); else s.setItem(k, v); } catch (e) {} return null; }
+  function sdk() {
+    if (sdkP) return sdkP;
+    sdkP = new Promise(function (ok, no) {
+      if (window.ttCloudSDK) return ok();
+      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261121g'; sc.async = true;
+      sc.onload = ok; sc.onerror = function () { no(new Error('load')); };
+      document.head.appendChild(sc);
+    }).then(function () {
+      ttCloudSDK.init(FB);
+      ttCloudSDK.onUser(function (u) {
+        var was = cloud.user && cloud.user.uid;
+        cloud.user = u; cloud.ready = true;
+        if (u && u.uid !== was) {
+          var fresh = flag(CLOUD_ON) === 'pending', prev = flag(CLOUD_UID);
+          flag(CLOUD_ON, '1');
+          // just signed in with a different account from the one this device last synced with: ask first
+          if (fresh && prev && prev !== u.uid && hasProgress()) { cloud.choice = true; cloud.fresh = false; if (!back) open(); }
+          else sync();
+        }
+        if (!u) { flag(CLOUD_ON, null); cloud.choice = false; cloud.out = false; }
+        drawCloud();
+      });
+      return ttCloudSDK;
+    }).catch(function (e) { sdkP = null; cloud.err = 'Sync could not load. Check your connection, or your school network may block it.'; drawCloud(); throw e; });
+    return sdkP;
+  }
+
+  /* add another device's progress into this one; returns true if anything here changed */
+  function mergeIn(data) {
+    var s = ls(), changed = false; if (!s) return false;
+    Object.keys(data).forEach(function (k) {
+      if (!INCLUDE.test(k) || EXCLUDE.test(k) || typeof data[k] !== 'string') return;
+      var cur = s.getItem(k), nv = mergeStr(cur, data[k]);
+      if (nv !== cur) { try { s.setItem(k, nv); changed = true; } catch (e) {} }
+    });
+    return changed;
+  }
+  function hasProgress() { return Object.keys(collect()).some(function (k) { return appOf(k) !== 'shared'; }); }
+  function hash(t) { var h = 5381; for (var i = 0; i < t.length; i++) h = (h * 33 + t.charCodeAt(i)) | 0; return t.length + '.' + (h >>> 0).toString(36); }
+  /* take this device's progress off it (settings like theme and language stay). Also drops the daily safety copies. */
+  function wipeLocal() {
+    var s = ls(); if (!s) return;
+    Object.keys(collect()).forEach(function (k) { if (appOf(k) !== 'shared') s.removeItem(k); });
+    s.removeItem(UNDO); s.removeItem(CLOUD_HASH);
+    try { indexedDB.deleteDatabase(SAFE_DB); } catch (e) {}
+  }
+  /* wait for any sync in progress, run one more, and say whether it worked */
+  function settle() { return cloud.busy ? new Promise(function (r) { setTimeout(r, 250); }).then(settle) : sync().then(function () { return cloud.ok; }); }
+  function same(a, b) { var ka = Object.keys(a), kb = Object.keys(b); return ka.length === kb.length && ka.every(function (k) { return a[k] === b[k]; }); }
+
+  function sync() {
+    if (!cloud.user || !window.ttCloudSDK || cloud.choice) { cloud.ok = false; return Promise.resolve(); }
+    if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+    cloud.busy = true; cloud.err = ''; drawCloud();
+    var clearing = !!flag(CLOUD_CLEAR), pulled = false, uid = cloud.user.uid;
+    return ttCloudSDK.update(uid, function (remote) {
+      var get = remote && remote.code && !clearing ? fromCode(remote.code).then(normalise) : Promise.resolve(null);
+      return get.then(function (r) {
+        var theirs = (r && r.data) || {};
+        if (mergeIn(theirs)) pulled = true;
+        var mine = collect();
+        if (!clearing && remote && same(mine, theirs)) return null; // the cloud already has all of it
+        return toCode(pack()).then(function (code) {
+          if (code.length > CLOUD_MAX) throw new Error('big');
+          return { code: code, v: VERSION, bytes: code.length };
+        });
+      });
+    }).then(function () {
+      if (clearing) flag(CLOUD_CLEAR, null);
+      cloud.last = Date.now(); cloud.seen = JSON.stringify(collect()); cloud.ok = true; stamp();
+      flag(CLOUD_UID, uid); flag(CLOUD_HASH, hash(cloud.seen));
+      if (pulled) arrived();
+    }).catch(function (e) {
+      var c = (e && (e.code || e.message)) || '';
+      cloud.ok = false;
+      cloud.err = c === 'big' ? 'Your progress is too big to sync in one go. Use a save file instead, and tell us via "Report a bug".'
+        : /permission/.test(c) ? 'The sync database refused this. Its rules may not be set up yet.'
+        : /unavailable|network|offline|load/.test(c) ? 'Offline: it will sync when you are back online.'
+        : 'Sync failed (' + c + '). It will try again.';
+    }).then(function () {
+      cloud.busy = false; cloud.fresh = false; drawCloud();
+      if (cloud.again) { cloud.again = false; return sync(); }
+    });
+  }
+  /* sync when progress has changed, without sending anything when nothing has */
+  function syncIfChanged() { if (cloud.user && !cloud.busy && JSON.stringify(collect()) !== cloud.seen) sync(); }
+  setInterval(syncIfChanged, 120000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') syncIfChanged();
+    else if (cloud.user && Date.now() - cloud.last > 60000) sync(); // back on this tab: fetch other devices' progress
+  });
+  window.addEventListener('pagehide', syncIfChanged);
+
+  /* progress came in from another device: the open app needs a reload to show it */
+  function arrived() {
+    var ss = null; try { ss = window.sessionStorage; } catch (e) {}
+    var lastRl = ss ? +(ss.getItem('tt-cloud-rl') || 0) : 0;
+    if (cloud.fresh) { cloud.fresh = false; if (back) msg('Signed in. Adding progress from your other devices… reloading.', 'ok'); setTimeout(function () { location.reload(); }, 900); return; }
+    if (!touched && !back && Date.now() - loadedAt < 10000 && Date.now() - lastRl > 30000) {
+      try { ss && ss.setItem('tt-cloud-rl', String(Date.now())); } catch (e) {}
+      location.reload(); return;
+    }
+    if (document.querySelector('.tts-toast')) return;
+    var t = document.createElement('div'); t.className = 'tts-toast'; t.setAttribute('role', 'status');
+    t.innerHTML = '<span>Progress from your other devices was added.</span><button type="button" data-r>Reload to see it</button><button type="button" data-c aria-label="Dismiss">&times;</button>';
+    t.querySelector('[data-r]').onclick = function () { location.reload(); };
+    t.querySelector('[data-c]').onclick = function () { t.remove(); };
+    document.body.appendChild(t);
+  }
+  /* clearing progress on purpose: the cloud copy is replaced by what is left, instead of being merged back in */
+  function cloudClearing() { if (flag(CLOUD_ON)) { flag(CLOUD_CLEAR, '1'); setTimeout(sync, 1500); } }
+
+  var GLOGO = '<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  /* start Google sign-in. Call it straight from a tap, so the Google window is allowed to open. */
+  function signIn() {
+    if (!cloud.ready || !window.ttCloudSDK) { open(); return; } // still loading: the panel shows progress and the button
+    cloud.err = ''; cloud.fresh = true; flag(CLOUD_ON, 'pending'); // so the page picks the sign-in up if Google sends us back here
+    nudgeClose();
+    ttCloudSDK.signIn().catch(function (e) {
+      var c = (e && e.code) || '';
+      if (/popup-closed|cancelled-popup/.test(c)) { if (!cloud.user) flag(CLOUD_ON, null); return; }
+      cloud.err = /unauthorized-domain/.test(c) ? 'Sign-in is not switched on for this web address yet.'
+        : /network/.test(c) ? 'Could not reach Google. Check your connection.'
+        : 'Sign-in did not work (' + c + ').';
+      if (!back) open(); else drawCloud();
+    });
+  }
+
+  /* account buttons: any element with data-tt-account shows "Sign in with Google", or your picture once signed in */
+  function drawAccount() {
+    var u = cloud.user, on = flag(CLOUD_ON) === '1';
+    [].forEach.call(document.querySelectorAll('[data-tt-account]'), function (b) {
+      if (u) {
+        var first = (u.name || u.email || '').split(/[\s@]/)[0];
+        b.innerHTML = (u.photo ? '<img src="' + esc(u.photo) + '" alt="" referrerpolicy="no-referrer" style="width:24px;height:24px;border-radius:50%;margin-left:-6px">' : '') + '<span>' + esc(first) + '</span><span class="txt"> · synced</span>';
+        b.title = 'Syncing as ' + (u.email || u.name) + '. Open to sign out or sync now.';
+      } else if (on && !cloud.ready) {
+        b.innerHTML = '<span>Syncing…</span>'; b.title = 'Connecting to your Google account';
+      } else {
+        b.innerHTML = GLOGO.replace('width="18" height="18"', 'width="18" height="18" style="background:#fff;border-radius:50%;padding:2px;box-sizing:content-box"') + '<span style="white-space:nowrap">Sign in<span class="txt"> with Google</span></span>';
+        b.title = 'Sign in with Google to sync your progress across devices';
+      }
+      b.hidden = false;
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-tt-account],[data-tt-signin]'); if (!b) return;
+    e.preventDefault();
+    if (cloud.user || b.hasAttribute('data-tt-account') && cloud.err) open(); else signIn();
+  });
+
+  /* when an app opens signed out: a small card suggests signing in. "Not now" hides it for 3 days. */
+  var NUDGE = 'tt-cloud-nudge', nudge = null;
+  function nudgeClose() { if (nudge) { nudge.remove(); nudge = null; } }
+  function nudgeShow() {
+    var ss = null; try { ss = window.sessionStorage; } catch (e) {}
+    if (cloud.user || flag(CLOUD_ON) || back || nudge || !cloud.ready || window.top !== window) return;
+    if (Date.now() - +(flag(NUDGE) || 0) < 3 * 864e5 || (ss && ss.getItem(NUDGE))) return;
+    try { ss && ss.setItem(NUDGE, '1'); } catch (e) {} // once per visit
+    nudge = document.createElement('div'); nudge.className = 'tts tts-nudge'; nudge.setAttribute('role', 'dialog'); nudge.setAttribute('aria-labelledby', 'tts-nh');
+    nudge.innerHTML = '<button class="x" type="button" aria-label="Close" data-nx>&times;</button><h2 id="tts-nh">Keep your progress on every device</h2>' +
+      '<p class="mu">Sign in with Google once, and everything you do here follows you to your phone, laptop and school computer. You can keep using TrainTanmay without signing in.</p>' +
+      '<div class="row" style="margin:0"><button type="button" class="pr" data-tt-signin>' + GLOGO + 'Sign in with Google</button><button type="button" data-nn>Not now</button></div>';
+    document.body.appendChild(nudge);
+    nudge.querySelector('[data-nx]').onclick = nudgeClose;
+    nudge.querySelector('[data-nn]').onclick = function () { flag(NUDGE, String(Date.now())); nudgeClose(); };
+  }
+
+  function drawCloud() {
+    drawAccount();
+    if (!back) return;
+    var box = back.querySelector('#tts-cloud'); if (!box) return;
+    var u = cloud.user, h;
+    if (u && cloud.choice) {
+      var unsynced = flag(CLOUD_HASH) !== hash(JSON.stringify(collect()));
+      h = '<b>Signed in as ' + esc(u.email || u.name) + '</b><p class="mu" style="margin:4px 0 10px">The progress on this device came from a <b>different Google account</b>.' +
+        (unsynced ? ' Some of it was never synced to that account.' : ' It is safe in that account.') + ' What should happen to it?</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-add">Add it to this account</button><button type="button" id="tts-fresh">Start fresh with this account</button></div>' +
+        '<p class="mu" style="margin:8px 0 0">Add it if both accounts are yours. Start fresh if someone else used this device: their progress is removed from it' + (unsynced ? ', and the unsynced part is lost' : '') + '.</p>';
+    } else if (u && cloud.out) {
+      h = '<b>Sign out of ' + esc(u.email || u.name) + '?</b><p class="mu" style="margin:4px 0 10px">Your progress is synced to your Google account first. What should happen to the copy on this device?</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-keep">Keep it on this device</button><button type="button" class="danger" id="tts-rm">Remove it from this device</button><button type="button" id="tts-back">Cancel</button></div>' +
+        '<p class="mu" style="margin:8px 0 0">Remove it on a shared or school computer. Signing in again brings it all back.</p>';
+    } else if (u) {
+      h = '<div class="cl-h">' + (u.photo ? '<img src="' + esc(u.photo) + '" alt="" referrerpolicy="no-referrer">' : '') + '<span><b>Syncing as ' + esc(u.name || u.email) + '</b><small>' + esc(u.email) + '</small></span></div>' +
+        '<p class="mu" style="margin:8px 0">' + (cloud.busy ? 'Syncing…' : cloud.last ? 'Last synced ' + ago(cloud.last) + '. Your progress syncs by itself while you work.' : 'Your progress syncs by itself while you work.') + '</p>' +
+        '<div class="row" style="margin:0"><button type="button" id="tts-sync"' + (cloud.busy ? ' disabled' : '') + '>Sync now</button><button type="button" id="tts-out">Sign out</button></div>';
+    } else {
+      h = '<b>Sync with Google</b><p class="mu" style="margin:4px 0 10px">Sign in once on each device and your progress follows you automatically. We keep your progress and your Google name and email, nothing else.</p>' +
+        '<div class="row" style="margin:0"><button type="button" class="pr" id="tts-in-g"' + (cloud.ready ? '' : ' disabled') + '>' + GLOGO + '' + (cloud.ready ? 'Sign in with Google' : 'Loading…') + '</button></div>';
+    }
+    if (cloud.err) h += '<p class="msg bad" style="margin:8px 0 0">' + esc(cloud.err) + '</p>';
+    box.innerHTML = h;
+    var g = box.querySelector('#tts-in-g');
+    if (g) g.onclick = signIn;
+    var sn = box.querySelector('#tts-sync'); if (sn) sn.onclick = function () { sync(); };
+    function on(id, fn) { var b = box.querySelector(id); if (b) b.onclick = fn; }
+    on('#tts-out', function () { cloud.out = true; drawCloud(); });
+    on('#tts-back', function () { cloud.out = false; drawCloud(); });
+    function signedOut() { cloud.last = 0; cloud.seen = ''; cloud.err = ''; cloud.out = false; }
+    on('#tts-keep', function () {
+      box.innerHTML = '<p class="mu" style="margin:0">Syncing, then signing out…</p>';
+      settle().then(function () { return ttCloudSDK.signOut(); }).then(function () { signedOut(); if (back) msg('Signed out. Your progress stays on this device, and is no longer synced.', 'ok'); });
+    });
+    on('#tts-rm', function () {
+      confirmRaw('your progress in every app', function () {
+        box.innerHTML = '<p class="mu" style="margin:0">Syncing, then signing out…</p>';
+        settle().then(function (ok) {
+          if (!ok) { cloud.out = false; cloud.err = 'Could not reach your Google account, so nothing was removed. Try again when you are online.'; drawCloud(); return; }
+          return ttCloudSDK.signOut().then(function () { signedOut(); wipeLocal(); if (back) msg('Signed out and removed from this device. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 700); });
+        });
+      }, 'It stays safe in your Google account: signing in again on any device brings it back.');
+    });
+    on('#tts-add', function () { cloud.choice = false; cloud.fresh = true; sync(); });
+    on('#tts-fresh', function () {
+      confirmRaw('the other account’s progress', function () {
+        cloud.choice = false; cloud.fresh = false; wipeLocal();
+        box.innerHTML = '<p class="mu" style="margin:0">Fetching this account’s progress…</p>';
+        sync().then(function () { if (back) msg('Done. Reloading…', 'ok'); setTimeout(function () { location.reload(); }, 600); });
+      }, 'Use this if someone else used this device. Their progress stays in their own Google account if it was synced.');
+    });
+  }
+  // connect a moment after the page opens: straight away if signed in before, otherwise so the sign-in card and buttons work
+  drawAccount();
+  setTimeout(function () { sdk().then(function () { setTimeout(nudgeShow, 1200); }, function () {}); }, flag(CLOUD_ON) ? 1200 : 1800);
+
   /* ---- the panel ---- */
   var css = document.createElement('style');
   css.textContent =
@@ -233,6 +481,11 @@
     '.tts button.danger{background:none;color:#b23a33;border-color:#b23a33}.tts button.danger:hover{background:#b23a3314}' +
     '@media (prefers-color-scheme:dark){.tts button.danger{color:#ff8a80;border-color:#ff8a80}}' +
     '@media (prefers-color-scheme:dark){.tts{background:#1c1e24;color:#eceef2}.tts .ap,.tts .cf{border-color:#363a44}.tts .cf{background:#22252c}.tts button,.tts label.b{background:#2a2d35;border-color:#424754}.tts button:hover,.tts label.b:hover{background:#333743}.tts button.pr{background:#eceef2;color:#14161b;border-color:#eceef2}.tts textarea{background:#15171b;border-color:#424754}.tts .msg.ok{color:#5fd39a}.tts .msg.bad{color:#ff8a80}}' +
+    '.tts .cl-h{display:flex;gap:10px;align-items:center}.tts .cl-h img{width:34px;height:34px;border-radius:50%}.tts .cl-h small{display:block;opacity:.65;font-size:.8rem}' +
+    '.tts-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 24px);background:#14161b;color:#fff;padding:10px 12px 10px 16px;border-radius:12px;box-shadow:0 14px 40px -10px rgba(0,0,0,.5);font-size:.92rem;animation:ttsU .28s ease both}' +
+    '.tts-toast button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;background:#fff;color:#14161b}.tts-toast button[data-c]{background:none;color:#aaa;font-size:1.2rem;padding:2px 6px}' +
+    '.tts.tts-nudge{position:fixed;right:16px;bottom:16px;z-index:99998;width:min(380px,calc(100vw - 24px));padding:18px 18px 16px;border-top:5px solid #5b9cff}.tts-nudge h2{font-size:1.1rem;padding-right:24px}.tts-nudge p{font-size:.92rem}' +
+    '@media (max-width:460px){.tts.tts-nudge{right:12px;bottom:12px}}' +
     '@media (max-width:460px){.tts .apps{grid-template-columns:1fr}}' +
     '@media (prefers-reduced-motion:reduce){.tts-back,.tts{animation:none}}';
   document.head.appendChild(css);
@@ -243,7 +496,7 @@
   function msg(t, kind) { var m = el('#tts-msg'); m.textContent = t; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 
   function open() {
-    close(); lastFocus = document.activeElement;
+    close(); nudgeClose(); lastFocus = document.activeElement;
     var data = collect(), any = Object.keys(data).some(function (k) { return appOf(k) !== 'shared'; });
     var hasUndo = false; try { hasUndo = !!(ls() && ls().getItem(UNDO)); } catch (e) {}
     back = document.createElement('div'); back.className = 'tts-back';
@@ -251,7 +504,8 @@
       '<div class="tts" role="dialog" aria-modal="true" aria-labelledby="tts-h">' +
       '<button class="x" type="button" aria-label="Close" data-x>&times;</button>' +
       '<h2 id="tts-h">Save your progress</h2>' +
-      '<p class="mu">One save covers every TrainTanmay app. Progress lives in this browser, so save it before you switch device or clear your history. Last saved: <b>' + ago(lastTime()) + '</b>.</p>' +
+      '<p class="mu">One save covers every TrainTanmay app. Progress lives in this browser, so sync it with Google or save it before you switch device or clear your history. Last saved: <b>' + ago(lastTime()) + '</b>.</p>' +
+      '<div id="tts-cloud" class="cf" style="margin:12px 0 4px"></div>' +
       '<div class="apps">' + APPS.map(function (a) { var d = describe(a.id, data); return '<div class="ap"><i style="background:' + a.col + '"></i><span><b>' + a.name + '</b><small>' + (d || 'nothing yet') + '</small></span></div>'; }).join('') + '</div>' +
       '<h3>Save</h3><div class="row"><button class="pr" type="button" id="tts-file"' + (any ? '' : ' disabled') + '>Download save file</button><button type="button" id="tts-copy"' + (any ? '' : ' disabled') + '>Copy save code</button></div>' +
       '<p class="mu">The save code is text you can email to yourself or paste into a note. Use it if downloads are blocked (e.g. on school computers).</p>' +
@@ -263,6 +517,7 @@
       '<div id="tts-safe"></div>' +
       '</div>';
     document.body.appendChild(back);
+    drawCloud(); sdk().catch(function () {});
     back.addEventListener('click', function (e) { if (e.target === back || e.target.hasAttribute('data-x')) close(); });
     el('#tts-file').focus();
 
@@ -325,5 +580,5 @@
   /* any element with data-tt-save opens the panel */
   document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-tt-save]'); if (t) { e.preventDefault(); open(); } });
 
-  window.ttSave = { open: open, collect: collect, parse: parseAny, merge: mergeVal, confirm3: confirm3, _normalise: normalise, _toCode: toCode };
+  window.ttSave = { open: open, sync: sync, collect: collect, parse: parseAny, merge: mergeVal, confirm3: confirm3, _normalise: normalise, _toCode: toCode };
 })();

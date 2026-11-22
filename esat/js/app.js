@@ -1689,8 +1689,8 @@ function viewData() {
   view.innerHTML = `
     ${storageBanner()}
     <div class="page-head"><div><h1>Data &amp; question bank</h1>
-      <p>Your progress never leaves this browser. Export it if you want a backup or want to carry
-      it to another device.</p></div></div>
+      <p>Your progress stays in this browser unless you sign in to sync with Google (logo menu, then
+      Save or load progress). Export it if you want a backup or want to carry it to another device.</p></div></div>
 
     <div class="grid cols-2" style="align-items:start">
       <div class="card">

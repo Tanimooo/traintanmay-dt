@@ -133,54 +133,300 @@ mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
  el.lkPreset=o=>{}; fresh(); return ()=>S.dispose(); }};
 
 /* ======================= 3D SHAPES ======================= */
-const COL={C:'#3a3d44',H:'#f2f2f2',O:'#e0403a',N:'#3c64d8',Cl:'#3fb34f',F:'#9be08a',B:'#f0a0a0',Be:'#c8c890',P:'#f08a28',S:'#e8d040',X:'#888'};
-const RAD={H:0.28,C:0.42,N:0.42,O:0.42,Cl:0.52,F:0.38,B:0.42,Be:0.42,P:0.5,S:0.5,X:0.55};
-const nrm=v=>{ const l=Math.hypot(...v); return v.map(c=>c/l); };
-const pyr=(deg)=>{ const c2=(Math.cos(deg*Math.PI/180)+0.5)/1.5, ca=Math.sqrt(c2), sa=Math.sqrt(1-c2); return [0,120,240].map(p=>[sa*Math.cos(p*Math.PI/180),sa*Math.sin(p*Math.PI/180),-ca]); };
-const TET=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(nrm);
-const mk=(centre,dirs,lig,lps,bl=1.4,order=1)=>{ const at=[[centre,0,0,0]], bo=[]; dirs.forEach((d,i)=>{ at.push([lig[i]||lig[0],d[0]*bl,d[1]*bl,d[2]*bl]); bo.push([0,i+1,order]); }); return {at,bo,lp:(lps||[]).map(d=>[0,...d])}; };
+{
+const D2R=Math.PI/180;
+/* atom colours (CPK-style) and ball radii in model units */
+const ELC={H:'#f1f1f1',C:'#5d636e',N:'#4573e6',O:'#e9473d',F:'#8fdc6a',Cl:'#2fb35b',B:'#f3a69e',Be:'#d4cb8a',P:'#ff8a1c',S:'#f0d13a',Xe:'#3ea7b9'};
+const ELR={H:0.25,C:0.35,N:0.35,O:0.35,F:0.32,Cl:0.42,B:0.35,Be:0.35,P:0.42,S:0.42,Xe:0.47};
+const ELN={H:'hydrogen',C:'carbon',N:'nitrogen',O:'oxygen',F:'fluorine',Cl:'chlorine',B:'boron',Be:'beryllium',P:'phosphorus',S:'sulfur',Xe:'xenon'};
+const V={add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],mul:(a,k)=>[a[0]*k,a[1]*k,a[2]*k],dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],len:a=>Math.hypot(a[0],a[1],a[2]),unit:a=>{ const l=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/l,a[1]/l,a[2]/l]; }};
+/* colour helpers */
+const rgbOf=c=>{ c=String(c).trim(); if(c[0]==='#'){ if(c.length===4) c='#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3]; const n=parseInt(c.slice(1,7),16); return [n>>16&255,n>>8&255,n&255]; } const m=c.match(/[\d.]+/g); return m?m.slice(0,3).map(Number):[128,128,128]; };
+const mix=(a,b,t)=>{ const A=rgbOf(a),B=rgbOf(b); return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`; };
+const rgba=(c,al)=>{ const A=rgbOf(c); return `rgba(${A[0]},${A[1]},${A[2]},${al})`; };
+const lum=c=>{ const [r,g,b]=rgbOf(c); return (0.2126*r+0.7152*g+0.0722*b)/255; };
+const TONE=new Map(); const tone=c=>{ let t=TONE.get(c); if(!t){ t={hi:mix(c,'#ffffff',0.55),base:c,lo:mix(c,'#000000',0.38),edge:mix(c,'#000000',0.62),txt:lum(c)>0.55?'#1c1c1c':'#ffffff'}; TONE.set(c,t); } return t; };
+/* formulae: Unicode sub/superscripts drawn as real sub/superscripts */
+const SUBS='₀₁₂₃₄₅₆₇₈₉', SUPS='⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻';
+const fH=s=>LK.esc(s).replace(/[₀-₉]+/g,m=>'<sub>'+[...m].map(c=>SUBS.indexOf(c)).join('')+'</sub>').replace(/[⁺⁻]/g,c=>'<sup>'+(c==='⁺'?'+':'−')+'</sup>');
+const runs=s=>{ const R=[]; for(const ch of s){ let k='n', c=ch; const i=SUBS.indexOf(ch), j=SUPS.indexOf(ch); if(i>=0){ k='b'; c=String(i); } else if(j>=0){ k='p'; c='0123456789+−'[j]; } const l=R[R.length-1]; if(l&&l.k===k) l.t+=c; else R.push({k,t:c}); } return R; };
+const fText=(x,s,px,py,o)=>{ const size=o.size||14, R=runs(s); let tot=0; R.forEach(r=>{ r.f=`${o.weight||600} ${r.k==='n'?size:Math.round(size*0.7)}px ${o.font}`; x.font=r.f; r.w=x.measureText(r.t).width; tot+=r.w; }); if(o.measure) return tot;
+ let cx=o.align==='center'?px-tot/2:o.align==='right'?px-tot:px; x.fillStyle=o.col; x.textAlign='left'; x.textBaseline=o.base||'alphabetic'; R.forEach(r=>{ x.font=r.f; x.fillText(r.t,cx,py+(r.k==='b'?size*0.24:r.k==='p'?-size*0.36:0)); cx+=r.w; }); return tot; };
+/* geometry in "textbook" orientation: x right, y up, z towards you */
+const TETX=[[0,1,0],[-0.9428,-0.3333,0],[0.4714,-0.3333,0.8165],[0.4714,-0.3333,-0.8165]];
+const PYR=deg=>{ const c2=(Math.cos(deg*D2R)+0.5)/1.5, ca=Math.sqrt(c2), sa=Math.sqrt(1-c2); return [180,60,300].map(a=>[sa*Math.cos(a*D2R),-ca,sa*Math.sin(a*D2R)]); };
+const Q=Math.SQRT1_2, SQ=[[Q,0,Q],[-Q,0,Q],[-Q,0,-Q],[Q,0,-Q]];
+const s52=Math.sin(52.25*D2R), c52=Math.cos(52.25*D2R);
+const vsepr=o=>{ const atoms=[{e:o.c,p:[0,0,0]}], bonds=[]; o.dirs.forEach((d,i)=>{ atoms.push({e:o.l,p:V.mul(V.unit(d),o.L)}); bonds.push([0,i+1,o.order||1]); });
+ return Object.assign({kind:'vsepr',exam:[0,0],title:o.f},o,{atoms,bonds,lps:(o.lpd||[]).map(d=>[0,V.unit(d)]),angles:(o.arcs||[]).map(([i,j,t,w])=>[0,i+1,j+1,t,w]),cap:o.shape+' · '+o.ang}); };
+const but=z=>{ const c0=[-0.67,0,0], c1=[0.67,0,0], up=[0.5,0.866,0], dn=[0.5,-0.866,0], L1=1.5, L2=1.08, fl=v=>[-v[0],v[1],0];
+ return {atoms:[{e:'C',p:c0},{e:'C',p:c1},{e:'C',g:'CH₃',r:0.43,p:V.add(c0,V.mul(fl(up),L1))},{e:'H',p:V.add(c0,V.mul(fl(dn),L2))},{e:'C',g:'CH₃',r:0.43,p:V.add(c1,V.mul(z?up:dn,L1))},{e:'H',p:V.add(c1,V.mul(z?dn:up,L2))}],
+  bonds:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]],lps:[],angles:[[0,1,2,'120°']],axis:[[-2.5,0,0],[2.5,0,0]]}; };
 const MOLS={
- co2:{n:'CO₂: linear, 180°',info:'2 bonding regions (two double bonds), no lone pairs on C. The regions repel equally and get as far apart as possible: 180°.',...mk('C',[[1,0,0],[-1,0,0]],['O'],[],1.3,2)},
- becl2:{n:'BeCl₂: linear, 180°',info:'2 bonding pairs, no lone pairs: linear, 180°.',...mk('Be',[[1,0,0],[-1,0,0]],['Cl'])},
- bf3:{n:'BF₃: trigonal planar, 120°',info:'3 bonding pairs, no lone pairs: trigonal planar, 120°, all in one plane.',...mk('B',[[1,0,0],[-0.5,0.866,0],[-0.5,-0.866,0]],['F'])},
- ch4:{n:'CH₄: tetrahedral, 109.5°',info:'4 bonding pairs, no lone pairs: tetrahedral, 109.5°.',...mk('C',TET,['H'],[],1.2)},
- nh4:{n:'NH₄⁺: tetrahedral, 109.5°',info:'4 bonding pairs (one is dative), no lone pairs: tetrahedral, 109.5°. All four N–H bonds are identical.',...mk('N',TET,['H'],[],1.2)},
- nh3:{n:'NH₃: pyramidal, 107°',info:'3 bonding pairs + 1 lone pair. The lone pair repels more strongly than bonding pairs, squeezing the H–N–H angle from 109.5° to about 107°.',...mk('N',pyr(107),['H'],[[0,0,1]],1.2)},
- h2o:{n:'H₂O: non-linear (bent), 104.5°',info:'2 bonding pairs + 2 lone pairs. Two lone pairs squeeze the angle further, to about 104.5°.',...mk('O',[[Math.sin(52.25*Math.PI/180),0,-Math.cos(52.25*Math.PI/180)],[-Math.sin(52.25*Math.PI/180),0,-Math.cos(52.25*Math.PI/180)]],['H'],[[0,0.83,0.56],[0,-0.83,0.56]],1.2)},
- pcl5:{n:'PCl₅: trigonal bipyramidal, 90° and 120°',info:'5 bonding pairs: three in a triangle (120°) and two above and below (90° to the triangle).',...mk('P',[[0,0,1],[0,0,-1],[1,0,0],[-0.5,0.866,0],[-0.5,-0.866,0]],['Cl'],[],1.5)},
- sf6:{n:'SF₆: octahedral, 90°',info:'6 bonding pairs: octahedral, all angles 90°. Sulfur has expanded its octet (12 electrons around S).',...mk('S',[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],['F'],[],1.4)},
- zbut:{n:'Z-but-2-ene (cis)',info:'Restricted rotation about the C=C. Each carbon has two different groups (CH₃ and H). The higher-priority groups (CH₃) are on the same side: Z.',at:[['C',-0.67,0,0],['C',0.67,0,0],['C',-1.45,1.2,0],['H',-1.25,-0.95,0],['C',1.45,1.2,0],['H',1.25,-0.95,0]],bo:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]],lp:[],lab:{2:'CH₃',4:'CH₃'}},
- ebut:{n:'E-but-2-ene (trans)',info:'The CH₃ groups are on opposite sides of the C=C: E. The two isomers can’t interconvert because the π bond stops rotation.',at:[['C',-0.67,0,0],['C',0.67,0,0],['C',-1.45,1.2,0],['H',-1.25,-0.95,0],['C',1.45,-1.2,0],['H',1.25,0.95,0]],bo:[[0,1,2],[0,2,1],[0,3,1],[1,4,1],[1,5,1]],lp:[],lab:{2:'CH₃',4:'CH₃'}},
- ala:{n:'Alanine: a chiral centre',info:'The central carbon has four different groups (H, CH₃, NH₂, COOH), so it is a chiral centre. Tick "mirror image" to see the other optical isomer: you can’t rotate one to look exactly like the other.',at:[['C',0,0,0],['H',...TET[0].map(v=>v*1.1)],['C',...TET[1].map(v=>v*1.5)],['N',...TET[2].map(v=>v*1.5)],['C',...TET[3].map(v=>v*1.5)]],bo:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],lp:[],lab:{2:'CH₃',3:'NH₂',4:'COOH'}}};
-L.shapes={title:'3D shapes of molecules',cat:'Atoms & bonding',topic:'2.2.2',
-desc:'Spin molecules in 3D to see how bonding pairs and lone pairs arrange themselves. Includes every shape you need, plus E/Z isomers of but-2-ene and the optical isomers of alanine.',
+ co2:vsepr({f:'CO₂',name:'carbon dioxide',c:'C',l:'O',dirs:[[-1,0,0],[1,0,0]],L:1.25,order:2,shape:'Linear',ang:'180°',arcs:[[0,1,'180°',[0,1,0]]],
+  why:'Carbon makes two C=O double bonds and has no lone pairs. A double bond counts as <b>one region</b> of electron density, so there are 2 regions. They repel as far apart as possible, giving a straight line: 180°.'}),
+ becl2:vsepr({f:'BeCl₂',name:'beryllium chloride',c:'Be',l:'Cl',dirs:[[-1,0,0],[1,0,0]],L:1.45,shape:'Linear',ang:'180°',arcs:[[0,1,'180°',[0,1,0]]],
+  why:'Be has only 2 outer electrons, so it makes 2 bonds and has no lone pairs (just 4 electrons around Be: it doesn’t reach an octet). Two bonding pairs repel to opposite sides: linear, 180°.'}),
+ bf3:vsepr({f:'BF₃',name:'boron trifluoride',c:'B',l:'F',dirs:[[0,1,0],[0.866,-0.5,0],[-0.866,-0.5,0]],L:1.35,shape:'Trigonal planar',ang:'120°',arcs:[[0,2,'120°']],
+  why:'B has 3 outer electrons, so it makes 3 bonds and has no lone pairs (only 6 electrons around B). Three bonding pairs spread out in one flat plane: trigonal planar, 120°.'}),
+ ch4:vsepr({f:'CH₄',name:'methane',c:'C',l:'H',dirs:TETX,L:1.15,shape:'Tetrahedral',ang:'109.5°',arcs:[[0,1,'109.5°']],exam:[0,0.36],
+  why:'4 bonding pairs and no lone pairs. Four regions repel equally and point to the corners of a tetrahedron: 109.5°.'}),
+ nh4:vsepr({f:'NH₄⁺',name:'ammonium ion',c:'N',l:'H',dirs:TETX,L:1.15,shape:'Tetrahedral',ang:'109.5°',arcs:[[0,1,'109.5°']],exam:[0,0.36],charge:'+',
+  why:'In NH₃, N uses its lone pair to form a <b>dative</b> bond to H⁺. That leaves 4 bonding pairs and no lone pairs, so NH₄⁺ is tetrahedral, 109.5°, just like CH₄. Once it has formed, the dative bond is identical to the other three.'}),
+ nh3:vsepr({f:'NH₃',name:'ammonia',c:'N',l:'H',dirs:PYR(107),lpd:[[0,1,0]],L:1.15,shape:'Pyramidal',ang:'107°',arcs:[[0,1,'107°']],exam:[0,0.36],
+  why:'3 bonding pairs and 1 lone pair make 4 regions, arranged roughly tetrahedrally. The lone pair is held closer to N and repels <b>more</b> than a bonding pair, pushing the N–H bonds together: 109.5° − 2.5° ≈ 107°. The shape names the atoms only, so it is pyramidal.'}),
+ h2o:vsepr({f:'H₂O',name:'water',c:'O',l:'H',dirs:[[-s52,-c52,0],[s52,-c52,0]],lpd:[[0,0.54,0.84],[0,0.54,-0.84]],L:1.1,shape:'Non-linear (bent)',ang:'104.5°',arcs:[[0,1,'104.5°']],exam:[0.42,0.1],
+  why:'2 bonding pairs and 2 lone pairs make 4 regions. Two lone pairs squeeze the bonds even more: 109.5° − 2 × 2.5° ≈ 104.5°. Looking at the atoms only, the shape is non-linear (bent).'}),
+ pcl5:vsepr({f:'PCl₅',name:'phosphorus(V) chloride',c:'P',l:'Cl',dirs:[[0,1,0],[0,-1,0],[-1,0,0],[0.5,0,0.866],[0.5,0,-0.866]],L:1.45,shape:'Trigonal bipyramidal',ang:'90° and 120°',arcs:[[0,2,'90°'],[3,4,'120°']],exam:[0,0.3],
+  why:'5 bonding pairs, no lone pairs. Three bonds sit in a triangle around P, 120° apart, and two point straight up and down, at 90° to the triangle. P has expanded its octet: 10 electrons in its outer shell.'}),
+ sf6:vsepr({f:'SF₆',name:'sulfur hexafluoride',c:'S',l:'F',dirs:[[0,1,0],[0,-1,0],...SQ],L:1.4,shape:'Octahedral',ang:'90°',arcs:[[0,2,'90°']],exam:[0,0.26],
+  why:'6 bonding pairs, no lone pairs: the bonds point to the corners of an octahedron, all at 90°. S has expanded its octet: 12 electrons in its outer shell.'}),
+ xef4:vsepr({f:'XeF₄',name:'xenon tetrafluoride',c:'Xe',l:'F',dirs:SQ,lpd:[[0,1,0],[0,-1,0]],L:1.45,shape:'Square planar',ang:'90°',arcs:[[0,3,'90°']],exam:[0,0.26],
+  why:'Xe has 8 outer electrons: 4 bond to F atoms, leaving 2 lone pairs. That makes 6 regions, arranged octahedrally. The lone pairs repel most, so they sit opposite each other, 180° apart, leaving the four F atoms in a flat square: square planar, 90°.'}),
+ zbut:Object.assign(but(true),{kind:'iso',title:'Z-but-2-ene',chip:'Z-but-2-ene',name:'cis-but-2-ene',cap:'Z isomer · CH₃ groups on the same side',exam:[0,0],
+  facts:[['iso','E/Z','stereoisomerism'],['g','CH₃ on each C','higher priority'],['ang','same side','priority groups'],['sh','restricted','rotation about C=C']],
+  why:'There is restricted rotation about the C=C double bond, and each carbon carries two different groups (CH₃ and H). The higher-priority groups (CH₃) are on the <b>same side</b> of the double bond (the dashed line), so this is the <b>Z</b> isomer (here also <i>cis</i>).'}),
+ ebut:Object.assign(but(false),{kind:'iso',title:'E-but-2-ene',chip:'E-but-2-ene',name:'trans-but-2-ene',cap:'E isomer · CH₃ groups on opposite sides',exam:[0,0],
+  facts:[['iso','E/Z','stereoisomerism'],['g','CH₃ on each C','higher priority'],['ang','opposite sides','priority groups'],['sh','restricted','rotation about C=C']],
+  why:'The CH₃ groups are on <b>opposite sides</b> of the double bond (the dashed line): the <b>E</b> isomer (<i>trans</i>). E and Z can’t turn into each other, because the π bond stops rotation about C=C.'}),
+ ala:{kind:'iso',title:'Alanine',chip:'Alanine',name:'2-aminopropanoic acid',cap:'Chiral centre C* · optical isomers',exam:[0,0.36],
+  atoms:[{e:'C',p:[0,0,0],star:true},{e:'O',g:'COOH',r:0.5,p:V.mul(TETX[0],1.55)},{e:'C',g:'CH₃',r:0.43,p:V.mul(TETX[1],1.5)},{e:'N',g:'NH₂',r:0.43,p:V.mul(TETX[2],1.5)},{e:'H',p:V.mul(TETX[3],1.1)}],
+  bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]],lps:[],angles:[],
+  facts:[['iso','optical','isomerism'],['g','C*','chiral centre'],['ang','4 different','groups on C*'],['sh','non-superimposable','mirror images']],
+  why:'The central carbon (C*) is bonded to <b>four different groups</b>: H, CH₃, NH₂ and COOH, so it is a chiral centre. Turn on <b>Mirror image</b>: the two molecules are non-superimposable mirror images (optical isomers). Drag the mirror image to try to line it up with the original: you can’t.'}};
+Object.values(MOLS).forEach(M=>{ const n=M.atoms.length; M.ctr=M.kind==='vsepr'?[0,0,0]:M.atoms.reduce((s,a)=>V.add(s,V.mul(a.p,1/n)),[0,0,0]);
+ let R=0; M.atoms.forEach(a=>{ R=Math.max(R,V.len(V.sub(a.p,M.ctr))+(a.r||ELR[a.e])); }); M.lps.forEach(([i,d])=>{ R=Math.max(R,V.len(V.sub(V.add(M.atoms[i].p,V.mul(d,1.05)),M.ctr))); }); M.R=R; });
+const GROUPS=[['2 regions',['co2','becl2']],['3 regions',['bf3']],['4 regions',['ch4','nh4','nh3','h2o']],['5 regions',['pcl5']],['6 regions',['sf6','xef4']],['Isomers',['zbut','ebut','ala']]];
+/* rotate (yaw about y, then pitch about x) and project with mild perspective */
+const rotDir=(d,rot,mir)=>{ let [px,py,pz]=d; if(mir) px=-px; const cy=Math.cos(rot.yaw), sy=Math.sin(rot.yaw), cp=Math.cos(rot.pitch), sp=Math.sin(rot.pitch); const x1=px*cy+pz*sy, z1=-px*sy+pz*cy; return [x1,py*cp-z1*sp,py*sp+z1*cp]; };
+const projector=(M,rot,cx,cy,sc,persp,mir)=>p=>{ const r=rotDir(V.sub(p,M.ctr),rot,mir); const f=1/(1-r[2]*persp); return {x:cx+r[0]*sc*f,y:cy-r[1]*sc*f,z:r[2],f}; };
+const radOf=a=>a.r||ELR[a.e];
+/* small picture of each molecule for the picker */
+const icon=M=>{ const pr=projector(M,{yaw:M.exam[0],pitch:M.exam[1]},0,0,1,0,false), k=12.5/M.R, A=M.atoms.map(a=>Object.assign(pr(a.p),{a})); const f=v=>v.toFixed(1);
+ let s='<svg viewBox="-15 -15 30 30" aria-hidden="true">';
+ M.bonds.forEach(([i,j])=>{ s+=`<line x1="${f(A[i].x*k)}" y1="${f(A[i].y*k)}" x2="${f(A[j].x*k)}" y2="${f(A[j].y*k)}" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" opacity=".5"/>`; });
+ M.lps.forEach(([i,d])=>{ const q=pr(V.add(M.atoms[i].p,V.mul(d,0.62))); s+=`<circle cx="${f(q.x*k)}" cy="${f(q.y*k)}" r="${f(0.34*k)}" fill="var(--accent)" opacity=".45"/>`; });
+ A.slice().sort((p,q)=>p.z-q.z).forEach(q=>{ s+=`<circle cx="${f(q.x*k)}" cy="${f(q.y*k)}" r="${f(Math.max(1.9,radOf(q.a)*k*0.95))}" fill="${ELC[q.a.e]}" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`; });
+ return s+'</svg>'; };
+
+/* painters shared by the lab and the hero preview */
+function stick(x,p1,p2,w,col){ const dx=p2.x-p1.x, dy=p2.y-p1.y, L=Math.hypot(dx,dy); if(L<0.5||w<0.5) return; const c=tone(col); let nx=-dy/L, ny=dx/L; if(nx+ny>0){ nx=-nx; ny=-ny; }
+  const g=x.createLinearGradient(p1.x+nx*w/2,p1.y+ny*w/2,p1.x-nx*w/2,p1.y-ny*w/2); g.addColorStop(0,c.lo); g.addColorStop(0.24,c.hi); g.addColorStop(0.55,c.base); g.addColorStop(1,c.edge);
+  x.strokeStyle=g; x.lineWidth=w; x.lineCap='round'; x.beginPath(); x.moveTo(p1.x,p1.y); x.lineTo(p2.x,p2.y); x.stroke(); }
+function ball(x,q,col,pal){ const r=q.r, c=tone(col);
+  const g=x.createRadialGradient(q.x-r*0.38,q.y-r*0.42,r*0.06,q.x-r*0.12,q.y-r*0.12,r*1.1); g.addColorStop(0,c.hi); g.addColorStop(0.3,c.base); g.addColorStop(0.8,c.lo); g.addColorStop(1,c.edge);
+  x.fillStyle=g; x.beginPath(); x.arc(q.x,q.y,r,0,7); x.fill();
+  const s=x.createRadialGradient(q.x-r*0.36,q.y-r*0.44,0,q.x-r*0.36,q.y-r*0.44,r*0.45); s.addColorStop(0,'rgba(255,255,255,.8)'); s.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=s; x.fill();
+  x.lineWidth=1; x.strokeStyle=pal.rim; x.stroke(); }
+function lobe(x,q,rd,s,pal,flat){ const a=0.5*s, b=0.31*s, sx=Math.hypot(rd[0],rd[1]), A=Math.max(b,Math.sqrt(a*a*sx*sx+b*b*rd[2]*rd[2])), ang=Math.atan2(-rd[1],rd[0]);
+  x.save(); x.translate(q.x,q.y); x.rotate(ang);
+  if(flat){ x.beginPath(); x.ellipse(0,0,A,b,0,0,7); x.fillStyle=pal.lpC; x.fill(); x.lineWidth=1.6; x.strokeStyle=pal.lpLine; x.stroke(); }
+  else { x.save(); x.scale(A/b,1); const g=x.createRadialGradient(b*0.15,-b*0.3,b*0.05,0,0,b); g.addColorStop(0,pal.lpA); g.addColorStop(0.6,pal.lpB); g.addColorStop(1,pal.lpC); x.shadowColor=pal.lpGlow; x.shadowBlur=16; x.fillStyle=g; x.beginPath(); x.arc(0,0,b,0,7); x.fill(); x.restore();
+   x.beginPath(); x.ellipse(0,0,A,b,0,0,7); x.lineWidth=1.1; x.strokeStyle=pal.lpLine; x.stroke(); }
+  const off=(A-b)*0.45, dr=Math.max(2.3,s*0.04); [-1,1].forEach(k=>{ x.beginPath(); x.arc(off,k*b*0.34,dr,0,7); x.fillStyle=pal.accent; x.fill(); if(!flat){ x.beginPath(); x.arc(off-dr*0.3,k*b*0.34-dr*0.3,dr*0.4,0,7); x.fillStyle='rgba(255,255,255,.7)'; x.fill(); } });
+  x.restore(); }
+L.shapes={title:'3D shapes of molecules',cat:'Atoms & bonding',topic:'2.2.2',anim:false,
+desc:'Spin molecules in 3D to see how bonding pairs and lone pairs arrange themselves, with every bond angle marked. Flip to an exam-style wedge-and-dash drawing, and explore E/Z isomers of but-2-ene and the optical isomers of alanine.',
 icon:'<circle cx="60" cy="62" r="14" fill="currentColor"/><g stroke="currentColor" stroke-width="5"><path d="M60 62L60 16M60 62L22 86M60 62L98 86M60 62l18 10"/></g><circle cx="60" cy="14" r="9" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="20" cy="88" r="9" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="100" cy="88" r="9" fill="none" stroke="currentColor" stroke-width="4"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
- let m='nh3', yaw=0.6, pitch=-0.35, spin=true, mirror=false, showLP=true, drag=null;
- LK.select(ct,{label:'Molecule',options:Object.entries(MOLS).map(([k,v])=>[k,v.n]),value:m,on:v=>{m=v;info.innerHTML=MOLS[m].info;}});
- LK.check(ct,'Spin',true,v=>{spin=v;}); LK.check(ct,'Show lone pairs',true,v=>{showLP=v;}); LK.check(ct,'Mirror image',false,v=>{mirror=v;});
- const st=LK.stage(el,S,{ratio:0.62,maxH:440});
- const info=LK.el('<p style="margin:8px 0 0"></p>'); el.appendChild(info); info.innerHTML=MOLS[m].info;
- LK.note(el,'Electron pairs around the central atom repel and get as far apart as possible. Lone pairs repel more than bonding pairs, so each lone pair reduces the bond angle by about 2.5°. Count bonding pairs and lone pairs on the central atom; a double bond counts as one region of electron density. <b>Drag</b> the molecule to turn it.');
- const cv=st.cv; cv.style.cursor='grab'; cv.style.touchAction='none';
- S.on(cv,'pointerdown',e=>{ drag={x:e.clientX,y:e.clientY,yaw,pitch}; cv.setPointerCapture(e.pointerId); cv.style.cursor='grabbing'; });
- S.on(cv,'pointermove',e=>{ if(!drag) return; yaw=drag.yaw+(e.clientX-drag.x)*0.01; pitch=clamp(drag.pitch+(e.clientY-drag.y)*0.01,-1.5,1.5); });
- S.on(cv,'pointerup',()=>{ drag=null; cv.style.cursor='grab'; });
- S.loop(dt=>{ if(spin&&!drag) yaw+=dt*0.5; const P=LK.P(), x=st.ctx, W=st.w, H=st.h; st.clear();
-  const M=MOLS[m], sc=Math.min(W,H)*0.2, cx=W/2, cy=H/2;
-  const tr=([px,py,pz])=>{ if(mirror) px=-px; const cyw=Math.cos(yaw), syw=Math.sin(yaw); let X=px*cyw+pz*syw, Z=-px*syw+pz*cyw; const cp=Math.cos(pitch), sp=Math.sin(pitch); let Y=py*cp-Z*sp; Z=py*sp+Z*cp; const f=4/(4+Z*0.35); return {x:cx+X*sc*f,y:cy-Y*sc*f,z:Z,f}; };
-  const A=M.at.map(a=>({el:a[0],...tr([a[1],a[2],a[3]])}));
+ let m='nh3', spin=!LK.reduced(), spinWas=spin, showLP=true, showAng=true, labels=true, mirror=false, exam=false;
+ let ex=0, tin=0, hint=1, dragged=false, linked=true, target=null, drag=null;
+ const rotL={yaw:0,pitch:0,vy:0,vp:0}, rotR={yaw:0,pitch:0,vy:0,vp:0};
+ const cSpin=LK.check(ct,'Spin',spin,v=>{ spin=v; spinWas=v; });
+ LK.check(ct,'Show lone pairs',true,v=>{ showLP=v; });
+ LK.check(ct,'Show bond angles',true,v=>{ showAng=v; });
+ LK.check(ct,'Atom labels',true,v=>{ labels=v; });
+ const cMir=LK.check(ct,'Mirror image',false,v=>{ mirror=v; linked=true; syncR(); tin=Math.min(tin,0.55); });
+ /* molecule tray, grouped by regions of electron density */
+ const tray=LK.el('<div class="shp-tray" role="group" aria-label="Choose a molecule"></div>'); el.appendChild(tray);
+ GROUPS.forEach(([lab,ids])=>{ const g=LK.el(`<div class="shp-grp"><span>${lab}</span><div></div></div>`); ids.forEach(id=>{ const M=MOLS[id]; g.lastElementChild.appendChild(LK.el(`<button type="button" class="shp-chip" data-m="${id}" aria-pressed="false" title="${LK.esc(M.name)}">${icon(M)}<span>${fH(M.chip||M.f)}</span></button>`)); }); tray.appendChild(g); });
+ tray.addEventListener('click',e=>{ const b=e.target.closest('[data-m]'); if(b) pick(b.dataset.m); });
+ /* stage */
+ const wrap=LK.el('<div class="shp-stage"></div>'); el.appendChild(wrap);
+ const st=LK.stage(wrap,S,{ratio:0.68,maxH:560,minH:360}); const cv=st.cv; cv.tabIndex=0; cv.setAttribute('role','img');
+ const tools=LK.el('<div class="shp-tools"><div class="shp-seg" role="group" aria-label="View"><button type="button" data-v="3d" aria-pressed="true">3D model</button><button type="button" data-v="exam" aria-pressed="false">Exam drawing</button></div><button type="button" class="shp-ib" data-reset title="Reset the view" aria-label="Reset the view"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v5h5"/></svg></button></div>'); wrap.insertBefore(tools,wrap.firstChild);
+ tools.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; if(b.dataset.v) setView(b.dataset.v); if(b.hasAttribute('data-reset')) resetRot(true); });
+ const info=LK.el('<div class="shp-info" aria-live="polite"></div>'); el.appendChild(info);
+ LK.note(el,'Electron pairs around the central atom repel each other and get as far apart as possible. Count the <b>bonding pairs</b> and <b>lone pairs</b> on the central atom; a double bond counts as one region. Lone pairs repel more than bonding pairs, so each lone pair closes the bond angle by about 2.5°.<table class="shp-tab"><thead><tr><th>Bonding</th><th>Lone</th><th>Shape</th><th>Angle</th></tr></thead><tbody><tr><td>2</td><td>0</td><td>linear</td><td>180°</td></tr><tr><td>3</td><td>0</td><td>trigonal planar</td><td>120°</td></tr><tr><td>4</td><td>0</td><td>tetrahedral</td><td>109.5°</td></tr><tr><td>3</td><td>1</td><td>pyramidal</td><td>107°</td></tr><tr><td>2</td><td>2</td><td>non-linear</td><td>104.5°</td></tr><tr><td>5</td><td>0</td><td>trigonal bipyramidal</td><td>90°, 120°</td></tr><tr><td>6</td><td>0</td><td>octahedral</td><td>90°</td></tr><tr><td>4</td><td>2</td><td>square planar</td><td>90°</td></tr></tbody></table>In an exam drawing, a plain line is in the plane of the paper, a solid wedge comes <b>towards</b> you and a hashed wedge goes <b>away</b> from you.');
+ const Mo=()=>MOLS[m];
+ function syncR(){ if(linked){ rotR.yaw=-rotL.yaw; rotR.pitch=rotL.pitch; rotR.vy=-rotL.vy; rotR.vp=rotL.vp; } }
+ function examTarget(){ const M=Mo(), T=2*Math.PI; return {yaw:M.exam[0]+T*Math.round((rotL.yaw-M.exam[0])/T),pitch:M.exam[1]}; }
+ function resetRot(smooth){ const M=Mo(); linked=true; rotL.vy=rotL.vp=0; const t=exam?{yaw:M.exam[0],pitch:M.exam[1]}:{yaw:M.exam[0]+0.55,pitch:0.32};
+  if(smooth){ const T=2*Math.PI; t.yaw+=T*Math.round((rotL.yaw-t.yaw)/T); target=t; } else { target=null; rotL.yaw=t.yaw; rotL.pitch=t.pitch; } syncR(); }
+ function pick(id){ if(!MOLS[id]) return; m=id; tin=0; resetRot(false); renderInfo();
+  tray.querySelectorAll('[data-m]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===id)));
+  const b=tray.querySelector(`[data-m="${id}"]`); if(b&&tray.scrollWidth>tray.clientWidth+4) tray.scrollTo({left:b.offsetLeft-tray.clientWidth/2+b.offsetWidth/2,behavior:'smooth'}); }
+ function setView(v){ const want=v==='exam'; tools.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.v==='exam')===want))); if(want===exam) return; exam=want;
+  if(exam){ spinWas=spin; spin=false; cSpin.checked=false; linked=true; rotL.vy=rotL.vp=0; target=examTarget(); }
+  else { target=null; if(spinWas){ spin=true; cSpin.checked=true; } } }
+ function renderInfo(){ const M=Mo(), nl=M.lps.length;
+  const F=M.kind==='vsepr'?[['bp',M.bonds.length,M.order===2?'bonding regions':'bonding pairs'],['lp',nl,nl===1?'lone pair':'lone pairs'],['ang',M.ang,/and/.test(M.ang)?'bond angles':'bond angle'],['sh',M.shape,'shape']]:M.facts;
+  info.innerHTML=`<div class="shp-facts">${F.map(([c,v,l])=>`<div class="shp-fact ${c}"><b>${fH(String(v))}</b><span>${l}</span></div>`).join('')}</div><p class="shp-why">${M.why}</p>`;
+  cv.setAttribute('aria-label',`${M.title} (${M.name}): ${M.cap}. Drag or use the arrow keys to rotate.`); }
+ /* pointer: drag to turn (with a little momentum); in mirror view each half turns its own molecule */
+ S.on(cv,'pointerdown',e=>{ const p=st.pos(e), right=mirror&&p.x>st.w/2; if(right) linked=false; const r=right?rotR:rotL; r.vy=r.vp=0; target=null; drag={r,x:e.clientX,y:e.clientY,t:performance.now()}; dragged=true; try{ cv.setPointerCapture(e.pointerId); }catch(err){} });
+ S.on(cv,'pointermove',e=>{ if(!drag) return; const now=performance.now(), dx=e.clientX-drag.x, dy=e.clientY-drag.y, dt=Math.max(8,now-drag.t)/1000, k=0.0095, r=drag.r;
+  r.yaw+=dx*k; r.pitch=clamp(r.pitch+dy*k,-1.45,1.45); r.vy=clamp(dx*k/dt,-9,9)*0.85; r.vp=clamp(dy*k/dt,-9,9)*0.85; drag.x=e.clientX; drag.y=e.clientY; drag.t=now; if(r===rotL) syncR(); });
+ const up=()=>{ if(!drag) return; if(performance.now()-drag.t>90){ drag.r.vy=drag.r.vp=0; } drag=null; };
+ S.on(cv,'pointerup',up); S.on(cv,'pointercancel',up); S.on(cv,'lostpointercapture',up);
+ S.on(cv,'dblclick',()=>resetRot(true));
+ S.on(cv,'keydown',e=>{ const k={ArrowLeft:[-0.15,0],ArrowRight:[0.15,0],ArrowUp:[0,-0.15],ArrowDown:[0,0.15]}[e.key]; if(!k) return; e.preventDefault(); target=null; rotL.yaw+=k[0]; rotL.pitch=clamp(rotL.pitch+k[1],-1.45,1.45); syncR(); dragged=true; });
+
+ /* ---------- drawing ---------- */
+ let PK=null, PC=null;
+ const pals=P=>{ if(PK===P) return PC; PK=P; const l1=lum(P.surface), l2=lum(P.bg), dark=l2<0.35, hiC=l1>l2?P.surface:P.bg, loC=l1>l2?P.bg:P.surface;
+  const cs=getComputedStyle(document.documentElement);
+  PC={dark,bgIn:dark?mix(hiC,P.brand,0.05):hiC,bgOut:dark?mix(loC,'#000000',0.35):mix(loC,P.line,0.55),fog:dark?mix(loC,'#000000',0.3):hiC,
+   shadow:dark?'rgba(0,0,0,.42)':'rgba(90,45,15,.16)',rim:dark?'rgba(0,0,0,.5)':'rgba(50,25,8,.32)',ink:P.ink,ink2:P.ink2,muted:P.muted,brand:P.brand,accent:P.accent,
+   lpA:rgba(P.accent,dark?0.62:0.5),lpB:rgba(P.accent,dark?0.3:0.24),lpC:rgba(P.accent,0.06),lpLine:rgba(P.accent,0.75),lpGlow:rgba(P.accent,dark?0.55:0.35),
+   arcFill:rgba(P.brand,0.16),pill:rgba(P.surface,0.94),grid:P.grid,mirror:rgba(P.accent,dark?0.16:0.1),
+   display:cs.getPropertyValue('--f-display').trim()||'sans-serif',body:P.body}; return PC; };
+ function fogOver(x,amt,pal,fn){ if(amt<0.02) return; x.save(); x.globalAlpha*=amt; fn(pal.fog); x.restore(); }
+ function draw3D(x,M,pr,rot,mir,sc,pal,floorY){
+  const A=M.atoms.map(a=>{ const q=pr(a.p); q.r=radOf(a)*sc*q.f; q.a=a; return q; }), fogK=z=>clamp(-z/M.R,0,1)*0.32;
+  /* soft shadows on an imaginary floor */
+  A.forEach(q=>{ const sy=floorY+q.z*sc*0.1, rx=q.r*1.7, ry=rx*0.2; x.save(); x.translate(q.x,sy); x.scale(1,ry/rx); const g=x.createRadialGradient(0,0,0,0,0,rx); g.addColorStop(0,pal.shadow); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(-rx,-rx,2*rx,2*rx); x.restore(); });
+  if(M.axis){ const a=pr(M.axis[0]), b=pr(M.axis[1]); x.save(); x.setLineDash([7,7]); x.lineWidth=1.6; x.strokeStyle=pal.muted; x.globalAlpha*=0.7; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); x.restore(); }
   const items=[];
-  M.bo.forEach(([i,j,o])=>items.push({z:(A[i].z+A[j].z)/2-0.01,draw:()=>{ const a=A[i],b=A[j]; x.strokeStyle=P.ink2; x.lineCap='round'; if(o===2){ const dx=b.x-a.x, dy=b.y-a.y, l=Math.hypot(dx,dy)||1, ox=-dy/l*4, oy=dx/l*4; x.lineWidth=4; x.beginPath(); x.moveTo(a.x+ox,a.y+oy); x.lineTo(b.x+ox,b.y+oy); x.moveTo(a.x-ox,a.y-oy); x.lineTo(b.x-ox,b.y-oy); x.stroke(); } else { x.lineWidth=7; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); } }}));
-  if(showLP) M.lp.forEach(([i,dx,dy,dz])=>{ const c=A[i], tip=tr([dx*1.15+M.at[i][1],dy*1.15+M.at[i][2],dz*1.15+M.at[i][3]]); items.push({z:tip.z,draw:()=>{ x.save(); x.globalAlpha=0.45; x.fillStyle=P.accent; x.beginPath(); x.ellipse((c.x+tip.x)/2+(tip.x-c.x)*0.25,(c.y+tip.y)/2+(tip.y-c.y)*0.25,sc*0.28*tip.f,sc*0.18*tip.f,Math.atan2(tip.y-c.y,tip.x-c.x),0,7); x.fill(); x.restore(); x.fillStyle=P.accent; [-1,1].forEach(s=>{ x.beginPath(); x.arc(tip.x+s*4,tip.y,2.6,0,7); x.fill(); }); }}); });
-  A.forEach((a,i)=>items.push({z:a.z,draw:()=>{ const r=RAD[a.el]*sc*a.f*0.95; const g=x.createRadialGradient(a.x-r*0.35,a.y-r*0.35,r*0.1,a.x,a.y,r); g.addColorStop(0,'#ffffff'); g.addColorStop(0.25,COL[a.el]); g.addColorStop(1,shade(COL[a.el])); x.fillStyle=g; x.beginPath(); x.arc(a.x,a.y,r,0,7); x.fill(); x.strokeStyle='rgba(0,0,0,.35)'; x.lineWidth=1; x.stroke();
-    const lab=(M.lab&&M.lab[i])||(a.el!=='C'||i===0&&!M.lab?a.el:''); if(lab) LK.text(x,lab,a.x,a.y+4,a.el==='H'||a.el==='S'||a.el==='F'||a.el==='Be'?'#222':'#fff',{size:Math.max(10,Math.round(r*0.62)),weight:700,align:'center'}); }}));
-  items.sort((p,q)=>p.z-q.z).forEach(it=>it.draw());
-  LK.text(x,M.n,12,22,P.ink,{size:14,weight:700,mono:false});
-  if(mirror) LK.text(x,'mirror image',12,42,P.accent,{size:12,mono:false});
- });
- function shade(h){ const n=parseInt(h.slice(1),16); const r=(n>>16)*0.55, g=((n>>8)&255)*0.55, b=(n&255)*0.55; return `rgb(${r|0},${g|0},${b|0})`; }
- el.lkPreset=o=>{}; return ()=>S.dispose(); }};
+  M.bonds.forEach(([i,j,o])=>{ const ai=M.atoms[i], aj=M.atoms[j], u=V.unit(V.sub(aj.p,ai.p));
+   const s=pr(V.add(ai.p,V.mul(u,radOf(ai)*0.9))), mid=pr(V.mul(V.add(ai.p,aj.p),0.5)), e=pr(V.sub(aj.p,V.mul(u,radOf(aj)*0.9)));
+   const w=sc*(o===2?0.085:0.125); let ox=0, oy=0; if(o===2){ const dx=e.x-s.x, dy=e.y-s.y, l=Math.hypot(dx,dy)||1; ox=-dy/l*w*0.72; oy=dx/l*w*0.72; }
+   [[s,mid,ELC[ai.e]],[mid,e,ELC[aj.e]]].forEach(([p1,p2,col])=>{ const z=(p1.z+p2.z)/2, ww=w*(p1.f+p2.f)/2;
+    const segs=o===2?[[1],[-1]].map(([k])=>[{x:p1.x+k*ox,y:p1.y+k*oy},{x:p2.x+k*ox,y:p2.y+k*oy}]):[[p1,p2]];
+    items.push({z,d:()=>{ segs.forEach(([a,b])=>stick(x,a,b,ww,col)); fogOver(x,fogK(z),pal,f=>{ x.strokeStyle=f; x.lineWidth=ww; x.lineCap='round'; x.beginPath(); segs.forEach(([a,b])=>{ x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); }); x.stroke(); }); }}); }); });
+  if(showLP) M.lps.forEach(([i,d])=>{ const q=pr(V.add(M.atoms[i].p,V.mul(d,0.55))), rd=rotDir(d,rot,mir); items.push({z:q.z,d:()=>lobe(x,q,rd,sc*q.f,pal,false)}); });
+  A.forEach(q=>items.push({z:q.z,d:()=>{ const col=ELC[q.a.e]; ball(x,q,col,pal); const fz=fogK(q.z); if(fz>0.02){ x.save(); x.globalAlpha*=fz; x.fillStyle=pal.fog; x.beginPath(); x.arc(q.x,q.y,q.r,0,7); x.fill(); x.restore(); }
+   if(labels&&q.r>7){ const t=(q.a.g||q.a.e), size=q.a.g?clamp(q.r*0.48,9,17):clamp(q.r*0.62,9,21); fText(x,t,q.x,q.y+size*0.05,{size,weight:700,font:pal.body,col:tone(col).txt,align:'center',base:'middle'}); }
+   if(q.a.star){ fText(x,'*',q.x+q.r*0.78,q.y-q.r*0.55,{size:clamp(q.r*0.9,14,26),weight:800,font:pal.body,col:pal.brand,align:'center',base:'middle'}); } }}));
+  items.sort((p,q)=>p.z-q.z).forEach(it=>it.d()); }
+ function drawExam(x,M,pr,rot,mir,sc,pal){
+  const A=M.atoms.map(a=>pr(a.p));
+  if(M.axis){ const a=pr(M.axis[0]), b=pr(M.axis[1]); x.save(); x.setLineDash([7,7]); x.lineWidth=1.4; x.strokeStyle=pal.muted; x.globalAlpha*=0.6; x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); x.restore(); }
+  const lab=M.atoms.map((a,i)=>{ const t=(a.g||a.e)+(a.star?'*':''), size=(i===0&&M.kind==='vsepr')?22:18; return {t,size,w:fText(x,t,0,0,{size,weight:600,font:pal.body,measure:true})}; });
+  const trim=(L,dx,dy)=>Math.min((L.w/2+3)/Math.max(Math.abs(dx),1e-3),(L.size*0.5+2)/Math.max(Math.abs(dy),1e-3))+3;
+  x.strokeStyle=pal.ink; x.fillStyle=pal.ink; x.lineCap='round'; x.lineJoin='round';
+  M.bonds.forEach(([i,j,o])=>{ const a=A[i], b=A[j]; let dx=b.x-a.x, dy=b.y-a.y; const L=Math.hypot(dx,dy); if(L<2) return; dx/=L; dy/=L;
+   const ti=trim(lab[i],dx,dy), tj=trim(lab[j],dx,dy); if(ti+tj>L-4) return; const p1={x:a.x+dx*ti,y:a.y+dy*ti}, p2={x:b.x-dx*tj,y:b.y-dy*tj}, nx=-dy, ny=dx;
+   const dz=(b.z-a.z)/(V.len(V.sub(M.atoms[j].p,M.atoms[i].p))||1);
+   if(o===2){ x.lineWidth=2.3; [1,-1].forEach(k=>{ x.beginPath(); x.moveTo(p1.x+nx*3.4*k,p1.y+ny*3.4*k); x.lineTo(p2.x+nx*3.4*k,p2.y+ny*3.4*k); x.stroke(); }); }
+   else if(dz>0.4){ x.beginPath(); x.moveTo(p1.x,p1.y); x.lineTo(p2.x+nx*6,p2.y+ny*6); x.lineTo(p2.x-nx*6,p2.y-ny*6); x.closePath(); x.fill(); }
+   else if(dz<-0.4){ const len=Math.hypot(p2.x-p1.x,p2.y-p1.y), n=Math.max(3,Math.round(len/5.5)); x.lineWidth=1.7; x.beginPath(); for(let k=1;k<=n;k++){ const t=k/n, cx=p1.x+(p2.x-p1.x)*t, cy=p1.y+(p2.y-p1.y)*t, h=0.8+5.2*t; x.moveTo(cx+nx*h,cy+ny*h); x.lineTo(cx-nx*h,cy-ny*h); } x.stroke(); }
+   else { x.lineWidth=2.4; x.beginPath(); x.moveTo(p1.x,p1.y); x.lineTo(p2.x,p2.y); x.stroke(); } });
+  if(showLP) M.lps.forEach(([i,d])=>{ const q=pr(V.add(M.atoms[i].p,V.mul(d,0.56))); lobe(x,q,rotDir(d,rot,mir),sc*0.88,pal,true); });
+  A.forEach((q,i)=>{ const Lb=lab[i]; fText(x,Lb.t,q.x,q.y+1,{size:Lb.size,weight:i===0&&M.kind==='vsepr'?700:600,font:pal.body,col:pal.ink,align:'center',base:'middle'}); });
+  if(M.charge){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; A.forEach((q,i)=>{ x0=Math.min(x0,q.x-lab[i].w/2); x1=Math.max(x1,q.x+lab[i].w/2); y0=Math.min(y0,q.y-12); y1=Math.max(y1,q.y+12); }); x0-=14; x1+=14; y0-=10; y1+=10;
+   x.lineWidth=2; x.beginPath(); x.moveTo(x0+8,y0); x.lineTo(x0,y0); x.lineTo(x0,y1); x.lineTo(x0+8,y1); x.moveTo(x1-8,y0); x.lineTo(x1,y0); x.lineTo(x1,y1); x.lineTo(x1-8,y1); x.stroke(); fText(x,M.charge,x1+5,y0+4,{size:20,weight:700,font:pal.body,col:pal.ink}); } }
+ function arcs(x,M,pr,pal){ M.angles.forEach(([c,i,j,t,w])=>{ const pc=M.atoms[c].p, u=V.unit(V.sub(M.atoms[i].p,pc)), v=V.unit(V.sub(M.atoms[j].p,pc)), d=V.dot(u,v), rc=radOf(M.atoms[c])*(1-ex*0.15);
+   const th=Math.acos(clamp(d,-1,1)), sn=Math.sin(th), ww=V.unit(w||[0,1,0]);
+   const at=(t,r)=>{ const dir=d<-0.999?V.add(V.mul(u,Math.cos(t*Math.PI)),V.mul(ww,Math.sin(t*Math.PI))):V.add(V.mul(u,Math.sin((1-t)*th)/sn),V.mul(v,Math.sin(t*th)/sn)); return pr(V.add(pc,V.mul(dir,r))); };
+   const r1=rc+0.1, r2=rc+0.36, N=30, out=[], inn=[]; for(let k=0;k<=N;k++){ out.push(at(k/N,r2)); inn.push(at(k/N,r1)); }
+   x.beginPath(); out.forEach((p,k)=>k?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)); for(let k=N;k>=0;k--) x.lineTo(inn[k].x,inn[k].y); x.closePath(); x.save(); x.globalAlpha*=1-ex; x.fillStyle=pal.arcFill; x.fill(); x.restore();
+   x.beginPath(); out.forEach((p,k)=>k?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)); x.lineWidth=2.2; x.strokeStyle=pal.brand; x.lineCap='round'; x.stroke();
+   const q=at(0.5,r2+0.34-ex*0.06); x.font=`700 12.5px ${pal.body}`; const tw=x.measureText(t).width+14; LK.rr(x,q.x-tw/2,q.y-11,tw,22,11); x.fillStyle=pal.pill; x.fill(); x.lineWidth=1.3; x.strokeStyle=pal.brand; x.stroke();
+   x.fillStyle=pal.brand; x.textAlign='center'; x.textBaseline='middle'; x.fillText(t,q.x,q.y+0.5); }); }
+ function legend(x,M,W,H,pal){ x.save(); x.font=`500 12px ${pal.body}`; x.textBaseline='middle'; const y=H-17; let cx=W-14; const put=(w,fn,t)=>{ const tw=x.measureText(t).width; cx-=tw; x.fillStyle=pal.muted; x.textAlign='left'; x.fillText(t,cx,y); cx-=w+6; fn(cx,y); cx-=16; };
+  if(ex>0.5){ put(18,(a,b)=>{ x.strokeStyle=pal.ink2; x.lineWidth=1.5; x.beginPath(); for(let k=1;k<=4;k++){ const h=0.8+4*k/4, xx=a+k*4.2; x.moveTo(xx,b-h); x.lineTo(xx,b+h); } x.stroke(); },'away');
+   put(18,(a,b)=>{ x.fillStyle=pal.ink2; x.beginPath(); x.moveTo(a,b); x.lineTo(a+18,b-5); x.lineTo(a+18,b+5); x.closePath(); x.fill(); },'towards you');
+   put(18,(a,b)=>{ x.strokeStyle=pal.ink2; x.lineWidth=2.2; x.beginPath(); x.moveTo(a,b); x.lineTo(a+18,b); x.stroke(); },'in the page'); }
+  else { if(showLP&&M.lps.length) put(14,(a,b)=>{ x.fillStyle=pal.lpA; x.beginPath(); x.ellipse(a+7,b,8,5,0,0,7); x.fill(); x.fillStyle=pal.accent; x.beginPath(); x.arc(a+8,b-1.8,1.5,0,7); x.arc(a+8,b+1.8,1.5,0,7); x.fill(); },'lone pair');
+   [...new Set(M.atoms.filter(a=>!a.g).map(a=>a.e))].reverse().forEach(e=>put(10,(a,b)=>{ const c=tone(ELC[e]); const g=x.createRadialGradient(a+3,b-2,0.5,a+5,b,6); g.addColorStop(0,c.hi); g.addColorStop(0.5,c.base); g.addColorStop(1,c.lo); x.fillStyle=g; x.beginPath(); x.arc(a+5,b,5,0,7); x.fill(); },ELN[e])); }
+  x.restore(); }
+ function render(){ const P=LK.P(), pal=pals(P), x=st.ctx, W=st.w, H=st.h, M=Mo();
+  const bg=x.createRadialGradient(W/2,H*0.42,10,W/2,H*0.5,Math.max(W,H)*0.75); bg.addColorStop(0,pal.bgIn); bg.addColorStop(1,pal.bgOut); x.fillStyle=bg; x.fillRect(0,0,W,H);
+  if(ex>0){ x.save(); x.globalAlpha=ex*0.85; LK.grid(x,W,H,22); x.restore(); }
+  const n=mirror?2:1, top=60, bot=36, Rv=(H-top-bot)/2, Rh=n===2?W/4-12:W/2-24, pix=Math.max(36,Math.min(Rv*1.08,Rh));
+  const e3=1-Math.pow(1-tin,3), sc=pix/M.R*(0.86+0.14*e3), cy=top+Rv, persp=0.085*(1-ex);
+  if(n===2){ x.save(); const g=x.createLinearGradient(W/2-26,0,W/2+26,0); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.5,pal.mirror); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(W/2-26,top-6,52,H-top-bot+12);
+   x.setLineDash([5,6]); x.strokeStyle=pal.accent; x.globalAlpha=0.55; x.lineWidth=1.5; x.beginPath(); x.moveTo(W/2,top-6); x.lineTo(W/2,H-bot+6); x.stroke(); x.restore();
+   if(W>=560){ x.save(); x.font=`700 10px ${pal.body}`; x.fillStyle=pal.accent; x.textAlign='center'; x.fillText('MIRROR',W/2,top-12); x.restore(); } }
+  for(let k=0;k<n;k++){ const cx=n===2?(k?W*0.75:W*0.25):W/2, rot=k?rotR:rotL, pr=projector(M,rot,cx,cy,sc,persp,k===1);
+   if(ex<0.999){ x.save(); x.globalAlpha=e3*(1-ex); draw3D(x,M,pr,rot,k===1,sc,pal,cy+pix*1.0); x.restore(); }
+   if(ex>0.001){ x.save(); x.globalAlpha=e3*ex; drawExam(x,M,pr,rot,k===1,sc,pal); x.restore(); }
+   if(showAng){ x.save(); x.globalAlpha=e3; arcs(x,M,pr,pal); x.restore(); }
+   if(n===2){ x.save(); x.font=`600 12.5px ${pal.body}`; x.fillStyle=pal.ink2; x.textAlign='center'; x.fillText(k?(linked?'mirror image':'mirror image (turned)'):'molecule',cx,H-bot+4); x.restore(); } }
+  /* title */
+  const ts=W<420?24:28, tw=fText(x,M.title,18,40,{size:ts,weight:700,font:pal.display,col:pal.ink});
+  if(M.kind==='vsepr'&&W>=360) fText(x,M.name,18+tw+10,40,{size:13,weight:500,font:pal.body,col:pal.muted});
+  fText(x,M.cap,18,62,{size:13.5,weight:600,font:pal.body,col:pal.brand});
+  /* legend and hint */
+  if(!(hint>0.02&&W<560)) legend(x,M,W,H,pal);
+  if(hint>0.02){ x.save(); x.globalAlpha=hint; x.font=`500 12px ${pal.body}`; x.fillStyle=pal.muted; x.textAlign='left'; x.textBaseline='middle'; x.fillText(mirror?'Drag either molecule to turn it · double-click to reset':'Drag to rotate · double-click to reset',16,H-17); x.restore(); } }
+ S.loop(dt=>{ tin=Math.min(1,tin+dt/0.5); const want=exam?1:0; ex+=(want-ex)*Math.min(1,dt*7); if(Math.abs(ex-want)<0.003) ex=want; if(dragged) hint=Math.max(0,hint-dt*1.2);
+  if(!drag){ if(target){ const k=Math.min(1,dt*6.5); rotL.yaw+=(target.yaw-rotL.yaw)*k; rotL.pitch+=(target.pitch-rotL.pitch)*k; if(Math.abs(target.yaw-rotL.yaw)+Math.abs(target.pitch-rotL.pitch)<1e-3){ rotL.yaw=target.yaw; rotL.pitch=target.pitch; target=null; } }
+   const sp=spin?0.42:0, dmp=Math.exp(-dt*3.2);
+   [rotL,rotR].forEach((r,k)=>{ if(k===1&&linked) return; r.yaw+=r.vy*dt; r.pitch=clamp(r.pitch+r.vp*dt,-1.45,1.45); r.vy*=dmp; r.vp*=dmp; });
+   rotL.yaw+=sp*dt; if(!linked) rotR.yaw-=sp*dt; syncR(); }
+  render(); });
+ el.lkPreset=o=>{ o=o||{}; if(o.mirror!=null&&!!o.mirror!==mirror){ mirror=!!o.mirror; cMir.checked=mirror; } if(o.mol) pick(o.mol); if(o.view) setView(o.view); if(o.spin!=null&&!exam){ spin=!!o.spin; spinWas=spin; cSpin.checked=spin; } };
+ pick(m);
+ return ()=>S.dispose(); }};
+/* live preview. Home-page hero: a bubbling flask brews each molecule in turn; it rises out of the neck, spins, then pops.
+   {bare:true} (labs page banner): just the spinning molecule. Stops itself when its canvas leaves the page. */
+const FLASK=typeof Path2D==='function'?{glass:new Path2D('M172 40h56v8h-6v62l58 104q6 14-10 14H130q-16 0-10-14l58-104V48h-6z'),liq:new Path2D('M152 168h96l32 46q6 14-10 14H130q-16 0-10-14z')}:null;
+L.shapes.preview=(cv,opt)=>{ opt=opt||{}; const bare=!!opt.bare||!FLASK, ids=opt.ids||['nh3','sf6','h2o','pcl5','ch4','xef4','bf3','co2'], x=cv.getContext('2d'), red=LK.reduced();
+ const P=LK.P(), body=P.body, mono=P.mono, disp=getComputedStyle(document.documentElement).getPropertyValue('--f-display').trim()||'sans-serif', ac='#ac90ff', INK='#140a04', CREAM='#fff4ea';
+ const pal={rim:'rgba(0,0,0,.5)',accent:ac,lpA:rgba(ac,0.62),lpB:rgba(ac,0.3),lpC:rgba(ac,0.06),lpLine:rgba(ac,0.75),lpGlow:rgba(ac,0.55)};
+ const HOLD=5.2, RISE=0.9, POP=0.32; let W=0, H=0, k=0, t=red?RISE:0, yaw=0.5, last=performance.now(), drip=0;
+ const bub=[], ease=u=>1-Math.pow(1-clamp(u,0,1),3), back=u=>{ u=clamp(u,0,1)-1; return 1+2.6*u*u*u+1.6*u*u; };
+ const fit=()=>{ const r=cv.getBoundingClientRect(), d=Math.min(2,window.devicePixelRatio||1); W=r.width; H=r.height; cv.width=Math.max(1,Math.round(W*d)); cv.height=Math.max(1,Math.round(H*d)); x.setTransform(d,0,0,d,0,0); };
+ let ro=null; try{ ro=new ResizeObserver(()=>{ fit(); if(red) draw(); }); ro.observe(cv); }catch(e){} fit();
+ /* where things go: words on the left (wide cards only), the flask, then the molecule hovering beside its neck */
+ const lay=()=>{ const wide=W>=420, tw=wide?Math.min(210,W*0.4):0, rest=W-tw, fs=Math.min(H*0.56/188,rest*0.34/172), fx=tw+rest*(wide?0.22:0.26), fy=H-14;
+  return {wide,fs,fx,fy,mouth:{x:fx,y:fy-188*fs},liquid:fy-60*fs,pix:Math.min(H*0.3,rest*0.2),mx:tw+rest*0.7,my:H*0.43}; };
+ const spawn=(L,n,burst)=>{ for(let i=0;i<n;i++) bub.push(burst?{x:L.mouth.x+(Math.random()-0.5)*8,y:L.mouth.y+4,vx:20+Math.random()*40,vy:-30-Math.random()*50,r:1.8+Math.random()*2.4,life:0,max:1.1+Math.random()*0.6,out:true}:{x:L.fx+(Math.random()-0.5)*26*L.fs,y:L.liquid+4,vx:0,vy:-34-Math.random()*26,r:(3+Math.random()*3)*L.fs,life:0,max:9,out:false}); };
+ const popAt=(px,py)=>{ for(let i=0;i<9;i++){ const a=i/9*Math.PI*2+Math.random()*0.4, s=40+Math.random()*50; bub.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s-10,r:1.4+Math.random()*2,life:0,max:0.45+Math.random()*0.3,out:true,pop:true}); } };
+ const step=(dt,L,M)=>{ drip-=dt; if(drip<=0){ drip=0.28+Math.random()*0.25; spawn(L,1,false); }
+  for(let i=bub.length-1;i>=0;i--){ const b=bub[i]; b.life+=dt;
+   if(!b.out){ b.vy-=dt*10; b.x+=(L.fx-b.x)*Math.min(1,dt*3)+Math.sin((b.life+i)*7)*0.15; b.y+=b.vy*dt; if(b.y<L.mouth.y){ b.out=true; b.vx=12+Math.random()*24; b.life=0; b.max=0.9+Math.random()*0.7; } }
+   else { if(!b.pop){ b.vx+=((L.mx-b.x)*0.6-b.vx*0.4)*dt; b.vy+=(-8-b.vy*0.3)*dt; } else { b.vx*=Math.exp(-dt*3); b.vy*=Math.exp(-dt*3); } b.x+=b.vx*dt; b.y+=b.vy*dt; }
+   if((b.out&&b.life>b.max)||b.y<-10) bub.splice(i,1); } };
+ const drawBubbles=(inside)=>{ bub.forEach(b=>{ if(b.out===inside) return; const al=b.out?clamp(1-b.life/b.max,0,1):1; if(al<=0.01) return; x.save(); x.globalAlpha*=al; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fillStyle=b.pop?'#ffd3b5':CREAM; x.fill(); x.lineWidth=b.out?1:1.6; x.strokeStyle=b.out?'rgba(255,200,160,.55)':INK; x.stroke(); x.restore(); }); };
+ const drawFlask=L=>{ /* a soft glow and a shadow so it sits on the bench */
+  x.save(); const gl=x.createRadialGradient(L.fx,L.fy-70*L.fs,4,L.fx,L.fy-70*L.fs,130*L.fs); gl.addColorStop(0,'rgba(255,122,47,.28)'); gl.addColorStop(1,'rgba(255,122,47,0)'); x.fillStyle=gl; x.fillRect(L.fx-140*L.fs,L.fy-210*L.fs,280*L.fs,220*L.fs);
+  x.translate(L.fx,L.fy+3); x.scale(1,0.16); const sh=x.createRadialGradient(0,0,0,0,0,100*L.fs); sh.addColorStop(0,'rgba(0,0,0,.55)'); sh.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=sh; x.fillRect(-100*L.fs,-100*L.fs,200*L.fs,200*L.fs); x.restore();
+  x.save(); x.translate(L.fx,L.fy); x.scale(L.fs,L.fs); x.translate(-200,-228); x.lineJoin='round'; x.lineWidth=4; x.strokeStyle=INK;
+  x.fillStyle=CREAM; x.fill(FLASK.glass); x.stroke(FLASK.glass); x.fillStyle='#ff7a2f'; x.fill(FLASK.liq); x.stroke(FLASK.liq);
+  x.lineWidth=3; [[176,204,7],[222,196,5],[204,214,4]].forEach(([bx,by,br])=>{ x.beginPath(); x.arc(bx,by,br,0,7); x.fillStyle=CREAM; x.fill(); x.stroke(); });
+  x.restore(); };
+ const drawMol=(M,cx,cy,sc,al,floor)=>{ const rot={yaw,pitch:0.3}, pr=projector(M,rot,cx,cy,sc,0.085,false); x.save(); x.globalAlpha*=al;
+  const A=M.atoms.map(at=>{ const q=pr(at.p); q.r=radOf(at)*sc*q.f; q.a=at; return q; }), items=[];
+  if(floor!=null) A.forEach(q=>{ const sy=floor+q.z*sc*0.1, rx=q.r*1.7; x.save(); x.translate(q.x,sy); x.scale(1,0.2); const g=x.createRadialGradient(0,0,0,0,0,rx); g.addColorStop(0,'rgba(0,0,0,.42)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(-rx,-rx,2*rx,2*rx); x.restore(); });
+  M.bonds.forEach(([i,j,o])=>{ const ai=M.atoms[i], aj=M.atoms[j], u=V.unit(V.sub(aj.p,ai.p)), s=pr(V.add(ai.p,V.mul(u,radOf(ai)*0.9))), mid=pr(V.mul(V.add(ai.p,aj.p),0.5)), en=pr(V.sub(aj.p,V.mul(u,radOf(aj)*0.9)));
+   const w=sc*(o===2?0.085:0.125); let ox=0, oy=0; if(o===2){ const dx=en.x-s.x, dy=en.y-s.y, l=Math.hypot(dx,dy)||1; ox=-dy/l*w*0.72; oy=dx/l*w*0.72; }
+   [[s,mid,ELC[ai.e]],[mid,en,ELC[aj.e]]].forEach(([p1,p2,col])=>{ const ww=w*(p1.f+p2.f)/2; items.push({z:(p1.z+p2.z)/2,d:()=>{ if(o===2) [1,-1].forEach(m=>stick(x,{x:p1.x+m*ox,y:p1.y+m*oy},{x:p2.x+m*ox,y:p2.y+m*oy},ww,col)); else stick(x,p1,p2,ww,col); }}); }); });
+  M.lps.forEach(([i,d])=>{ const q=pr(V.add(M.atoms[i].p,V.mul(d,0.55))); items.push({z:q.z,d:()=>lobe(x,q,rotDir(d,rot,false),sc*q.f,pal,false)}); });
+  A.forEach(q=>items.push({z:q.z,d:()=>{ ball(x,q,ELC[q.a.e],pal); const fz=clamp(-q.z/M.R,0,1)*0.3; if(fz>0.02){ x.save(); x.globalAlpha*=fz; x.fillStyle='#12060c'; x.beginPath(); x.arc(q.x,q.y,q.r,0,7); x.fill(); x.restore(); }
+   if(q.r>8) fText(x,q.a.e,q.x,q.y+0.5,{size:clamp(q.r*0.62,9,16),weight:700,font:body,col:tone(ELC[q.a.e]).txt,align:'center',base:'middle'}); }}));
+  items.sort((p,q)=>p.z-q.z).forEach(it=>it.d()); x.restore(); };
+ const draw=()=>{ if(W<10||H<10) return; const M=MOLS[ids[k]];
+  if(bare){ const a=clamp(Math.min(t/0.45,(HOLD-t)/0.45),0,1), e=ease(a), pix=Math.min(H*0.37,W*0.4); x.clearRect(0,0,W,H); drawMol(M,W/2,H*0.47,pix/M.R*(0.86+0.14*e),a,H*0.47+pix*1.02); return; }
+  const L=lay();
+  const bg=x.createRadialGradient(L.mx,H*0.42,6,W*0.6,H*0.5,Math.max(W,H)*0.85); bg.addColorStop(0,'#3d1e0b'); bg.addColorStop(1,'#12060c'); x.fillStyle=bg; x.fillRect(0,0,W,H);
+  x.save(); x.strokeStyle='rgba(255,178,122,.07)'; x.lineWidth=1; x.beginPath(); for(let g=8;g<W;g+=26){ x.moveTo(g+0.5,0); x.lineTo(g+0.5,H); } for(let g=10;g<H;g+=26){ x.moveTo(0,g+0.5); x.lineTo(W,g+0.5); } x.stroke(); x.restore();
+  /* the molecule's life: rises out of the neck, hovers and spins, then pops */
+  const up=red?1:t/RISE, popping=!red&&t>HOLD-POP, pv=popping?(t-(HOLD-POP))/POP:0, ue=ease(up), sb=back(up);
+  const qx=(1-ue)*(1-ue)*L.mouth.x+2*(1-ue)*ue*L.mouth.x+ue*ue*L.mx, qy=(1-ue)*(1-ue)*L.mouth.y+2*(1-ue)*ue*(L.my-L.pix*0.6)+ue*ue*L.my;
+  const al=clamp(up*3,0,1)*(1-pv), scl=(0.12+0.88*sb)*(1+0.3*pv);
+  /* words */
+  const lx=Math.max(16,W*0.045), textA=clamp(up*2,0,1)*(1-pv);
+  if(L.wide){ const ty=H*0.24;
+   x.save(); x.font=`600 10.5px ${mono}`; x.fillStyle='#ffb07f'; x.textBaseline='alphabetic'; x.fillText('FEATURED LAB',lx,ty); x.restore();
+   fText(x,'3D shapes',lx,ty+29,{size:27,weight:700,font:disp,col:'#ffffff'}); fText(x,'of molecules',lx,ty+56,{size:27,weight:700,font:disp,col:'#ffffff'});
+   x.save(); x.globalAlpha=textA; const fw=fText(x,M.title,lx,ty+86,{size:17,weight:700,font:body,col:'#ffd3b5'}); fText(x,'· '+M.ang,lx+fw+7,ty+86,{size:13,weight:600,font:body,col:'#ff9a5c'});
+   fText(x,M.shape.toLowerCase(),lx,ty+104,{size:12.5,weight:500,font:body,col:'#c9a184'}); x.restore(); }
+  else { x.save(); x.font=`600 10px ${mono}`; x.fillStyle='#ffb07f'; x.textBaseline='alphabetic'; x.fillText('FEATURED LAB · 3D SHAPES',lx,22); x.restore();
+   x.save(); x.globalAlpha=textA; fText(x,M.title,lx,43,{size:17,weight:700,font:body,col:'#ffd3b5'}); fText(x,M.shape.toLowerCase(),lx,59,{size:11.5,weight:500,font:body,col:'#c9a184'}); x.restore(); }
+  drawFlask(L);
+  drawBubbles(false);
+  drawBubbles(true);
+  if(al>0.01) drawMol(M,qx,qy,L.pix/M.R*scl,al,null); };
+ const frame=now=>{ if(!cv.isConnected){ if(ro) ro.disconnect(); return; } const dt=Math.min(0.05,Math.max(0,(now-last)/1000)); last=now;
+  if(!red){ yaw+=dt*0.6; t+=dt;
+   if(!bare&&W>10){ const L=lay(); if(t>=HOLD-POP&&t-dt<HOLD-POP) popAt(L.mx,L.my); if(t>=HOLD){ t=0; k=(k+1)%ids.length; spawn(L,7,true); } step(dt,L); }
+   else if(t>=HOLD){ t=0; k=(k+1)%ids.length; } }
+  if(!document.hidden) draw(); if(!red) requestAnimationFrame(frame); };
+ requestAnimationFrame(frame); };
+}
 
 /* ======================= INTERACTIVE SPECTRA ======================= */
 const SPX={

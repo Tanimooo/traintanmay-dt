@@ -13,7 +13,7 @@
   ];
   try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
-  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261121d'; document.head.appendChild(sj); }
+  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261121g'; document.head.appendChild(sj); }
   /* shared by every app: loading a backup only adds (never removes), and clearing progress asks three times */
   window.ttAddIn = function (cur, inc) { return window.ttSave && ttSave.merge ? ttSave.merge(cur, inc) : Object.assign({}, inc, cur); };
   window.ttSure3 = function (what, fn) {
