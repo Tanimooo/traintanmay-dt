@@ -1,108 +1,94 @@
-# TrainTanmay: 5 videos a day, plan
+# TrainTanmay: 5 videos a day, real exam questions solved step by step
 
-Goal: grow @traintanmay with short vertical videos (9:16, TikTok / YT Shorts / Reels) that
-**teach something real using the site's own labs and visualisers**, so every video is also a
-demo of the product. One idea per video. The site is the visual; no stock footage.
-
----
-
-## 1. Why the last batch underperformed, and the rules that fix it
-
-| Problem last time | Rule now |
-|---|---|
-| Promo-first ("what's new", feature tours): nobody scrolls for an ad | **Lesson first, plug last.** The app appears as *the tool that shows the answer*, and the name only shows up in the last 2 s |
-| Slow openings (logos, titles, music build-up) | **Hook in frame 1:** a question or a bold claim on screen *and* something already moving. No intro card, ever |
-| Edits that only work with a trending song added by hand | Every video ships **finished**: own voice + own music, so it can be posted via Buffer to all platforms unchanged |
-| Long (60–80 s) and spread across several ideas | **20–45 s**, one concept, one "aha" |
-| Text too small, under the UI overlays | Captions ≥ 64 px at 1080 w, inside the safe zone (top 220 px and bottom 380 px kept clear) |
-| Pretty motion graphics that didn't show the site | ≥ 70 % of screen time is **real lab footage** (Playwright recordings of the live site) |
-
-Every video uses the same beat structure:
-`0–1.5 s hook → 1.5–5 s stakes ("80 % of students get this wrong") → body → payoff/aha → 2 s plug + loop line`
+**Decision (22 Nov 2026):** no edits. No beat-cut montages, motion-graphic ads, loops or trend
+edits. Every video is **one real past-paper question, solved step by step**, and it ends on the
+same question inside TrainTanmay.
 
 ---
 
-## 2. The 5 daily formats (one slot each)
+## 1. The format (one template for all 5 daily videos)
 
-### 1. TRAP: "You'll get this wrong" quiz (30–40 s, narrated)
-Proven template (`promo/source/quiz/`). A–D options on screen at 0:00, a 3 s countdown, the
-tempting wrong answer crossed out in red, then a step-by-step reveal *using a lab* (not just
-text), the answer in green, a "comment your answer" prompt and a loop line.
-**Why it works:** comments ("I said B 😭") and rewatches drive the algorithm.
+| Time | What's on screen | Voice |
+|---|---|---|
+| 0:00 | The **real question**, cropped from the official paper, with the source on a tag: *"ENGAA 2019 · Q16"* | "This is one of the hardest questions on the 2019 ENGAA. Pause and try it." |
+| 0:03 | The same question plus a thin 3 s timer bar | (silence) |
+| 0:06 | **Working appears line by line**, whiteboard style, in the site's fonts and maths typesetting. The current line is highlighted; nothing else moves | Explains each line: *why* you'd do this step, not only *what* it is |
+| ~mid | **The trap:** the wrong option most people pick is crossed out | "Most people pick B because they forget the sign flip…" |
+| (optional, 5–10 s) | The site's matching **lab or visualiser** confirming the result (circuit sandbox reading, graph plot, molecule shape), used only when it actually adds something | "And you can see it here: …" |
+| end | **Answer** boxed in green, then 3 s of the same question open on TrainTanmay | "Every ESAT question since 2016, solved, free. TrainTanmay, link in bio." |
 
-### 2. SEE IT: "Your textbook can't show you this" (35–50 s, narrated)
-A concept that's hard to picture, shown moving in the lab. Example: two travelling waves
-literally *becoming* a stationary wave in *Wave on a string*. Hook: "This is what a
-stationary wave actually is."
-**Why it works:** strong visual payoff, gets saved and shared to study group chats.
+- **Length:** 45–90 s. A long multi-part A-level question is split into Part 1 / Part 2 (series hook).
+- **Audio:** voice only (Kokoro TTS, calm pace, ~150 wpm). No music, sound effects or transitions.
+- **Captions:** big word-by-word captions in the safe zone. Working sits in the middle third.
+- **Accuracy:** every answer is checked against the official answer key or mark scheme, and the arithmetic
+  is checked numerically by script before rendering. Wrong maths in a "solved" video would kill trust.
+- **Sourcing:** show only the one question, always with the paper and question number cited. Never the
+  whole paper. (Same approach the site uses: it shows ESAT questions live from the official
+  paper rather than re-hosting them.)
 
-### 3. HARD Q: "Hardest question on the paper in 60 s" (45–60 s, narrated)
-A real exam-style problem (A-level / ESAT / Further Maths) solved line by line, with the
-visualiser proving the result at the end. Hook: the question, plus "most people stop here."
-**Why it works:** high-intent viewers (the people who'd actually use the site), long watch time.
+## 2. The 5 daily slots
 
-### 4. MARKS: "Stop losing marks on ___" (20–30 s, fast cut, narrated)
-Three quick mark-scheme mistakes with a red pen. Each fix is shown on the site's notes,
-flashcards or drills. Hook: "Examiners take marks off for this every single year."
-**Why it works:** quick, practical and saveable. Mock season is *now* (Nov–Jan).
+| Slot (UK) | Series | Source |
+|---|---|---|
+| 07:30 | **ESAT Maths in 60 s** | TMUA / ENGAA / NSAA maths: 424 real questions in the site's bank, all with worked solutions + traps |
+| 12:30 | **A-level Physics: hardest question** | OCR A H556 past papers (the site's Physics app) |
+| 16:30 | **A-level Maths / Further Maths** | Edexcel past papers (the site's Maths app) |
+| 18:30 | **A-level Chemistry** | OCR A H432 past papers (the site's Chemistry app) |
+| 20:30 | **ESAT Physics in 60 s** | ENGAA / NSAA physics: 149 real questions in the bank |
 
-### 5. LOOP: satisfying / no-voice visual (8–15 s, original music, one line of text)
-A mesmerising lab loop with a single text hook. Examples: Maclaurin terms snapping onto sin x,
-Voyager's Grand Tour, ripple-tank interference, CNC G-code drawing a part.
-"Wait for it…" / "Physics is lowkey beautiful."
-**Why it works:** very cheap to make, high loop count, pulls in non-students and fills the reach slot.
+Mock season is now (Nov–Jan), so A-level gets 3 of the 5 daily slots. Questions are picked
+for: high difficulty, a clear trap, a solution that fits in 90 s, and a topic that has a lab on the site.
 
-**Posting slots (UK):** 07:30 LOOP · 12:30 MARKS · 16:30 TRAP · 18:30 SEE IT · 20:30 HARD Q.
-TikTok + YT Shorts get all 5. Instagram gets the best 1–2 a day (Reels penalise volume).
+**Platforms:** TikTok + YouTube Shorts get all 5. Instagram gets the best 1–2 a day.
+YouTube title pattern: *"ENGAA 2019 Q16: the circuits question everyone gets wrong"*.
 
-**Subject mix per week (35 videos):** Physics 12 · Maths/Further 10 · Chemistry 8 · ESAT 3 · D&T 2.
-(Weighted to where the site's labs are richest and where the audience is biggest.)
+## 3. Week 1: ESAT picks (real questions, all difficulty 4–5 in the bank)
 
----
+| Day | 07:30 ESAT Maths | 20:30 ESAT Physics |
+|---|---|---|
+| 1 | TMUA 2020 Q20: quadratic roots & discriminant | ENGAA 2019 Q16: series-parallel resistors (+ *Circuit sandbox*) |
+| 2 | ENGAA 2020 Q29: perpendicular lines & triangle area | ENGAA 2022 Q16: EM induction voltage (+ *EM induction* lab) |
+| 3 | TMUA 2019 Q11: simultaneous log equations | ENGAA 2018 Q22: terminal velocity & drag (+ *Terminal velocity* lab) |
+| 4 | TMUA 2016 Q15: minimising the gradient of a curve | ENGAA 2020 Q18: spring energy & conservation (+ *Springs* lab) |
+| 5 | ENGAA 2022 Q39: exponential equation by substitution | NSAA 2021 Q39: hydrostatic pressure in layers |
+| 6 | TMUA 2019 Q18: shortest distance, curve to line (+ graph plot) | ENGAA 2022 Q20: ideal gas pressure & density (+ *Ideal gas* lab) |
+| 7 | TMUA 2023 Q05: rectangle in a square, area optimisation | NSAA 2023 Q37: motor effect on a current loop (hardest in the bank) |
 
-## 3. First week calendar (35 videos)
+## 4. Week 1: A-level topics (questions picked from real papers once access is on, see §6)
 
-Each entry names the lab or visualiser it's filmed in.
+| Day | 12:30 Physics (OCR A) | 16:30 Maths / FM (Edexcel) | 18:30 Chemistry (OCR A) |
+|---|---|---|---|
+| 1 | Capacitor discharge: time constant / half-life | Integration by parts (the loop trick) | Kp from equilibrium moles |
+| 2 | Circular motion: vertical circle / banked track | Parametric curves: area or tangent | Buffer pH calculation |
+| 3 | Gravitational fields: orbit / escape speed | Vectors: shortest distance | Born–Haber cycle |
+| 4 | SHM: energy & max speed | Mechanics: ladder against a wall (moments + friction) | Rate equation from initial-rates data |
+| 5 | Photoelectric effect: work function from a graph | Hypothesis test (binomial), wording for full marks | NMR / IR structure deduction |
+| 6 | Stationary waves: harmonics in a pipe | Proof by contradiction / induction | Electrode potentials & cell EMF |
+| 7 | Internal resistance from a graph | Projectiles with a vector or calculus twist | Organic synthesis route (multi-step) |
 
-| Day | LOOP | MARKS | TRAP | SEE IT | HARD Q |
-|---|---|---|---|---|---|
-| **1** | Maclaurin terms hugging sin x (*Maclaurin & Taylor*) | Physics: units, sig figs, "show that" (*Physics notes*) | Satellite moved to 2× orbit radius: speed? 1/√2 (trap: ½) (*Orbits & grav fields*) | Brighter light ≠ faster electrons (*Photoelectric effect*) | Min speed at top of a vertical circle, √(gr) (*Motion in a vertical circle*) |
-| **2** | Ripple-tank interference (*Ripple tank*) | Chem: curly arrows start from the bond/lone pair (*Chem notes*) | Heat it up 10 °C, rate ~doubles. Why? (trap: "twice the collisions") (*Boltzmann & collisions*) | Two travelling waves become a stationary wave (*Wave on a string*) | Line tangent to a circle: find k via the discriminant (ESAT) (*Coordinate geometry*) |
-| **3** | Voyager 2 Grand Tour (*Famous space missions*) | Maths: +C, limits, "hence" (*Maths drills*) | 2¹⁰⁰ vs 3⁶⁰: which is bigger? (ESAT logs) (*ESAT bank*) | Volume of revolution: the solid actually spins (*Volumes of revolution*) | Capacitor to half charge: t = RC ln 2 (*Capacitor charge/discharge*) |
-| **4** | Heating curve plateau (*Heating curve & latent heat*) | Physics: graphs (best fit, gradient triangles, axes) (*Data grapher*) | Double the SHM amplitude: period? unchanged (*Simple harmonic motion*) | Shapes: why water is bent, 104.5° (*3D shapes of molecules*) | Banked track with no friction: v = √(rg tanθ) (*Conical pendulum & banked tracks*) |
-| **5** | CNC G-code drawing a part (*D&T CNC simulator*) | Chem: titration write-ups (concordant, units, sig figs) (*Titration lab*) | Area between sin x and the axis, 0→2π (trap: 0, answer: 4) (*Area under a curve*) | Resonance: the amplitude explodes (*Forced oscillations*) | Projectile from a cliff: why 45° is NOT the max range (*Projectile launcher*) |
-| **6** | Central limit theorem: dice → bell curve (*CLT*) | D&T: name specific materials, not "plastic" (*Materials explorer*) | Catalyst: does equilibrium shift? no (*Equilibrium & Le Chatelier*) | Double slit: fringes build up (*Double slit & grating*) | Geometric series trick for an ESAT sum (*ESAT bank*) |
-| **7** | Halley's Comet speeding up at perihelion (*Famous space missions*) | Physics: circuits (ammeter/voltmeter placement, EMF vs pd) (*Circuit sandbox*) | Gears: 10-tooth driver, 40-tooth driven. Speed *and* direction? (*Gear trains*) | Matrix = what it does to the grid (*2D matrix transformations*) | Internal resistance: max power when R = r (*Internal resistance & max power*) |
+## 5. Production pipeline (per video)
 
----
+1. **Pick** the question; pull the answer key/mark scheme and the site's worked solution (ESAT bank
+   `esat/data/exp_*.json` already has a step-by-step solution and the trap for every question).
+2. **Script** (`promo/daily/<date>/<slot>.json`): hook, one line of narration per working step, the trap,
+   an optional lab moment, and the outro. Check the numbers with a quick script.
+3. **Render:** an HTML template draws the cropped question + KaTeX working line by line and is
+   stepped frame by frame → ffmpeg (1080×1920, 30 fps; no fancy motion, so 30 is plenty).
+4. **Lab moment / outro:** Playwright recording of the live site (phone size), with the question open in the app.
+5. **Voice + captions:** Kokoro TTS, word timings → captions; mix to −14 LUFS.
+6. **Deliver:** MP4 + cover frame + `post.md` (YT title, caption, 3–5 hashtags, pinned comment
+   "What did you get? 👇") → committed and dropped into a dated Google Drive folder for Buffer.
 
-## 4. Backlog (next weeks, same five slots)
+**Build order:** one template, then a **pilot of 2** (one ESAT, one A-level) for review before the daily
+5 start. That way style problems are fixed once, not 35 times.
 
-- **TRAP:** heavier ball vs lighter ball dropped (*Terminal velocity*, air resistance changes the answer) · add a parallel resistor, total R? · 3 half-lives left? → "what fraction has *decayed*" · E/Z vs cis/trans trap (*3D shapes*) · Type I error definition (*Critical regions*) · centre of mass of an L-shape outside the shape? (*Centre of mass*) · lever: double the distance, force? (*D&T Levers*)
-- **SEE IT:** electromagnetic induction (*EM induction*) · ideal gas: pressure is just collisions (*Ideal gas in a box*) · NMR splitting n+1 (*Interactive spectra*) · titration curve shapes (*Titration lab*) · polar curves drawing themselves · hyperbolic cosh = hanging chain · Newton–Raphson failing (*N–R & iteration*) · alpha scattering (*Alpha-particle scattering*) · HR diagram: the Sun's life (*HR diagram*) · TIR & optical fibres (*Refraction & TIR*)
-- **HARD Q:** collisions with restitution (*Collisions & restitution*) · χ² test in 60 s · 3 planes: no solution / sheaf (*Three planes*) · electrochemical cell EMF (*Electrochemical cell builder*) · charged particle in a B-field radius (*E and B fields*) · second-order ODE damping cases (*Second-order ODEs*) · binding energy per nucleon: fission vs fusion
-- **MARKS:** organic naming · stats hypothesis wording · moments ("about which point?") · required practicals (PAGs) · vectors notation · energy-level diagrams
-- **LOOP:** Lissajous-like SHM traces · Artemis II path · wave machine · stress–strain to fracture · smart-materials playground · conic sections morphing · recurrence relations cobweb
+## 6. Access needed
 
-Series hooks that build return viewers: "**Trap of the day #N**", "**60-second hardest question #N**".
+- **ESAT/TMUA papers** (esat-tmua.ac.uk downloads): ✅ reachable from the session.
+- **A-level papers + mark schemes:** ❌ blocked here (physicsandmathstutor.com, ocr.org.uk,
+  qualifications.pearson.com). Fix: allow `pmt.physicsandmathstutor.com` in this cloud
+  environment's network settings, or upload the PDFs (paper + mark scheme) for each week.
 
----
-
-## 5. How each video gets made (daily pipeline)
-
-1. **Script** (`promo/daily/<date>/<slot>.py`): hook line, narration lines, lab actions with timings, on-screen text.
-2. **Film** the lab: Playwright on the live site at 360×640, dsf 3 → 1080×1920, 60 fps, scripted
-   slider/button moves (extends `promo/source/rec.js`). Overlays are rendered as an HTML canvas on top.
-3. **Voice:** Kokoro TTS (`af_heart`, plus a second voice for variety), at +5–8 % speed for Shorts pacing.
-   Word-by-word captions generated from the TTS timings.
-4. **Music:** original numpy/scipy beds, 4–5 reusable loops per format, ducked under the voice, mixed to −14 LUFS.
-5. **Export:** MP4 + cover frame + `post.md` (title for YT, caption, 3–5 hashtags, pinned comment).
-6. **Deliver:** commit to the branch and drop into a Google Drive folder per day for Buffer.
-
-**Build order:** first one reusable template per format (TRAP exists; SEE IT, HARD Q, MARKS and LOOP
-are new). Then a **pilot day of 5**, which you review before style is locked. After that it's daily batches.
-
-## 6. What we measure (review after 14 days)
-- 3-second hold rate (is the hook working?), average % watched, rewatches/loops, comments, shares, link clicks.
-- Kill the weakest format after 2 weeks and give its slot to the best one. Re-test hooks on the top 3
-  topics with a new first line ("Version B").
+## 7. Review after 14 days
+3-second hold, average % watched, comments ("I got C 😭"), saves, link clicks per series.
+Give more slots to the series that wins; re-test hooks on the weakest.
