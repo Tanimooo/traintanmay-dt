@@ -1,0 +1,95 @@
+rules_version = '2';
+// Firestore rules for TrainTanmay (project traintanmay26).
+// Paste the whole file into Firebase console → Firestore Database → Rules, and Publish.
+//   users/{uid}                 one synced save per person (save.js): only that person can read or write it
+//   leagues/{CODE}              study leagues (league.js): no size limit; the leader (owner) can rename, remove or promote members
+//   leagues/{CODE}/scores/{uid} each member's minutes this week: members can read, only you can write yours
+//   memberships/{uid}           the leagues you are in (at most 5): you must list a league here to start or join it
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function okName(n, lo, hi) { return n is string && n.size() >= lo && n.size() <= hi && n.matches("^[A-Za-z0-9 '._-]+$"); }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /memberships/{uid} {
+      function L(c) { return /databases/$(database)/documents/leagues/$(c); }
+      function before() { return resource == null ? [] : resource.data.codes; }
+      function after() { return request.resource.data.codes; }
+      function added() { return after().removeAll(before()); }
+      function removed() { return before().removeAll(after()); }
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['codes'])
+        && after() is list && after().size() <= 5
+        // add one league at a time, and only one you are in once this write is done
+        && (added().size() == 0 || (added().size() == 1 && uid in getAfter(L(added()[0])).data.members))
+        // drop one league at a time, and only one you are no longer in
+        && (removed().size() == 0 || (removed().size() == 1
+              && (!existsAfter(L(removed()[0])) || !(uid in getAfter(L(removed()[0])).data.members))));
+      allow delete: if false;
+    }
+
+    match /leagues/{code} {
+      function listed() { return code in getAfter(/databases/$(database)/documents/memberships/$(request.auth.uid)).data.codes; }
+      function me() { return request.auth.uid; }
+      function nu() { return request.resource.data; }
+      function old() { return resource.data; }
+      function added() { return nu().members.removeAll(old().members); }
+      function removed() { return old().members.removeAll(nu().members); }
+      function onlyMyName() { return nu().names.diff(old().names).affectedKeys().hasOnly([me()]); }
+
+      // anyone signed in can look a code up (to join it); listing only finds leagues you are in
+      allow get: if signedIn();
+      allow list: if signedIn() && me() in resource.data.members;
+
+      allow create: if signedIn()
+        && code.matches('^[A-HJ-NP-Z2-9]{6}$')
+        && nu().keys().hasOnly(['name', 'owner', 'members', 'names', 'created'])
+        && okName(nu().name, 3, 24)
+        && nu().owner == me()
+        && nu().members == [me()]
+        && nu().names.keys().hasOnly([me()]) && okName(nu().names[me()], 2, 16)
+        && nu().created == request.time
+        && listed();
+
+      // a rename changes one name, recorded in 'edited', and that name must be 2-16 allowed characters
+      function renamedOk() { return nu().edited is string && nu().edited in old().members
+        && nu().names.diff(old().names).affectedKeys().hasOnly([nu().edited]) && okName(nu().names[nu().edited], 2, 16); }
+      function sameMembers() { return added().size() == 0 && removed().size() == 0; }
+
+      allow update: if signedIn()
+        && nu().diff(old()).affectedKeys().hasOnly(['members', 'names', 'owner', 'edited'])
+        && nu().members is list
+        && nu().names.keys().hasOnly(nu().members)
+        && (
+          // join, with your name
+          (added() == [me()] && removed().size() == 0 && nu().owner == old().owner && onlyMyName() && okName(nu().names[me()], 2, 16) && listed()
+            && nu().get('edited', null) == old().get('edited', null))
+          // rename: yourself, or anyone if you are the leader
+          || (me() in old().members && sameMembers() && nu().owner == old().owner && renamedOk() && (nu().edited == me() || old().owner == me()))
+          // the leader hands the league to another member
+          || (old().owner == me() && sameMembers() && nu().owner in old().members && nu().names == old().names && nu().get('edited', null) == old().get('edited', null))
+          // leave (if you lead it, it passes to someone still in it)
+          || (removed() == [me()] && added().size() == 0 && onlyMyName()
+              && (old().owner != me() ? nu().owner == old().owner : (nu().members.size() == 0 || nu().owner in nu().members)))
+          // the leader removes someone else
+          || (old().owner == me() && nu().owner == me() && removed().size() == 1 && added().size() == 0 && !(me() in removed())
+              && nu().names.diff(old().names).affectedKeys().hasOnly(removed()))
+        );
+
+      allow delete: if false;
+
+      match /scores/{uid} {
+        function league() { return get(/databases/$(database)/documents/leagues/$(code)).data; }
+        allow read: if signedIn() && request.auth.uid in league().members;
+        allow create, update: if signedIn() && request.auth.uid == uid && uid in league().members
+          && request.resource.data.keys().hasOnly(['dev', 'updated'])
+          && request.resource.data.dev is map && request.resource.data.dev.size() <= 8;
+        allow delete: if signedIn() && request.auth.uid == uid;
+      }
+    }
+  }
+}

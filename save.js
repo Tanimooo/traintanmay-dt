@@ -13,7 +13,7 @@
     { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] }
   ];
   var INCLUDE = /^(tt-|esat\.|sketchguessr-)/;
-  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-lastbackup$|esat\..*\.probe$)/;
+  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|esat\..*\.probe$)/;
   var LAST = 'tt-lastbackup', UNDO = 'tt-restore-undo';
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/save\.js[^/]*$/, '');
 
@@ -235,7 +235,7 @@
     if (sdkP) return sdkP;
     sdkP = new Promise(function (ok, no) {
       if (window.ttCloudSDK) return ok();
-      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261122a'; sc.async = true;
+      var sc = document.createElement('script'); sc.src = BASE + 'cloud/firebase.js?v=20261122b'; sc.async = true;
       sc.onload = ok; sc.onerror = function () { no(new Error('load')); };
       document.head.appendChild(sc);
     }).then(function () {
@@ -580,5 +580,7 @@
   /* any element with data-tt-save opens the panel */
   document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-tt-save]'); if (t) { e.preventDefault(); open(); } });
 
-  window.ttSave = { open: open, sync: sync, collect: collect, parse: parseAny, merge: mergeVal, confirm3: confirm3, _normalise: normalise, _toCode: toCode };
+  window.ttSave = { open: open, sync: sync, collect: collect, parse: parseAny, merge: mergeVal, confirm3: confirm3, _normalise: normalise, _toCode: toCode,
+    /* for the study leaderboards (league.js): the signed-in Google account, and the loaded Firebase SDK */
+    cloud: { sdk: sdk, signIn: signIn, user: function () { return cloud.user; }, ready: function () { return cloud.ready; } } };
 })();

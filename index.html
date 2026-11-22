@@ -304,6 +304,7 @@ footer a{text-underline-offset:3px}
       <a class="pill go" id="resume" href="dt.html" hidden><span id="resumeTxt">Continue</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       <button class="pill" type="button" id="btnInstall" hidden title="Install TrainTanmay as an app">Install app</button>
       <button class="pill" type="button" id="btnSubjects" title="Choose which subjects you take">Your subjects</button>
+      <button class="pill" type="button" data-tt-league title="Weekly study leaderboard with friends"><svg viewBox="0 0 24 24" fill="none" stroke="#ffcf3f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l4.5 4L12 4l4.5 8L21 8l-1.8 10H4.8z"/><path d="M5 21h14"/></svg>Study league</button>
       <button class="pill" type="button" data-tt-save title="Back up or move your progress for every app">Save progress</button>
       <a class="pill" href="https://revisedesk.com" data-feature="revisedesk" target="_blank" rel="noopener" title="Plan your revision on revisedesk.com (opens in a new tab)">Plan your revision ↗</a>
       <a class="pill" href="help.html" data-go="help" data-c="#f6f1e7" data-name="How it works">New here? See how it works</a>
@@ -317,7 +318,8 @@ footer a{text-underline-offset:3px}
 </div>
 
 <script src="features.js?v=20261121"></script>
-<script src="save.js?v=20261122a"></script>
+<script src="save.js?v=20261122b"></script>
+<script src="league.js?v=20261122b" data-notrack></script>
 <script>
 (function(){
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){});
