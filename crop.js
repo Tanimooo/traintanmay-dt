@@ -33,6 +33,9 @@
       .catch(function (e) { delete docs[url]; throw e; }));
   }
   var textCache = {};
+  /* some papers (e.g. older UAT-UK TMUA ones) use a maths font whose digits come out as U+0372–U+037B
+     ("ͳ" for 1, "͵" for 3…) and whose spaces come out as U+0003: read them as the digits and spaces they are */
+  function fixGlyphs(t) { return String(t || '').replace(/[\u0372-\u037B]/g, function (c) { return String(c.charCodeAt(0) - 0x372); }).replace(/\u0003/g, ' '); }
   /* every text item on a page, as {s, x, y (from top), h} in PDF points */
   function pageText(doc, url, n) {
     var k = url + '#' + n;
@@ -40,7 +43,7 @@
       var vp = pg.getViewport({ scale: 1 });
       return pg.getTextContent().then(function (tc) {
         // viewport coordinates, so rotated (landscape) pages such as mark schemes read the right way up
-        var items = tc.items.filter(function (i) { return i.str && i.str.trim(); }).map(function (i) {
+        var items = tc.items.map(function (i) { return Object.assign({}, i, { str: fixGlyphs(i.str) }); }).filter(function (i) { return i.str && i.str.trim(); }).map(function (i) {
           var pt = vp.convertToViewportPoint(i.transform[4], i.transform[5]);
           return { s: i.str.trim(), x: pt[0], y: pt[1], h: Math.hypot(i.transform[2], i.transform[3]) || i.height || 10, w: i.width || 0 };
         });
@@ -111,8 +114,12 @@
   /* scanned PDFs (e.g. handwritten worked solutions) have no real text, only scanning noise:
      a "match" there would be a guess, so they aren't cropped at all */
   var scanned = {};
+  /* papers the app knows are typeset (ttCrop.html({typeset: true, ...})), e.g. UAT-UK's ESAT papers, whose
+     cover, blank pages and maths-heavy first questions can hold too few words for the check below */
+  var typeset = {};
   function isScanned(doc, url) {
     if (url in scanned) return Promise.resolve(scanned[url]);
+    if (url in typeset) return Promise.resolve(scanned[url] = false);
     var n = Math.min(4, doc.numPages), ps = []; for (var p = 1; p <= n; p++) ps.push(pageText(doc, url, p));
     return Promise.all(ps).then(function (all) {
       // count real words, not text pieces: a page of multiple-choice questions is mostly short pieces ("A", "C m", "–1")
@@ -478,6 +485,7 @@
     var fallback = function () { el.innerHTML = window.ttLive.card(card); };
     if (!o.url || !(CORS_OK.test(host(o.url)) || PROXIED.test(host(o.url)))) return fallback();
     el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
+    if (o.typeset) typeset[o.url] = 1;
     var token = el.ttcToken = {};
     open(o.url).then(function (doc) {
       return isScanned(doc, o.url).then(function (sc) {
