@@ -85,3 +85,19 @@ Link in bio 👆 Tag the friend you're beating this week 👀
 ```
 It's 100% free 💸 Which subject should get new features next? 👇
 ```
+
+## Instagram jigsaw edit
+
+`TrainTanmay-insta-jigsaw.mp4`: a 21-second vertical Reel with no music. Shots snap in as jigsaw pieces, cut on the beat at about 157 BPM, and the logo falls into place at the end. Add "Jigsaw Falling Into Place" by Radiohead from Instagram's music library when you post (the file has a silent audio track). Line the song up so the pieces snap together ("Until now.") on a strong beat at about 0:02.
+
+**Caption**
+```
+POV: revision finally clicks 🧩
+
+5 free A level apps. Notes, past papers, 3D labs, instant marking and study leagues to race your mates 🏆
+
+D&T · Physics · Chemistry · Maths · ESAT
+🔗 Link in bio
+
+#alevels #alevelrevision #studygram #sixthform #revision
+```
