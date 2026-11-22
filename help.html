@@ -43,6 +43,10 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 .dysbtn{margin-left:auto;height:36px;min-width:42px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font:700 .95rem 'IBM Plex Sans',sans-serif;cursor:pointer}
 .dysbtn:hover{color:var(--ink)}
 .dysbtn[aria-pressed=true]{background:#1f5fbf;border-color:#1f5fbf;color:#fff}
+.tour{margin:0 0 22px}
+.tour video{display:block;width:100%;border-radius:16px;background:#0e0b22;border:1px solid var(--line);box-shadow:0 18px 40px -24px rgba(10,15,30,.55)}
+.tour.tall video{width:auto;max-width:100%;height:min(78vh,720px);aspect-ratio:9/16;margin:0 auto}
+.tour figcaption{margin-top:8px;font-size:.86rem;color:var(--muted)}
 </style>
 <link rel="stylesheet" href="polish.css?v=1">
 </head>
@@ -56,6 +60,15 @@ html.dys .brand b{font-family:'Barlow Semi Condensed',sans-serif}
 </header>
 <main>
   <h1>How to use TrainTanmay</h1>
+  <figure class="tour" id="tour">
+    <video controls playsinline preload="metadata" poster="promo/howto-wide.jpg" aria-label="Video: a narrated tour of TrainTanmay">
+      <source src="promo/howto-wide.mp4" type="video/mp4">
+    </video>
+    <figcaption>A 3½-minute narrated tour of every app, with subtitles. Prefer reading? Everything is also written out below.</figcaption>
+  </figure>
+  <script>/* phones and other tall screens get the vertical cut */
+  (function(){var f=document.getElementById('tour');if(!window.matchMedia||!matchMedia('(max-aspect-ratio: 1/1)').matches)return;
+  f.className+=' tall';var v=f.querySelector('video');v.poster='promo/howto-tall.jpg';v.querySelector('source').src='promo/howto-tall.mp4';v.load();})();</script>
   <p class="lead">TrainTanmay is a set of free revision sites made by an A level student for other students. Each one puts notes, practice questions, past papers and interactive tools for a subject in one place, so you don't have to hunt across lots of websites.</p>
 
   <div class="card">
