@@ -446,18 +446,20 @@ function estimateCard(s) {
   const ests = estimateSet(s);
   if (!ests.length) return '';
   const rows = ests.map((e) => e.n < EST.minQs
-    ? `<div class="stat"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v" style="font-size:1.2rem">—</div>
+    ? `<div class="stat" style="min-width:210px"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v" style="font-size:1.2rem">—</div>
         <div class="s">needs ${EST.minQs}+ questions (this set had ${e.n})</div></div>`
-    : `<div class="stat"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v">≈ ${e.score.toFixed(1)}</div>
+    : `<div class="stat" style="min-width:210px"><div class="k">${SUBJ_SHORT[e.subject]}</div><div class="v">≈ ${e.score.toFixed(1)}</div>
         <div class="s">likely ${e.lo.toFixed(1)}–${e.hi.toFixed(1)} · ${e.right}/${e.n} right</div></div>`).join('');
-  return `<div class="card" style="margin-top:var(--space-6)" id="r-est">
-      <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:var(--space-4)">
-        <h2>Estimated ESAT score</h2><span class="badge badge-warn">rough guide</span></div>
-      <div class="grid" style="gap:var(--space-3);grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${rows}</div>
-      <p class="muted" style="font-size:var(--text-xs);margin-top:var(--space-4)">On the real 1.0–9.0 scale, where a typical candidate scores about 4.5.
-        UAT-UK doesn't publish a marks-to-score table, so this compares your share of right answers with how candidates scored in October 2026
-        (UAT-UK's published results), assuming a typical candidate gets about 55% of past ENGAA/NSAA questions right. Skipped questions count as wrong,
-        as in the real test. Short sets and untimed practice make it less reliable: a timed 27-question mock is closest to the real thing.</p>
+  return `<div class="card" style="margin-top:var(--space-6);text-align:center" id="r-est">
+      <h2 style="margin-bottom:var(--space-1)">Estimated ESAT score <span class="badge badge-warn" style="vertical-align:middle;margin-left:6px">rough guide</span></h2>
+      <p class="muted" style="font-size:var(--text-sm);margin:0 0 var(--space-4)">On the real 1.0–9.0 scale, where a typical candidate scores about 4.5</p>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-3)">${rows}</div>
+      <details style="max-width:640px;margin:var(--space-4) auto 0;font-size:var(--text-xs)" class="muted">
+        <summary style="cursor:pointer">How is this worked out?</summary>
+        <p style="text-align:left;margin-top:var(--space-2)">UAT-UK doesn't publish a marks-to-score table, so this compares your share of right answers with how
+        candidates scored in October 2026 (UAT-UK's published results), assuming a typical candidate gets about 55% of past ENGAA/NSAA questions right.
+        Skipped questions count as wrong, as in the real test. Short sets and untimed practice make it less reliable: a timed 27-question mock is closest to the real thing.</p>
+      </details>
     </div>`;
 }
 

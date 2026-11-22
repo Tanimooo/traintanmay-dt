@@ -59,7 +59,7 @@
         });
         // the usual text size on the page, so small superscripts ("sin² t") aren't read as question numbers
         var hs = merged.map(function (i) { return i.h; }).sort(function (a, b) { return a - b; });
-        return { w: vp.width, h: vp.height, items: merged, page: n, mh: hs.length ? hs[hs.length >> 1] : 0 };
+        return { w: vp.width, h: vp.height, items: merged, page: n, mh: hs.length ? hs[hs.length >> 1] : 0, ts: url in typeset };
       });
     }));
   }
@@ -93,7 +93,10 @@
     if (!/^(?:Q|Question|M)/i.test(it.s) && P.items.some(function (o) { return o !== it && Math.abs(o.y - it.y) < Math.max(3, Math.min(o.h, it.h) * 0.8) && o.x < it.x - 2 && !isChrome(o, P); })) return null; // (a fraction's numerator or denominator sits a little off the line)
     if (/^\d{1,2}\.?$/.test(it.s)) {
       var nx = nextOnLine(it, P);
-      if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s))) return null;
+      // typeset multiple-choice papers (ESAT) have no answer lines, and a question can open with a diagram,
+      // leaving its number alone on the line: there a bare number at the far left still counts
+      var alone = P.ts && kind !== 'ms' && it.x < P.w * 0.12 && (!P.mh || it.h >= P.mh * 0.9);
+      if (nx ? DOTS.test(nx.s) : !(kind === 'ms' || /\.$/.test(it.s) || alone)) return null;
     }
     return +m[1];
   }
