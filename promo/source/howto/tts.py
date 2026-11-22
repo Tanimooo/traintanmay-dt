@@ -4,8 +4,13 @@ sys.path.insert(0, os.path.dirname(__file__)); from script import STEPS
 M = os.path.join(os.path.dirname(__file__), '..', '..', 'tts')
 k = Kokoro(os.path.join(M, 'kokoro-v1.0.onnx'), os.path.join(M, 'voices-v1.0.bin'))
 os.makedirs('voice', exist_ok=True); durs = {}
+# pronunciation fixes, swapped in at the sound level
+FIX = [('tˈænmeɪ', 'tˈʌnmˌeɪ'),      # Tanmay, said the Hindi way (तन्मय): TUN-may, not TAN-may
+       ('ˌeɪˈaɪ', 'ˈeɪ ˈaɪ')]          # AI, as two clear letters: ay, eye
 for sid, ch, say, sub in STEPS:
-    s, sr = k.create(say, voice='af_heart', speed=1.0, lang='en-us')
+    ph = k.tokenizer.phonemize(say, 'en-us')
+    for a, b in FIX: ph = ph.replace(a, b)
+    s, sr = k.create(ph, voice='af_heart', speed=1.0, lang='en-us', is_phonemes=True)
     # trim leading/trailing silence, keep 60 ms
     a = np.abs(s) > 0.01; i0 = max(0, np.argmax(a) - int(.06 * sr)); i1 = min(len(s), len(s) - np.argmax(a[::-1]) + int(.06 * sr))
     s = s[i0:i1]; sf.write(f'voice/{sid}.wav', s, sr); durs[sid] = round(len(s) / sr, 3)

@@ -1,13 +1,13 @@
 1
-00:00:03,652 --> 00:00:07,253
+00:00:03,652 --> 00:00:07,224
 Hi! Welcome to TrainTanmay. I'm going to give you a quick tour,
 
 2
-00:00:07,203 --> 00:00:09,790
+00:00:07,174 --> 00:00:09,740
 so you can get the most out of your revision.
 
 3
-00:00:10,339 --> 00:00:15,650
+00:00:10,339 --> 00:00:15,723
 TrainTanmay is a set of free revision apps, made by an A level student, for other students.
 
 4
@@ -35,11 +35,11 @@ the flashcards you've got due, and where you left off.
 Along the top, you'll find the notes, practice questions, past papers, and the labs.
 
 10
-00:00:49,329 --> 00:00:52,875
+00:00:49,329 --> 00:00:52,862
 To switch apps, tap the TrainTanmay logo in the top corner.
 
 11
-00:00:52,825 --> 00:00:56,548
+00:00:52,812 --> 00:00:56,523
 Its colour tells you which app you're in: orange is Chemistry.
 
 12
@@ -55,11 +55,11 @@ Every topic has full notes with worked examples, plus key terms, equations, flas
 and videos.
 
 15
-00:01:09,150 --> 00:01:12,424
+00:01:09,150 --> 00:01:12,289
 The notes were written with AI, so if anything looks off,
 
 16
-00:01:12,374 --> 00:01:15,196
+00:01:12,239 --> 00:01:14,944
 double-check it against your textbook or a video.
 
 17
@@ -167,11 +167,11 @@ The menu next to it switches the colours. Try dark mode, or a softer, warmer bac
 And in the logo menu, you can read everything in Welsh or Scottish Gaelic.
 
 43
-00:03:14,083 --> 00:03:19,016
+00:03:14,083 --> 00:03:19,060
 If you spot a mistake, or something's broken, tap Report a bug, and let Tanmay know.
 
 44
-00:03:18,966 --> 00:03:19,946
+00:03:19,010 --> 00:03:19,998
 It really helps.
 
 45

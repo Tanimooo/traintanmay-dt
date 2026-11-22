@@ -21,7 +21,7 @@ STEPS = [
     ('jump', 'nav', "Looking for something specific? Use Jump to anything, and just type what you need.", None),
 
     ('topic', 'chem', "Every topic has full notes with worked examples, plus key terms, equations, flashcards, and videos.", None),
-    ('ai', 'chem', "The notes were written with A.I., so if anything looks off, double check it against your textbook or a video.",
+    ('ai', 'chem', "The notes were written with AI, so if anything looks off, double check it against your textbook or a video.",
      "The notes were written with AI, so if anything looks off, double-check it against your textbook or a video."),
     ('drill', 'chem', "The calculation drills give you new numbers every time. Type your answer, and it's marked straight away, with a worked solution.", None),
     ('lab', 'chem', "And in the labs, you can spin real 3D molecules, see every bond angle, then flip it into an exam style drawing.",
