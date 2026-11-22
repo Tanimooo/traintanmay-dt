@@ -118,3 +118,20 @@ OCR A H556 · free · 🔗 link in bio
 
 #alevelphysics #alevels #physics #studygram #sixthform
 ```
+
+## Instagram Maths edit ("flow")
+
+`TrainTanmay-insta-maths.mp4`: a 30-second vertical Reel at 1080×1920 and 60 fps, with no music. It's cut at about 149 BPM for "APT." by ROSÉ & Bruno Mars (add it from Instagram's music library). The camera glides along a plotted curve on graph paper; each shot sits on the curve, captions are torn-paper collages, and Madas Maths gets a comic-book "OH NO." moment.
+
+Sync points: the first shot lands at 0:03, the Madas burst hits at 0:09, the zoom out to the whole curve starts at 0:26, and the logo appears at 0:28.
+
+**Caption**
+```
+f(x) = revision 📈
+
+Every maths question in one place: 7,434 papers, worked skill drills, real exam questions (yes, even Madas 😭) and interactive visualisers for the hard topics.
+
+Edexcel A level Maths & Further Maths · free · 🔗 link in bio
+
+#alevelmaths #alevels #furthermaths #studygram #maths
+```
