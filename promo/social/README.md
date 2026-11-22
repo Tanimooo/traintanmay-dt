@@ -101,3 +101,20 @@ D&T · Physics · Chemistry · Maths · ESAT
 
 #alevels #alevelrevision #studygram #sixthform #revision
 ```
+
+## Instagram Physics edit ("orbit")
+
+`TrainTanmay-insta-physics.mp4`: a 23-second vertical Reel with no music, cut at about 147 BPM for "Space Song" by Beach House (add it from Instagram's music library). It goes: pink planet → warp into the Physics app → 11 real labs swinging in on an orbit → every lab orbiting the planet ("48 labs. one app.") → end card.
+
+Sync points: "space." at 0:02, the warp flash at 0:04, the labs start at 0:06, "48 labs." at 0:17, the end card at 0:20.
+
+**Caption**
+```
+physics, but make it space 🪐
+
+48 free interactive labs for A level Physics: orbits, double slit, stationary waves, electric fields, Apollo 11 and more. Plus notes, practice tests and simulated practicals 🔭
+
+OCR A H556 · free · 🔗 link in bio
+
+#alevelphysics #alevels #physics #studygram #sixthform
+```
