@@ -54,7 +54,7 @@ YouTube title pattern: *"ENGAA 2019 Q16: the circuits question everyone gets wro
 | 6 | TMUA 2019 Q18: shortest distance, curve to line (+ graph plot) | ENGAA 2022 Q20: ideal gas pressure & density (+ *Ideal gas* lab) |
 | 7 | TMUA 2023 Q05: rectangle in a square, area optimisation | NSAA 2023 Q37: motor effect on a current loop (hardest in the bank) |
 
-## 4. Week 1: A-level topics (questions picked from real papers once access is on, see §6)
+## 4. Week 1: A-level topics (the exact question per slot is picked from the linked papers when scripting)
 
 | Day | 12:30 Physics (OCR A) | 16:30 Maths / FM (Edexcel) | 18:30 Chemistry (OCR A) |
 |---|---|---|---|
@@ -90,9 +90,8 @@ shows viewers exactly where to find it.
 
 
 - **ESAT/TMUA papers** (esat-tmua.ac.uk downloads): ✅ reachable from the session.
-- **A-level papers + mark schemes:** ❌ blocked here (physicsandmathstutor.com, ocr.org.uk,
-  qualifications.pearson.com). Fix: allow `pmt.physicsandmathstutor.com` in this cloud
-  environment's network settings, or upload the PDFs (paper + mark scheme) for each week.
+- **A-level papers + mark schemes:** ✅ reachable via the site's own Physics & Maths Tutor links
+  (cloud environment `traintanmay-dt` allows pmt./www.physicsandmathstutor.com).
 
 ## 7. Review after 14 days
 3-second hold, average % watched, comments ("I got C 😭"), saves, link clicks per series.
