@@ -3,7 +3,7 @@
    so files that haven't changed don't download again. Offline, use the saved copy.
    Pictures, fonts, PDFs and question packs: use the saved copy. Only check for a newer version about once a week.
    Saved files are kept through updates to the site: an update only downloads the files that changed. */
-var CORE = ['./', 'index.html', 'dt.html', 'help.html', 'physics/', 'chemistry/', 'maths/', 'esat/', 'switcher.js', 'save.js', 'league.js', 'polish.css', 'restyle.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+var CORE = ['./', 'index.html', 'dt.html', 'help.html', 'physics/', 'chemistry/', 'maths/', 'esat/', 'focus/', 'focus/focus.js', 'focus/focus.css', 'switcher.js', 'save.js', 'league.js', 'focusbar.js', 'polish.css', 'restyle.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 var PAGES = 'tt-pages', FILES = 'tt-files';
 var WEEK = 7 * 24 * 3600 * 1000;
 
