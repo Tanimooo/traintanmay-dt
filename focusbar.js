@@ -54,7 +54,7 @@
     } else seg.push({ k: 'w', d: Math.max(1, Math.min(240, o.min || 25)) * 60000 });
     var old = run(); if (old) stop(true);
     var r = { id: uid(), t0: NOW(), seg: seg, paused: 0, pausedAt: null, label: (o.label || '').slice(0, 80), subj: o.subj || '', goal: (o.goal || '').slice(0, 300), todo: o.todo || null, credited: 0, ended: null, lastSeg: 0, pomo: !!o.pomo };
-    putJ(K_RUN, r); unlockAudio(); askNotify(); hidden = false; mini = false; savePos();
+    putJ(K_RUN, r); unlockAudio(); askNotify(); hidden = false; mini = 'mini' in getJ(K_POS, {}) ? mini : phone(); savePos();
     emit(); paint(true);
     return r;
   }
@@ -153,7 +153,7 @@
 
   /* ---- the floating timer ---- */
   var CSS =
-    '.ttf{position:fixed;z-index:2147483000;width:268px;color:#0b2a45;font:14px/1.3 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}' +
+    '.ttf{position:fixed;z-index:9990;width:268px;color:#0b2a45;font:14px/1.3 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}' +
     '.ttf .g{position:relative;border-radius:22px;padding:12px 14px 13px;background:linear-gradient(150deg,rgba(214,238,255,.72),rgba(160,212,250,.5));-webkit-backdrop-filter:blur(20px) saturate(1.7);backdrop-filter:blur(20px) saturate(1.7);' +
     'border:1px solid rgba(255,255,255,.7);box-shadow:0 22px 50px -18px rgba(20,70,120,.55),0 2px 8px rgba(20,70,120,.15),inset 0 1px 0 rgba(255,255,255,.8);cursor:grab;overflow:hidden}' +
     '.ttf.drag .g{cursor:grabbing}.ttf .g::before{content:"";position:absolute;inset:-40% -20% auto auto;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);pointer-events:none}' +
@@ -180,6 +180,7 @@
     /* the shrunk pill */
     '.ttf.mini{width:auto}.ttf.mini .g{padding:7px 8px 7px 12px;border-radius:999px;display:flex;align-items:center;gap:8px}.ttf.mini .g::before{display:none}' +
     '.ttf.mini .tm{font-size:17px;margin:0}.ttf.mini .ic{width:26px;height:26px;border-radius:999px}' +
+    '@media (max-width:600px){.ttf{width:min(268px,calc(100vw - 24px))}.ttf .tk input[type=text]{font-size:16px}}' +
     '@media (prefers-reduced-motion:reduce){.ttf.in{animation:none}.ttf .dot{animation:none}.ttf .bar i{transition:none}}' +
     '@media print{.ttf{display:none!important}}';
   var I = {
@@ -195,7 +196,9 @@
     open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.3 1.6M9.5 2.5h5"/></svg>'
   };
   var el = null, hidden = false, mini = false, showTasks = false, inlineVisible = false, pip = null, wasIn = false;
-  (function () { var p = getJ(K_POS, {}); hidden = !!p.hidden; mini = !!p.mini; showTasks = !!p.tasks; })();
+  // on phones the timer starts as a small pill (tap the arrows to open it), unless you've chosen otherwise
+  function phone() { try { return matchMedia('(max-width: 600px)').matches; } catch (e) { return false; } }
+  (function () { var p = getJ(K_POS, {}); hidden = !!p.hidden; mini = 'mini' in p ? !!p.mini : phone(); showTasks = !!p.tasks; })();
   function savePos() { var p = getJ(K_POS, {}); p.hidden = hidden; p.mini = mini; p.tasks = showTasks; putJ(K_POS, p); }
   function host() { return document.fullscreenElement || document.body; }
   function ensureCss(doc) { if (doc.getElementById('ttf-css')) return; var s = doc.createElement('style'); s.id = 'ttf-css'; s.textContent = CSS; (doc.head || doc.documentElement).appendChild(s); }
@@ -300,10 +303,16 @@
   function restoreInput(doc, k) { if (!k) return; var i = doc.querySelector('.ttf input[name=t]'); if (!i) return; i.value = k.v; if (k.f) { i.focus(); try { i.setSelectionRange(k.s, k.s); } catch (e) {} } }
 
   /* position: kept as a fraction of the window, so it stays put through resizes and on every page */
+  /* the lowest the timer may sit: above a tab bar fixed along the bottom (the Focus page on phones has one) */
+  function floor() {
+    var H = window.innerHeight, nav = document.querySelector('.tabs');
+    if (nav && getComputedStyle(nav).position === 'fixed') { var t = nav.getBoundingClientRect().top; if (t > H / 2) return t - 8; }
+    return H - 8;
+  }
   function place(n) {
-    var p = getJ(K_POS, {}), w = n.offsetWidth || 268, h = n.offsetHeight || 150, W = window.innerWidth, H = window.innerHeight;
-    var x = typeof p.x === 'number' ? p.x * W : W - w - 20, y = typeof p.y === 'number' ? p.y * H : H - h - 24;
-    n.style.left = Math.max(8, Math.min(W - w - 8, x)) + 'px'; n.style.top = Math.max(8, Math.min(H - h - 8, y)) + 'px';
+    var p = getJ(K_POS, {}), w = n.offsetWidth || 268, h = n.offsetHeight || 150, W = window.innerWidth, F0 = floor();
+    var x = typeof p.x === 'number' ? p.x * W : W - w - 20, y = typeof p.y === 'number' ? p.y * window.innerHeight : F0 - h - 16;
+    n.style.left = Math.max(8, Math.min(W - w - 8, x)) + 'px'; n.style.top = Math.max(8, Math.min(F0 - h, y)) + 'px';
   }
   function drag(n) {
     var sx, sy, ox, oy, moved = false, id = null;
@@ -317,7 +326,7 @@
       var dx = e.clientX - sx, dy = e.clientY - sy; if (!moved && Math.abs(dx) + Math.abs(dy) < 4) return;
       moved = true; n.classList.add('drag');
       var W = window.innerWidth, H = window.innerHeight;
-      n.style.left = Math.max(8, Math.min(W - n.offsetWidth - 8, ox + dx)) + 'px'; n.style.top = Math.max(8, Math.min(H - n.offsetHeight - 8, oy + dy)) + 'px';
+      n.style.left = Math.max(8, Math.min(W - n.offsetWidth - 8, ox + dx)) + 'px'; n.style.top = Math.max(8, Math.min(floor() - n.offsetHeight, oy + dy)) + 'px';
     });
     function up(e) {
       if (id !== e.pointerId) return; id = null; n.classList.remove('drag');
