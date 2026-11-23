@@ -256,7 +256,7 @@ details.grp>summary{list-style:none;cursor:pointer}details.grp>summary::-webkit-
 .pill{display:flex;align-items:center;gap:5px;padding:2px 7px;border-radius:7px;font-size:12px;font-weight:600;line-height:1.5;white-space:nowrap;overflow:hidden;background:color-mix(in srgb,var(--c,var(--acc)) 16%,transparent);color:color-mix(in srgb,var(--c,var(--acc)) 75%,var(--ink));border-left:3px solid var(--c,var(--acc));cursor:grab;touch-action:none;min-width:0;flex:none}
 .pill .tt{overflow:hidden;text-overflow:ellipsis}
 .pill .tm{font:500 11px var(--f-mono);opacity:.8}
-.pill.dl{background:color-mix(in srgb,var(--bad) 13%,transparent);border-left-color:var(--bad);color:var(--bad)}
+.pill.dl{font-weight:700}
 .pill.task{background:transparent;border:1px dashed color-mix(in srgb,var(--c,var(--acc)) 60%,transparent);border-left:3px solid var(--c,var(--acc))}
 .pill.dnx{opacity:.5;text-decoration:line-through}
 .pill svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
@@ -457,3 +457,37 @@ table.sess td.n{text-align:right;font-variant-numeric:tabular-nums}
   .toasts{top:auto;bottom:calc(96px + env(safe-area-inset-bottom))}
 }
 @keyframes sheetUp{from{transform:translateY(100%)}}
+
+/* ---------- subjects and settings ---------- */
+.slist{display:grid;gap:4px}
+.srow{display:flex;align-items:center;gap:10px;padding:6px 6px;border-radius:12px}
+.srow:hover{background:var(--card2)}
+.sname{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;font-weight:600}
+.sname span{overflow-wrap:anywhere}
+.swatch{-webkit-appearance:none;appearance:none;width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);padding:0;background:none;cursor:pointer;flex:none}
+.swatch::-webkit-color-swatch-wrapper{padding:2px}.swatch::-webkit-color-swatch{border:0;border-radius:50%}.swatch::-moz-color-swatch{border:0;border-radius:50%}
+.sdel-sp{width:34px;flex:none}
+.smsg{min-height:1.3em;margin:6px 2px 0;color:var(--ok)}.smsg.bad{color:var(--bad)}
+.chip-edit{border-style:dashed;color:var(--muted);background:transparent}.chip-edit svg{width:14px;height:14px}
+.sh{margin:20px 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-family:var(--f-body)}
+.modal>h2+.sh{margin-top:4px}
+.bgsec{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:12px 0 7px}
+.bggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.bgt{position:relative;aspect-ratio:16/10;border-radius:12px;border:2px solid var(--line);cursor:pointer;overflow:hidden;display:flex;align-items:flex-end;padding:0;font:inherit}
+.bgt span{display:block;width:100%;padding:3px 6px;font-size:11.5px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55));text-align:left}
+.bgt[aria-pressed=true]{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.bgt[aria-pressed=true]::after{content:"✓";position:absolute;right:6px;top:5px;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#fff;font-size:12px;display:grid;place-items:center}
+.bgpick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+/* the chosen background */
+.sky.plain i{display:none}
+.sky::after{content:"";position:absolute;inset:0;background:#fff;opacity:var(--bgdim,0);pointer-events:none}
+:root[data-theme=dark] .sky::after{background:#000}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .sky::after{background:#000}}
+
+/* text that sits straight on a picked background follows its tone */
+body.bg-dark{--on-bg:#f3f8ff;--on-bg-muted:rgba(235,244,255,.82);--on-bg-shadow:0 1px 12px rgba(0,0,0,.45)}
+body.bg-light{--on-bg:#0b2236;--on-bg-muted:rgba(11,34,54,.72);--on-bg-shadow:0 1px 12px rgba(255,255,255,.6)}
+body.bg-dark .vhead h1,body.bg-light .vhead h1,body.bg-dark .cbar h1,body.bg-light .cbar h1,
+body.bg-dark.zen .ring .t,body.bg-light.zen .ring .t{color:var(--on-bg);text-shadow:var(--on-bg-shadow)}
+body.bg-dark .vhead p,body.bg-light .vhead p,body.bg-dark .legend,body.bg-light .legend,
+body.bg-dark.zen .ring .s,body.bg-light.zen .ring .s,body.bg-dark .zen-quote,body.bg-light .zen-quote{color:var(--on-bg-muted);text-shadow:var(--on-bg-shadow)}

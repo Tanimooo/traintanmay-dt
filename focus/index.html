@@ -12,7 +12,7 @@
 <script src="../features.js?v=20261121"></script>
 <script>/* theme before first paint, so the page never flashes the wrong colours */
 try{var t=JSON.parse(localStorage.getItem('tt-focus-prefs')||'{}').theme;if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('tt-help-dys')==='1')document.documentElement.classList.add('dys')}catch(e){}</script>
-<link rel="stylesheet" href="focus.css?v=20261124b">
+<link rel="stylesheet" href="focus.css?v=20261124c">
 </head>
 <body>
 <div class="sky" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -31,6 +31,7 @@ try{var t=JSON.parse(localStorage.getItem('tt-focus-prefs')||'{}').theme;if(t===
     <a href="#progress" data-tab="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span>Progress</span></a>
   </nav>
   <div class="tools">
+    <button type="button" class="iconbtn" id="btnSettings" aria-label="Settings: subjects, background and theme" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button type="button" class="iconbtn" id="btnTheme" aria-label="Switch light or dark" title="Light or dark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
     <button type="button" class="iconbtn" id="btnFull" aria-label="Full screen" title="Full screen (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     <button type="button" class="iconbtn" data-tt-league aria-label="Study league" title="Study league"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4.5 4L12 4l4.5 8L21 8l-1.8 10H4.8z"/><path d="M5 21h14"/></svg></button>
@@ -50,7 +51,7 @@ try{var t=JSON.parse(localStorage.getItem('tt-focus-prefs')||'{}').theme;if(t===
 
 <script src="../ttclock.js?v=20261124a"></script>
 <script src="../focusbar.js?v=20261124b"></script>
-<script src="focus.js?v=20261124b"></script>
+<script src="focus.js?v=20261124c"></script>
 <script src="../switcher.js?v=20261124a"></script>
 </body>
 </html>

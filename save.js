@@ -14,7 +14,7 @@
     { id: 'focus', name: 'Focus', col: '#2186d8', keys: [/^tt-focus-/] }
   ];
   var INCLUDE = /^(tt-|esat\.|sketchguessr-)/;
-  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|tt-exam-active$|tt-focus-(run|pos|beat)$|esat\..*\.probe$)/; // tt-exam-active, tt-focus-run: a running clock belongs to its own device
+  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|tt-exam-active$|tt-focus-(run|pos|beat|bgimg)$|esat\..*\.probe$)/; // tt-exam-active, tt-focus-run: a running clock belongs to its own device
   var LAST = 'tt-lastbackup', UNDO = 'tt-restore-undo';
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/save\.js[^/]*$/, '');
 
