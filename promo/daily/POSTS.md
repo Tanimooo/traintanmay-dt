@@ -20,7 +20,7 @@ Before posting: merge the `crop.js` fix to the live site, so the ESAT question s
 **Pinned comment:** A, B, C, D, E, F or G? Be honest 👇
 
 ### Physics · phys-ocr2024-p1-q4.mp4
-**YouTube title:** We slowed a falling ball 20× to find g 🔬 (OCR A-level Physics 2024) #shorts
+**YouTube title:** We slowed a falling ball down to find g 🔬 (OCR A-level Physics 2024) #shorts
 **Caption:** A ball cuts a laser for 0.04 s. That's enough to find g, if you use the right time ⏱️ Real OCR A-level question. Try it and more free, link in bio.
 **Hashtags:** #alevelphysics #physics #ocr #slowmotion #alevels
 **Pinned comment:** Did you divide by 0.14? 👀👇
