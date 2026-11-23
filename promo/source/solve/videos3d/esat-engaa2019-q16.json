@@ -1,0 +1,20 @@
+{
+  "id": "esat-engaa2019-q16",
+  "theme": "esat",
+  "tag": "ENGAA 2019 Q16",
+  "speed": 1.12,
+  "cover": "ans",
+  "answer": "E",
+  "site": {"kind": "esat", "qid": "ENGAA_2019_S1_Q16", "title": "ENGAA 2019 Q16"},
+  "lines": [
+    {"say": "{c}Five identical resistors. {vm}The voltmeter reads one volt. {q}What's the battery voltage?"},
+    {"say": "Real engineering admissions test question. {pz}Pause and pick one!", "gap": 2.2},
+    {"say": "{a}The voltmeter only covers this resistor: one volt. {b}Its twin matches it, {br}so that's two volts across the bottom branch."},
+    {"say": "{top}The top resistor is in parallel, so it gets two volts too."},
+    {"say": "{cur}Now zoom in on the current. {split}Twice as much goes over the top, {sum3}so three units flow through each outside resistor."},
+    {"say": "{out}Three times the current means three volts each."},
+    {"say": "{add}Three, plus two, plus three. {ans}Eight volts! It's E."},
+    {"say": "{trap}Four volts? You used one volt for the whole parallel bit."},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.4}
+  ]
+}

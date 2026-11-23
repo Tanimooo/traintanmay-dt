@@ -1,0 +1,19 @@
+{
+  "id": "phys-ocr2024-p1-q4",
+  "theme": "physics",
+  "tag": "OCR A 2024",
+  "speed": 1.12,
+  "cover": "ans",
+  "site": {"kind": "paper", "page": "physics/index.html#papers", "title": "H556/01 · June 2024 question paper",
+           "url": "https://pmt.physicsandmathstutor.com/download/Physics/A-level/Past-Papers/OCR-A/Paper-1/QP/June%202024%20QP.pdf", "pdfPage": 4},
+  "lines": [
+    {"say": "{drop}Drop a ball through a laser. {blk}It blocks the beam for a split second. {q}So, what's g?"},
+    {"say": "Real OCR A-level question. {pz}Pause and try it!", "gap": 2.2},
+    {"say": "{rw}Rewind. {sm}Slow motion. {b1}Beam blocked at point one oh seconds. {b2}Back on at point one four. {dt}That's point oh four seconds."},
+    {"say": "{d}In that time, the ball moves its own width: five centimetres. {v}So its average speed is one point two five metres per second."},
+    {"say": "{trap}But careful! {vt}The ball speeds up the whole time, in a straight line. {mid}So that average is its speed halfway. At point one two seconds."},
+    {"say": "{g}g is speed over time. One point two five over point one two. {ans}Ten point four!"},
+    {"say": "{w1}Divide by point one four? Eight point nine three. {w2}By point one oh? Twelve point five. {w3}Both wrong!"},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.4}
+  ]
+}

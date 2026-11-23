@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<!-- Full-screen 3D solve video frame (1080×1920). The scene module (scenes3d/<id>.js) builds a three.js scene and an
+     update(t) that moves it; everything is a pure function of time t, so frames can be rendered one by one.
+     Overlays (kinetic text, maths, labels pinned to 3D points, badges, captions) are HTML on top of the canvas. -->
+<link rel="stylesheet" href="/esat/vendor/katex/katex.min.css">
+<script src="/esat/vendor/katex/katex.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@500;600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;font-family:'IBM Plex Sans',sans-serif;color:#fff}
+#bg{position:absolute;inset:0}
+canvas#c{position:absolute;inset:0;width:1080px;height:1920px}
+#ui{position:absolute;inset:0;pointer-events:none}
+#ui > *{position:absolute;will-change:transform,opacity}
+.brand{left:56px;top:96px;display:flex;align-items:center;gap:16px;opacity:.95}
+.brand img{width:72px;height:72px;border-radius:18px;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.brand b{font:800 36px 'Bricolage Grotesque';display:block;line-height:1}
+.brand span{font:600 24px 'IBM Plex Sans';opacity:.8}
+.big{left:0;width:1080px;text-align:center;font:800 120px/1 'Bricolage Grotesque';letter-spacing:-2px;text-shadow:0 8px 0 rgba(0,0,0,.35)}
+.eq{left:60px;width:960px;text-align:center;font-size:64px;text-shadow:0 4px 18px rgba(0,0,0,.55)}
+.eq .katex{color:#fff}
+.lbl{transform-origin:50% 50%;white-space:nowrap;font:700 36px 'IBM Plex Sans';padding:8px 20px;border-radius:999px;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.badge{left:540px;top:250px;font:800 34px 'JetBrains Mono';padding:10px 26px;border-radius:14px;letter-spacing:2px;white-space:nowrap}
+.chips{left:40px;width:1000px;display:flex;gap:12px}
+.chip{flex:1;text-align:center;border-radius:20px;padding:12px 4px 10px;font:800 40px/1 'Bricolage Grotesque';border:4px solid rgba(255,255,255,.9);background:rgba(0,0,0,.35)}
+.chip small{display:block;font:700 26px 'IBM Plex Sans';margin-top:6px}
+.chip.right{background:#1f9d55;border-color:#b9f5cf}
+.chip.wrong{opacity:.35;text-decoration:line-through}
+#cap{left:60px;width:880px;top:1330px;text-align:center;font:800 54px/1.22 'IBM Plex Sans'}
+#cap .w{padding:0 6px;border-radius:12px;text-shadow:0 4px 12px rgba(0,0,0,.6)}
+#cap .w.on{text-shadow:none}
+#outro{inset:0;display:none}
+#outro img{width:1080px;height:1920px;display:block}
+#tap{width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;background:rgba(255,255,255,.45);border:5px solid #000;display:none}
+.ring{left:540px;top:960px;width:260px;height:260px;margin:-130px 0 0 -130px}
+</style></head>
+<body>
+<div id="bg"></div>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="ui"><div id="outro"><img id="oimg"></div><div id="tap"></div><div id="cap"></div></div>
+<script type="importmap">{"imports":{"three":"/__three/build/three.module.js","three/addons/":"/__three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const S = window.SCHED, T = S.T;
+// TrainTanmay subject themes (dark-mode brand colours read well on video)
+const THEMES = {
+  physics: { brand: '#ff5c9e', deep: '#c81e66', bg0: '#2a0918', bg1: '#0d0308', ink: '#fff', soft: '#fde2ee', name: 'Physics' },
+  chemistry: { brand: '#ff8a4c', deep: '#c2410c', bg0: '#2b1205', bg1: '#0e0602', ink: '#fff', soft: '#fde7d6', name: 'Chemistry' },
+  maths: { brand: '#4ade80', deep: '#15803d', bg0: '#082a16', bg1: '#030d07', ink: '#fff', soft: '#dcf2e3', name: 'Maths' },
+  dt: { brand: '#5b9cff', deep: '#1f5fbf', bg0: '#0a1a33', bg1: '#03080f', ink: '#fff', soft: '#e3ecfa', name: 'D&T' },
+  esat: { brand: '#ffc917', deep: '#b38600', bg0: '#2a2205', bg1: '#0c0a02', ink: '#1b1604', soft: '#fff3c4', name: 'ESAT' },
+};
+const TH = THEMES[S.theme];
+document.getElementById('bg').style.background = `radial-gradient(120% 80% at 50% 30%, ${TH.bg0}, ${TH.bg1})`;
+const $ui = document.getElementById('ui');
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const E = {
+  out: x => 1 - Math.pow(1 - clamp(x), 3), io: x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; },
+  back: x => { x = clamp(x); const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); },
+  lin: x => clamp(x),
+};
+const tv = v => { if (typeof v !== 'string') return v; const m = /^(\w+)\s*([+-]\s*[\d.]+)?$/.exec(v); if (!m || T[m[1]] === undefined) return undefined; return T[m[1]] + (m[2] ? +m[2].replace(/\s/g, '') : 0); };   // "marker" or "marker+0.5"
+let NOW = 0;
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(1080, 1920, false);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1080 / 1920, 0.05, 400);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;   // reflections for metal
+scene.fog = new THREE.Fog(new THREE.Color(TH.bg1), 9, 26);
+scene.add(new THREE.HemisphereLight(0xffffff, new THREE.Color(TH.bg0), 1.2));
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4, 9, 6); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: .5, far: 40 }); key.shadow.bias = -0.0004; scene.add(key);
+const rim = new THREE.DirectionalLight(new THREE.Color(TH.brand), 2.0); rim.position.set(-6, 3, -6); scene.add(rim);
+
+/* ---------- overlay elements ---------- */
+const items = [];
+const el = (cls, html, style = {}) => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; Object.assign(d.style, style); $ui.insertBefore(d, document.getElementById('outro')); return d; };
+const rich = s => s.replace(/\$([^$]+)\$/g, (_, x) => katex.renderToString(x, { throwOnError: false }));
+function win(t, t0, t1, fi = .25, fo = .25) { if (t0 === undefined || t < t0 || (t1 !== undefined && t > t1)) return 0; return Math.min(1, (t - t0) / fi, t1 === undefined ? 1 : (t1 - t) / fo); }
+const proj = v => { const p = v.clone().project(camera); return [(p.x + 1) / 2 * 1080, (1 - p.y) / 2 * 1920, p.z]; };
+const X = {
+  THREE, RoundedBoxGeometry, scene, camera, renderer, TH, T, E, clamp, tv,
+  now: () => NOW,
+  k: (t0, d = .5, f = E.out) => { t0 = tv(t0); return t0 === undefined ? 0 : f((NOW - t0) / d); },
+  on: t0 => { t0 = tv(t0); return t0 !== undefined && NOW >= t0; },
+  win: (t0, t1, fi, fo) => win(NOW, tv(t0), tv(t1), fi, fo),
+  mat: (c, o = {}) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c), roughness: .45, metalness: .1, ...o }),
+  glow: (c, o = {}) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, ...o }),
+  // camera keyframes: [{t, p:[x,y,z], l:[x,y,z], fov, ease}] (t may be a marker name or "marker+0.4")
+  camKeys: [],
+  cam(keys) { X.camKeys = keys; },
+  // big kinetic headline; from: 'zoom' | 'drop' | 'left' | 'right'
+  big(html, t0, t1, o = {}) { const d = el('big', o.box ? `<span style="background:rgba(0,0,0,.72);padding:6px 26px;border-radius:24px">${rich(html)}</span>` : rich(html), { top: (o.y || 760) + 'px', fontSize: (o.size || 120) + 'px', color: o.color || '#fff' });
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .3, .25); d.style.opacity = a; if (!a) return; const p = E.back((NOW - tv(t0)) / .45);
+      const m = o.from || 'zoom'; d.style.transform = m === 'zoom' ? `scale(${.2 + .8 * p})` : m === 'drop' ? `translateY(${(1 - p) * -300}px)` : `translateX(${(1 - p) * (m === 'left' ? -900 : 900)}px)`; }); return d; },
+  eq(tex, t0, t1, o = {}) { const d = el('eq', '', { top: (o.y || 1000) + 'px', fontSize: (o.size || 64) + 'px', color: o.color || '#fff' }); katex.render(tex, d, { throwOnError: false, displayMode: true });
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .3, .25); d.style.opacity = a; if (a) d.style.transform = `translateY(${(1 - E.out((NOW - tv(t0)) / .4)) * 60}px) scale(${o.scale ? o.scale() : 1})`; }); return d; },
+  // pill pinned to a 3D point (fn returns a Vector3 each frame)
+  label(text, at, t0, t1, o = {}) { const d = el('lbl', typeof text === 'function' ? '' : rich(text), { background: o.bg || TH.brand, color: o.fg || (S.theme === 'esat' ? TH.ink : '#fff'), fontSize: (o.size || 36) + 'px' });
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .2, .2); d.style.opacity = a; if (!a) return; if (typeof text === 'function') d.innerHTML = text(NOW); const [x, y, z] = proj(typeof at === 'function' ? at() : at);
+      const s = E.back((NOW - tv(t0)) / .35); d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.transform = `translate(-50%,-50%) translate(${o.dx || 0}px,${o.dy || 0}px) scale(${s})`; if (z > 1) d.style.opacity = 0; }); return d; },
+  badge(text, t0, t1, o = {}) { const d = el('badge', text, { background: o.bg || '#fff', color: o.fg || '#000', top: (o.y || 250) + 'px' });
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .15, .2); d.style.opacity = a; if (a) d.style.transform = `translateX(-50%) scale(${E.back((NOW - tv(t0)) / .3)})`; }); return d; },
+  // live text: fn(t) returns html
+  live(fn, t0, t1, style = {}) { const d = el('big', '', { fontSize: '72px', ...style });
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .2, .2); d.style.opacity = a; if (a) d.innerHTML = fn(NOW); }); return d; },
+  // ESAT only: options row
+  chips(opts, t0, t1, rightAt, right, wrongs = [], y = 300) { const d = el('chips', opts.map((o, i) => `<div class="chip" data-l="${'ABCDEFGH'[i]}">${'ABCDEFGH'[i]}<small>${o}</small></div>`).join(''), { top: y + 'px' });
+    const cs = [...d.children];
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .25, .25); d.style.opacity = a; if (!a) return;
+      cs.forEach((c, i) => { const p = E.back((NOW - tv(t0) - i * .06) / .35); c.style.transform = `translateY(${(1 - p) * 80}px)`; const L = c.dataset.l;
+        c.className = 'chip' + (rightAt && NOW >= tv(rightAt) && L === right ? ' right' : '') + (wrongs.find(w => w[0] === L && NOW >= tv(w[1])) ? ' wrong' : '');
+        if (L === right && rightAt && NOW >= tv(rightAt)) c.style.transform += ` scale(${1 + .25 * Math.sin(Math.PI * clamp((NOW - tv(rightAt)) / .5))})`; }); }); return d; },
+  ring(t0, dur) { const d = el('ring', `<svg viewBox="0 0 100 100" width="260" height="260"><circle cx="50" cy="50" r="44" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.25)" stroke-width="8"/><circle class="r" cx="50" cy="50" r="44" fill="none" stroke="${TH.brand}" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="276.5"/><text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="34" font-weight="800" fill="#fff" font-family="Bricolage Grotesque"></text></svg>`);
+    const r = d.querySelector('.r'), tx = d.querySelector('text');
+    items.push(() => { const a = win(NOW, tv(t0), tv(t0) + dur, .15, .15); d.style.opacity = a; if (!a) return; const u = clamp((NOW - tv(t0)) / dur);
+      r.setAttribute('stroke-dashoffset', 276.5 * u); tx.textContent = Math.ceil(dur * (1 - u)) || ''; }); return d; },
+  sfx: [],   // [{t, kind}] picked up by the mixer
+  cue(kind, t) { X.sfx.push({ kind, t: tv(t) }); },
+};
+// brand corner
+el('brand', `<img src="/icons/icon.svg"><div><b>TrainTanmay</b><span>${TH.name} · ${S.tag}</span></div>`);
+
+const scn = await import(`/__scene/${S.scene}.js`);
+const update = scn.default(X);
+
+// captions
+const W = S.words, $cap = document.getElementById('cap');
+function captions(t) {
+  let ci = -1; for (let i = 0; i < W.length; i++) if (W[i].t0 <= t + 0.02) ci = i;
+  const cur = ci >= 0 && t <= W[ci].lineEnd + 0.25 ? ci : -1;
+  if (cur < 0) { $cap.innerHTML = ''; return; }
+  const ws = W.filter(w => w.chunk === W[cur].chunk);
+  const hl = S.theme === 'esat' ? `background:${TH.brand};color:${TH.ink}` : `background:${TH.brand};color:#fff`;
+  $cap.innerHTML = ws.map(w => `<span class="w${w === W[cur] ? ' on' : ''}" style="${w === W[cur] ? hl : ''}">${w.w}</span>`).join(' ');
+  const p = E.back((t - ws[0].t0) / .25); $cap.style.transform = `scale(${.85 + .15 * p})`;
+}
+function camAt(t) {
+  const K = X.camKeys.map(k => ({ ...k, t: tv(k.t) })).filter(k => k.t !== undefined).sort((a, b) => a.t - b.t);
+  if (!K.length) return;
+  let i = 0; while (i < K.length - 1 && t >= K[i + 1].t) i++;
+  const a = K[i], b = K[i + 1] || a;
+  // hold the shot, then move in the last `dur` seconds before the next key (default ≤ 1.1 s: snappy cuts)
+  const dur = Math.min(b.dur || 1.1, b.t - a.t);
+  const u = b === a || t <= a.t ? 0 : (b.ease || E.io)((t - (b.t - dur)) / dur);
+  const L = (p, q) => p.map((v, j) => v + (q[j] - v) * u);
+  camera.position.set(...L(a.p, b.p));
+  // a slow handheld drift so the shot is never dead still
+  camera.position.x += Math.sin(t * .7) * .06; camera.position.y += Math.sin(t * .53 + 1) * .04; camera.position.z += Math.cos(t * .61) * .05;
+  camera.lookAt(new THREE.Vector3(...L(a.l, b.l)));
+  const fov = (a.fov || 38) + ((b.fov || 38) - (a.fov || 38)) * u; if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  // little kick when a key is marked shake
+  K.forEach(k => { if (k.shake && t > k.t && t < k.t + .35) { const s = (k.t + .35 - t) * .05; camera.position.x += Math.sin(t * 90) * s; camera.position.y += Math.cos(t * 77) * s; } });
+}
+const $o = document.getElementById('outro'), $oimg = document.getElementById('oimg'), $tap = document.getElementById('tap');
+window.setT = async (t) => {
+  NOW = t;
+  const inOutro = T.outro !== undefined && t >= T.outro;
+  $o.style.display = inOutro ? 'block' : 'none';
+  $cap.style.top = (inOutro ? 760 : 1330) + 'px';
+  if (inOutro && S.outro && S.outro.frames) {
+    const f = Math.min(S.outro.frames - 1, Math.floor((t - T.outro) * S.outro.fps));
+    $oimg.src = S.outro.dir + '/o_' + String(f).padStart(4, '0') + '.jpg';
+    const tp = (S.outro.taps || []).find(x => x && Math.abs(t - T.outro - x.t) < 0.5);
+    $tap.style.display = tp ? 'block' : 'none';
+    if (tp) { const dt = t - T.outro - tp.t; $tap.style.left = tp.x * 3 + 'px'; $tap.style.top = tp.y * 3 + 'px'; $tap.style.transform = `scale(${dt < 0 ? 1 : Math.max(.2, 1 - dt * .8)})`; }
+    [...$ui.children].forEach(c => { if (c !== $o && c !== $cap && c !== $tap) c.style.visibility = 'hidden'; });
+    captions(t);
+    await new Promise(r => $oimg.complete ? r() : ($oimg.onload = r));
+    return;
+  }
+  [...$ui.children].forEach(c => c.style.visibility = '');
+  camAt(t); update(t); camera.updateMatrixWorld();
+  items.forEach(f => f()); captions(t);
+  renderer.render(scene, camera);
+};
+window.SFX = () => X.sfx;
+window.READY = document.fonts.ready.then(() => true);
+</script>
+</body></html>

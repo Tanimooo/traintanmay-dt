@@ -1,0 +1,19 @@
+{
+  "id": "chem-ocr2023-p1-q7",
+  "theme": "chemistry",
+  "tag": "OCR A 2023",
+  "speed": 1.12,
+  "cover": "h2",
+  "site": {"kind": "paper", "page": "chemistry/index.html#papers", "title": "H432/01 · June 2023 question paper",
+           "url": "https://pmt.physicsandmathstutor.com/download/Chemistry/A-level/Past-Papers/OCR-A/Paper-1/QP/June%202023%20QP.pdf", "pdfPage": 4, "drift": 110},
+  "lines": [
+    {"say": "{f1}Same reaction, two flasks. {f2}The right one has double the concentration. {q}On the left, the half-life is sixteen minutes. On the right?"},
+    {"say": "Real OCR A-level question. {pz}Pause and try it!", "gap": 2.2},
+    {"say": "{tl}Let's time-lapse it. {go}It's first order, so the rate depends on concentration. {fast}The right flask reacts twice as fast."},
+    {"say": "{m16}But at sixteen minutes, {h1}the left has halved. {h2}And so has the right! Twice the rate, but twice as much to get through."},
+    {"say": "{m32}Thirty-two minutes: halved again. Both. {graph}Plot them, {shift}and it's the same curve, just shifted along."},
+    {"say": "{ans}So the half-life is still sixteen minutes! {rule}For first order, it doesn't depend on concentration."},
+    {"say": "{trap}If you said eight, you only thought about the faster rate."},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.4}
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "dt-edexcel2019-q3-flexo",
+  "theme": "dt",
+  "tag": "Edexcel 9DT0 2019",
+  "speed": 1.1,
+  "cover": "pr",
+  "site": {
+    "kind": "paper",
+    "page": "dt.html#papers",
+    "title": "2019 Paper 1 question paper",
+    "url": "https://designandtechbase.com/documents/pastpapers/Edexcel_A_Level/Edexcel_2019Q.pdf",
+    "pdfPage": 6
+  },
+  "lines": [
+    {
+      "say": "{hook}How does the print get onto this box? {q}Flexography! Here's the four-roller machine examiners want you to sketch."
+    },
+    {
+      "say": "{pan}It starts with an ink pan. {fr}Roller one, the fountain roller, dips in and picks up ink."
+    },
+    {
+      "say": "{an}It hands the ink to roller two, the anilox roller, covered in tiny cells. {db}A doctor blade scrapes off the extra, {cells}so every cell holds the same amount."
+    },
+    {
+      "say": "{pc}Roller three is the plate cylinder. {plate}It's wrapped in a flexible photopolymer plate, with the design raised up, like a rubber stamp. {ink}So only the raised bits get inked."
+    },
+    {
+      "say": "{ic}Roller four, the impression cylinder, presses the board onto the plate. {sm}Slow it right down. {pr}The pressure transfers the ink. {run}Printed!",
+      "gap": 1.3
+    },
+    {
+      "say": "{vs}So why not use gravure? {a1}Gravure needs a copper cylinder with the image engraved into it. {a1b}Flexo plates are just photopolymer, so setting up is cheaper and quicker."
+    },
+    {
+      "say": "{a2}That makes it great for shorter runs and quick changes. {a3}And the soft plate squashes onto uneven surfaces, like corrugated board."
+    },
+    {
+      "say": "{tip}In the exam: sketch all four rollers in order, label them, and say what each one does."
+    },
+    {
+      "say": "{o}Try this question and more at TrainTanmay. Link in bio!",
+      "gap": 1.4
+    }
+  ]
+}
