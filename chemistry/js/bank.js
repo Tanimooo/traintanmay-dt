@@ -25,8 +25,8 @@ S.bank=S.bank||{}; S.mocks=S.mocks||[]; S.exam=S.exam||{};
 WQ.forEach(q=>{ const e=S.exam[q.wr.id]; if(e&&e.got!=null&&!(S.bank[q.id]&&S.bank[q.id].got!=null)) S.bank[q.id]={got:e.got,ts:e.ts||Date.now(),rev:1}; });
 const saveNow=()=>{ save(); try{ localStorage.setItem('tt-chem-progress-v1',JSON.stringify(S)); }catch(e){} }; // write straight away as well as via the app's short debounce
 const save=()=>{ WQ.forEach(q=>{ const r=S.bank[q.id]; if(r&&r.got!=null) S.exam[q.wr.id]=Object.assign(S.exam[q.wr.id]||{},{got:r.got,ts:r.ts,rev:1}); }); C.save(); };
-const SRC={A:'cur',AS:'as',L:'old',T:'tb'};
-const SRCL={cur:'AQA A-level papers (7405, 2017–25)',as:'AQA AS papers (7404, 2016–25)',old:'Legacy AQA unit papers (2010–16)',tb:'Legacy AQA topic booklets',tt:'TrainTanmay exam-style questions'};
+const SRC={A:'cur',AS:'as',L:'old',T:'tb',O:'ocr'};
+const SRCL={cur:'AQA A-level papers (7405, 2017–25)',as:'AQA AS papers (7404, 2016–25)',old:'Legacy AQA unit papers (2010–16)',tb:'Legacy AQA topic booklets',ocr:'OCR A topic questions (same content)',tt:'TrainTanmay exam-style questions'};
 const srcOf=q=>q.wr?'tt':(SRC[B.packs[q.p].set]||'old');
 const pk=q=>q.wr?{title:'Exam-style question'}:B.packs[q.p];
 const qLabel=q=>q.wr?`Exam-style ${q.wr.id} · ${q.wr.style}`:`${pk(q).title} · Q${q.n}`;
@@ -38,7 +38,7 @@ const minsFor=m=>Math.max(1,Math.round(m*1.2));
    No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
 const live=(q,kind)=>{ const p=pk(q); return kind==='m'
-  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url||!q.mx?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
+  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url||(!q.mx&&p.set!=='O')?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
   : ttCrop.html({url:p.qp_url,q:String(q.n),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
   return live(q,kind); };
@@ -84,7 +84,7 @@ function filterQs(f){
 function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
   v.innerHTML=`<span class="eyebrow">Past paper and exam-style questions</span><h1>Practice questions</h1>
-  <p class="muted" style="max-width:78ch">${B.q.length.toLocaleString()} real AQA exam questions with mark schemes, from ${B.packs.filter(p=>p.set!=='T').length} past papers and ${B.packs.filter(p=>p.set==='T').length} topic booklets on PMT (${B.q.filter(q=>q.mcq).length} of them multiple choice, marked for you)${WQ.length?`, plus ${WQ.length} exam-style questions written for 7405`:''}. Each question is tagged with the AQA topics it uses. Filtering by a topic or section only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
+  <p class="muted" style="max-width:78ch">${B.q.length.toLocaleString()} real exam questions with mark schemes from Physics &amp; Maths Tutor (${B.q.filter(q=>q.mcq).length} of them multiple choice, marked for you): ${B.q.filter(q=>B.packs[q.p].set!=='O').length.toLocaleString()} AQA questions from ${B.packs.filter(p=>p.set!=='T'&&p.set!=='O').length} past papers and ${B.packs.filter(p=>p.set==='T').length} topic booklets, plus ${B.q.filter(q=>B.packs[q.p].set==='O').length.toLocaleString()} OCR A topic questions on the same chemistry, re-sorted into AQA topics (anything not on the AQA spec is left out)${WQ.length?`, plus ${WQ.length} exam-style questions written for 7405`:''}. Each question is tagged with the AQA topics it uses. Filtering by a topic or section only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
   <div class="filters bkfilters"><label class="field">Section<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
   <label class="field">Topic<select id="bt"><option value="">All topics</option>${topicOpts(pre.t)}</select></label>
   <label class="field">Source<select id="bs"><option value="">All sources</option>${Object.entries(SRCL).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
@@ -136,7 +136,7 @@ function viewBankQ(v,id){
 }
 
 /* ---------- mock tests ---------- */
-const DEF={topics:[],src:['cur','as','old','tb','tt'],types:['mcq','str'],mode:'random',marks:40,timed:true,reveal:'end',order:'paper'};
+const DEF={topics:[],src:['cur','as','old','tb','ocr','tt'],types:['mcq','str'],mode:'random',marks:40,timed:true,reveal:'end',order:'paper'};
 function pickQs(cfg){
   let pool=Q.filter(q=>(!cfg.topics.length||q.t.every(t=>cfg.topics.includes(t)))&&cfg.src.includes(srcOf(q))&&cfg.types.includes(q.mcq?'mcq':'str')&&(q.m||0)>0);
   const att=q=>S.bank[q.id]&&S.bank[q.id].got!=null, wrong=q=>att(q)&&S.bank[q.id].got<(q.m||1)*0.6;
