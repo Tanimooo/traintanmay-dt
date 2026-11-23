@@ -11,15 +11,16 @@ const KEY='tt-chem-extras-v1';
 let S={drills:{},rx:{seen:0,right:0},spec:{}};
 try{ const r=localStorage.getItem(KEY); if(r) S=Object.assign(S,JSON.parse(r)); }catch(e){}
 const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} };
-const MODN={'1':'Practical skills','2':'Foundations','3':'Periodic table and energy','4':'Core organic','5':'Physical and transition','6':'Organic and analysis'};
+const MODN={'3.1':'Physical chemistry','3.2':'Inorganic chemistry','3.3':'Organic chemistry','P.1':'Practical skills','P.2':'Practical skills'};
+const secOf=t=>t.slice(0,3);
 
 /* ================= CALCULATION DRILLS ================= */
 function drills(v){
-  const DR=window.CHEMDRILLS, mods=[...new Set(DR.list.map(d=>d.topic[0]))].sort();
+  const DR=window.CHEMDRILLS, mods=[...new Set(DR.list.map(d=>secOf(d.topic)))].sort();
   const stat=id=>S.drills[id]||{n:0,ok:0,streak:0};
   v.innerHTML=`<span class="eyebrow">Practise</span><h1>Calculation drills</h1><p class="muted" style="max-width:76ch">${DR.list.length} types of calculation from across the course. Every question has new numbers, is marked straight away, and shows a full worked solution, so you can keep going until the method is automatic. Give answers to 3 significant figures (pH to 2 decimal places). You can type standard form as 1.2e-3 or 1.2x10^-3.</p>
   <div class="row" style="margin:10px 0 18px"><a class="btn primary" href="#drill-mixed">Mixed practice</a></div>
-  <div class="stack" style="gap:24px">${mods.map(m=>`<section class="mod"><div class="mod-head"><span class="mnum">${m}</span><h2>${esc(MODN[m])}</h2></div><div class="grid g3">${DR.list.filter(d=>d.topic[0]===m).map(d=>{ const s=stat(d.id); return `<a class="tcard" href="#drill-${d.id}"><span class="id">${d.topic}</span><h4>${esc(d.title)}</h4><p>${esc(d.desc)}</p><div class="meta"><span>${s.n?`${s.ok}/${s.n} correct`:'Not tried yet'}</span><span>${s.streak>=3?'🔥 '+s.streak:''}</span></div></a>`; }).join('')}</div></section>`).join('')}</div>`;
+  <div class="stack" style="gap:24px">${mods.map(m=>`<section class="mod"><div class="mod-head"><span class="mnum">${m.startsWith('P')?'P':m}</span><h2>${esc(MODN[m])}</h2></div><div class="grid g3">${DR.list.filter(d=>secOf(d.topic)===m).map(d=>{ const s=stat(d.id); return `<a class="tcard" href="#drill-${d.id}"><span class="id">${d.topic}</span><h4>${esc(d.title)}</h4><p>${esc(d.desc)}</p><div class="meta"><span>${s.n?`${s.ok}/${s.n} correct`:'Not tried yet'}</span><span>${s.streak>=3?'🔥 '+s.streak:''}</span></div></a>`; }).join('')}</div></section>`).join('')}</div>`;
 }
 function drill(v,id){
   const DR=window.CHEMDRILLS, mixed=id==='mixed', d0=DR.byId[id];
@@ -43,57 +44,58 @@ function drill(v,id){
 
 /* ================= ORGANIC REACTION MAP ================= */
 const NODES={
- alkane:['Alkane',90,60],halo:['Haloalkane',300,60],nitrile:['Nitrile',510,60],amine:['Amine',720,60],amide:['Amide',930,60],
- dihalo:['Dihaloalkane',90,170],alkene:['Alkene',300,170],alc1:['1° alcohol',510,170],ald:['Aldehyde',720,170],hn:['Hydroxynitrile',930,170],
+ alkane:['Alkane',90,60],halo:['Halogenoalkane',300,60],nitrile:['Nitrile',510,60],amine:['Amine',720,60],amide:['Amide',930,60],
+ dihalo:['Dihalogenoalkane',90,170],alkene:['Alkene',300,170],alc1:['1° alcohol',510,170],ald:['Aldehyde',720,170],hn:['Hydroxynitrile',930,170],
  poly:['Poly(alkene)',90,280],alc2:['2° alcohol',300,280],ketone:['Ketone',510,280],acid:['Carboxylic acid',720,280],acyl:['Acyl chloride',930,280],
  salt:['Carboxylate salt',510,390],ester:['Ester',720,390],amsalt:['Ammonium salt',930,390],
- halobz:['Halobenzene',90,500],benzene:['Benzene',300,500],nitro:['Nitrobenzene',510,500],phenam:['Phenylamine',720,500],
- alkbz:['Alkylbenzene',90,610],phket:['Aromatic ketone',300,610],phenol:['Phenol',510,610],tbp:['2,4,6-tribromophenol',720,610],phester:['Phenyl ester',930,610]};
+ hso4:['Alkyl hydrogensulfate',90,390],anhyd:['Acid anhydride',930,500],benzene:['Benzene',90,500],nitro:['Nitrobenzene',300,500],phenam:['Phenylamine',510,500],
+ phket:['Aromatic ketone',90,610],quat:['Quaternary salt',720,500]};
 const EDGES=[
- ['alkane','halo','X₂ (Cl₂ or Br₂)','UV light','radical substitution','4.1.2'],
- ['alkene','alkane','H₂','nickel catalyst, 150 °C','addition (hydrogenation)','4.1.3'],
- ['alkene','dihalo','X₂ (e.g. Br₂)','room temperature','electrophilic addition','4.1.3'],
- ['alkene','halo','HX (e.g. HBr)','room temperature','electrophilic addition','4.1.3'],
- ['alkene','alc1','H₂O(g) (steam)','H₃PO₄ catalyst, ~300 °C, 6–7 MPa (ethene gives ethanol)','addition (hydration)','4.1.3'],
- ['alkene','alc2','H₂O(g) (steam)','H₃PO₄ catalyst; propene gives mainly propan-2-ol (Markownikoff)','addition (hydration)','4.1.3'],
- ['alkene','poly','—','high pressure and/or a catalyst','addition polymerisation','4.1.3'],
- ['alc1','alkene','conc. H₃PO₄ or conc. H₂SO₄','heat','elimination (dehydration)','4.2.1'],
- ['alc2','alkene','conc. H₃PO₄ or conc. H₂SO₄','heat','elimination (dehydration)','4.2.1'],
- ['alc1','halo','NaBr + conc. H₂SO₄ (makes HBr)','heat','substitution','4.2.1'],
- ['halo','alc1','NaOH(aq)','heat under reflux','nucleophilic substitution (hydrolysis)','4.2.2'],
- ['halo','amine','excess NH₃ in ethanol','heat','nucleophilic substitution','6.2.1'],
- ['halo','nitrile','NaCN or KCN in ethanol','heat under reflux','nucleophilic substitution (adds one carbon)','6.2.4'],
- ['alc1','ald','K₂Cr₂O₇ / H₂SO₄','heat, distil the aldehyde off as it forms','oxidation','4.2.1'],
- ['alc1','acid','excess K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','4.2.1'],
- ['alc2','ketone','K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','4.2.1'],
- ['ald','acid','K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','6.1.2'],
- ['ald','alc1','NaBH₄(aq)','room temperature (warm)','reduction (nucleophilic addition)','6.1.2'],
- ['ketone','alc2','NaBH₄(aq)','room temperature (warm)','reduction (nucleophilic addition)','6.1.2'],
- ['ald','hn','NaCN + H₂SO₄ (HCN)','room temperature','nucleophilic addition (adds one carbon)','6.1.2'],
- ['ketone','hn','NaCN + H₂SO₄ (HCN)','room temperature','nucleophilic addition (adds one carbon)','6.1.2'],
- ['nitrile','amine','H₂','nickel catalyst','reduction','6.2.4'],
- ['nitrile','acid','dilute HCl(aq)','heat under reflux','hydrolysis','6.2.4'],
- ['acid','ester','alcohol + conc. H₂SO₄ catalyst','warm (reversible)','esterification','6.1.3'],
- ['acid','acyl','SOCl₂ (thionyl chloride)','room temperature','substitution','6.1.3'],
- ['acid','salt','NaOH, Na₂CO₃, metal or metal oxide','room temperature','neutralisation (or redox with a metal)','6.1.3'],
- ['acyl','acid','water','room temperature','hydrolysis (vigorous, misty HCl fumes)','6.1.3'],
- ['acyl','ester','alcohol','room temperature','esterification (not reversible)','6.1.3'],
- ['acyl','amide','NH₃ (→ primary amide) or a primary amine (→ secondary amide)','room temperature','substitution','6.1.3'],
- ['amine','amide','acyl chloride','room temperature','substitution','6.2.2'],
- ['amine','amsalt','acid, e.g. HCl','room temperature','neutralisation (amine acts as a base)','6.2.1'],
- ['ester','acid','dilute H₂SO₄ or HCl','heat under reflux (reversible; alcohol also formed)','acid hydrolysis','6.1.3'],
- ['ester','salt','NaOH(aq)','heat under reflux (alcohol also formed)','alkaline hydrolysis','6.1.3'],
- ['benzene','nitro','conc. HNO₃ + conc. H₂SO₄','50 °C','electrophilic substitution (nitration)','6.1.1'],
- ['nitro','phenam','Sn + conc. HCl, then NaOH(aq)','heat under reflux','reduction','6.2.1'],
- ['benzene','halobz','X₂ + halogen carrier (FeBr₃, AlCl₃ or Fe)','room temperature','electrophilic substitution (halogenation)','6.1.1'],
- ['benzene','alkbz','haloalkane + AlCl₃','room temperature','Friedel–Crafts alkylation','6.2.4'],
- ['benzene','phket','acyl chloride + AlCl₃','room temperature','Friedel–Crafts acylation','6.2.4'],
- ['phenol','tbp','bromine water','room temperature, no catalyst','electrophilic substitution (white precipitate)','6.1.1'],
- ['phenol','phester','acyl chloride (or acid anhydride)','room temperature','esterification','6.1.3']];
+ ['alkane','halo','X₂ (Cl₂ or Br₂)','UV light','radical substitution','3.3.2'],
+ ['alkene','alkane','H₂','nickel catalyst, 150 °C','addition (hydrogenation)','3.3.4'],
+ ['alkene','dihalo','X₂ (e.g. Br₂)','room temperature','electrophilic addition','3.3.4'],
+ ['alkene','halo','HX (e.g. HBr)','room temperature','electrophilic addition','3.3.4'],
+ ['alkene','alc1','H₂O(g) (steam)','H₃PO₄ catalyst, ~300 °C, 6–7 MPa (ethene gives ethanol)','addition (hydration)','3.3.4'],
+ ['alkene','alc2','H₂O(g) (steam)','H₃PO₄ catalyst; propene gives mainly propan-2-ol (Markownikoff)','addition (hydration)','3.3.4'],
+ ['alkene','poly','—','high pressure and/or a catalyst','addition polymerisation','3.3.4'],
+ ['alc1','alkene','conc. H₃PO₄ or conc. H₂SO₄','heat','elimination (dehydration)','3.3.5'],
+ ['alc2','alkene','conc. H₃PO₄ or conc. H₂SO₄','heat','elimination (dehydration)','3.3.5'],
+ ['alc1','halo','NaBr + conc. H₂SO₄ (makes HBr)','heat','substitution','3.3.5'],
+ ['halo','alc1','NaOH(aq)','heat under reflux','nucleophilic substitution (hydrolysis)','3.3.3'],
+ ['halo','amine','excess conc. NH₃ in ethanol','heat in a sealed tube','nucleophilic substitution','3.3.3'],
+ ['halo','nitrile','KCN in ethanol and water','heat under reflux','nucleophilic substitution (adds one carbon)','3.3.3'],
+ ['halo','alkene','KOH in ethanol','heat','elimination (OH⁻ acts as a base)','3.3.3'],
+ ['alkene','hso4','conc. H₂SO₄','room temperature','electrophilic addition','3.3.4'],
+ ['hso4','alc2','water','warm (H₂SO₄ is regenerated)','hydrolysis','3.3.4'],
+ ['amine','quat','excess halogenoalkane','heat','nucleophilic substitution (repeated)','3.3.11'],
+ ['anhyd','ester','alcohol','warm','acylation (carboxylic acid also formed)','3.3.9'],
+ ['anhyd','amide','NH₃ or a primary amine','warm','acylation (carboxylic acid also formed)','3.3.9'],
+ ['alc1','ald','K₂Cr₂O₇ / H₂SO₄','heat, distil the aldehyde off as it forms','oxidation','3.3.5'],
+ ['alc1','acid','excess K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','3.3.5'],
+ ['alc2','ketone','K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','3.3.5'],
+ ['ald','acid','K₂Cr₂O₇ / H₂SO₄','heat under reflux','oxidation','3.3.8'],
+ ['ald','alc1','NaBH₄(aq)','room temperature (warm)','reduction (nucleophilic addition)','3.3.8'],
+ ['ketone','alc2','NaBH₄(aq)','room temperature (warm)','reduction (nucleophilic addition)','3.3.8'],
+ ['ald','hn','KCN, then dilute acid','room temperature (KCN is highly toxic: fume cupboard)','nucleophilic addition (adds one carbon; racemic product)','3.3.8'],
+ ['ketone','hn','KCN, then dilute acid','room temperature (KCN is highly toxic: fume cupboard)','nucleophilic addition (adds one carbon; racemic product)','3.3.8'],
+ ['nitrile','amine','LiAlH₄ in dry ether, or H₂ with a nickel catalyst','room temperature (LiAlH₄) or heat (H₂/Ni)','reduction','3.3.11'],
+ ['nitrile','acid','dilute HCl(aq)','heat under reflux','hydrolysis','3.3.14'],
+ ['acid','ester','alcohol + conc. H₂SO₄ catalyst','warm (reversible)','esterification','3.3.9'],
+ ['acid','salt','NaOH, Na₂CO₃, metal or metal oxide','room temperature','neutralisation (or redox with a metal)','3.3.9'],
+ ['acyl','acid','water','room temperature','nucleophilic addition–elimination (vigorous, misty HCl fumes)','3.3.9'],
+ ['acyl','ester','alcohol','room temperature','nucleophilic addition–elimination (not reversible)','3.3.9'],
+ ['acyl','amide','NH₃ (→ primary amide) or a primary amine (→ N-substituted amide)','room temperature','nucleophilic addition–elimination','3.3.9'],
+ ['amine','amide','acyl chloride or acid anhydride','room temperature','nucleophilic addition–elimination','3.3.11'],
+ ['amine','amsalt','acid, e.g. HCl','room temperature','neutralisation (amine acts as a base)','3.3.11'],
+ ['ester','acid','dilute H₂SO₄ or HCl','heat under reflux (reversible; alcohol also formed)','acid hydrolysis','3.3.9'],
+ ['ester','salt','NaOH(aq)','heat under reflux (alcohol also formed)','alkaline hydrolysis','3.3.9'],
+ ['benzene','nitro','conc. HNO₃ + conc. H₂SO₄','50 °C','electrophilic substitution (nitration)','3.3.10'],
+ ['nitro','phenam','Sn + conc. HCl, then NaOH(aq)','heat under reflux','reduction','3.3.11'],
+ ['benzene','phket','acyl chloride + AlCl₃ catalyst','heat under reflux','electrophilic substitution (Friedel–Crafts acylation)','3.3.10']];
 function rxmap(v){
   let sel=null;
   const NW=136, NH=40;
-  v.innerHTML=`<span class="eyebrow">Organic synthesis</span><h1>Reaction map</h1><p class="muted" style="max-width:78ch">Every reaction in OCR A organic chemistry on one map. Tap a compound type to see what it can be turned into (orange) and how it can be made (purple), with reagents, conditions and the type of reaction. Then test yourself with the quiz.</p>
+  v.innerHTML=`<span class="eyebrow">Organic synthesis</span><h1>Reaction map</h1><p class="muted" style="max-width:78ch">Every reaction in AQA A-level organic chemistry on one map. Tap a compound type to see what it can be turned into (orange) and how it can be made (purple), with reagents, conditions and the type of reaction. Then test yourself with the quiz.</p>
   <div class="subtabs" role="group" aria-label="Mode"><button aria-pressed="true" data-m="map">Map</button><button aria-pressed="false" data-m="quiz">Quiz: reagents and conditions</button></div>
   <div id="rxbody"></div>`;
   const body=$('#rxbody',v);
@@ -152,7 +154,7 @@ const SPQ=[
  {f:'C₃H₇Br',ms:'M⁺ 122 and 124 (equal heights); fragment at 43',ir:'no O–H, no C=O',c:'2 peaks: 45, 29',h:[['4.3','1H','septet'],['1.7','6H','doublet']],o:['1-bromopropane','2-bromopropane','bromocyclopropane','3-bromoprop-1-ene'],a:1,x:'Two M⁺ peaks of equal height, 2 apart: one Br atom (⁷⁹Br and ⁸¹Br are about 50 : 50). Two equivalent CH₃ on a CH (doublet 6H, septet 1H), and the CH is on Br (4.3 ppm). CH₃CHBrCH₃.'}];
 function spec(v){
   let order=SPQ.map((_,i)=>i).sort(()=>Math.random()-.5), pos=0;
-  v.innerHTML=`<span class="eyebrow">Analysis · 4.2.4 and 6.3.2</span><h1>Spectroscopy practice</h1><p class="muted" style="max-width:78ch">${SPQ.length} compounds to identify from their molecular formula, mass spectrum, IR spectrum and NMR data, the way Paper 2 asks. Work out the structure first, then choose. Chemical shifts are in ppm, IR in cm⁻¹. Check shifts against the Data Sheet (linked on <a href="#papers">Past papers</a>).</p><div id="spq"></div>`;
+  v.innerHTML=`<span class="eyebrow">Analysis · 4.2.4 and 6.3.2</span><h1>Spectroscopy practice</h1><p class="muted" style="max-width:78ch">${SPQ.length} compounds to identify from their molecular formula, mass spectrum, IR spectrum and NMR data, the way Paper 2 asks. Work out the structure first, then choose. Chemical shifts are in ppm, IR in cm⁻¹. Check shifts against Tables A–C of the AQA Data Booklet (linked on <a href="#papers">Past papers</a>).</p><div id="spq"></div>`;
   const show=()=>{ const q=SPQ[order[pos%order.length]], st=S.spec;
     $('#spq',v).innerHTML=`<div class="card" style="max-width:860px"><span class="eyebrow">Problem ${pos%order.length+1} of ${order.length} · score ${st.right||0}/${st.seen||0}</span><h2 style="margin:6px 0 12px">Molecular formula ${q.f}</h2>
     <div class="tbl"><table><tr><th style="width:150px">Mass spectrum</th><td>${q.ms}</td></tr><tr><th>Infrared / cm⁻¹</th><td>${q.ir}</td></tr><tr><th>¹³C NMR / ppm</th><td>${q.c}</td></tr><tr><th>¹H NMR</th><td><table style="min-width:0;width:auto"><tr><th>δ / ppm</th><th>Area</th><th>Splitting</th></tr>${q.h.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table></td></tr></table></div>

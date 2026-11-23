@@ -52,9 +52,9 @@ window.LABGUIDES={
   {t:'The ethyl group pattern',d:'Look at the ¹H NMR of ethyl ethanoate.',set:a=>{ a.set('Compound','ester'); a.set('Spectrum','h'); },q:'Which two peaks show an ethyl group?',a:'A 2H quartet and a 3H triplet: the CH₂ (next to CH₃) and the CH₃ (next to CH₂). Here the quartet is at 4.1 ppm because the CH₂ is bonded to oxygen.'},
   {t:'Alcohol, aldehyde or acid?',d:'Compare the IR spectra of ethanol, ethanal and ethanoic acid.',set:a=>{ a.set('Compound','acid'); a.set('Spectrum','ir'); },q:'What two features identify a carboxylic acid?',a:'A very broad O–H absorption from 2500 to 3300 cm⁻¹ and a strong C=O absorption near 1710 cm⁻¹.'}]};
 /* which topics each lab appears on */
-const MAP={titration:['2.1.4','5.1.3'],calorimetry:['3.2.1'],boltzmann:['3.2.2','5.1.1'],equilibrium:['3.2.3','5.1.2'],cells:['5.2.3'],iontests:['3.1.4','5.3.2','3.1.3'],shapes:['2.2.2','4.1.3','6.2.2'],spectra:['4.2.4','6.3.2']};
+const MAP={titration:['3.1.2','3.1.12'],calorimetry:['3.1.4'],boltzmann:['3.1.5','3.1.9'],equilibrium:['3.1.6','3.1.10'],cells:['3.1.11'],iontests:['3.2.3','3.2.6'],shapes:['3.1.3','3.3.4','3.3.7'],spectra:['3.3.6','3.3.15']};
 const S=window.SPEC; if(S) Object.entries(MAP).forEach(([lab,ids])=>ids.forEach(id=>{ const t=S.topics.find(x=>x.id===id); if(t){ t.labs=t.labs||[]; if(!t.labs.includes(lab)) t.labs.push(lab); } }));
-/* PAG pages run the matching lab in "Run the experiment" */
-const PAGLAB={'p2-1':'titration','p3-1':'calorimetry','p4-1':'iontests','p8-1':'cells','p11-1':'titration'};
+/* required practical pages run the matching lab in "Run the experiment" */
+const PAGLAB={'rp1':'titration','rp2':'calorimetry','rp4':'iontests','rp8':'cells','rp9':'titration','rp11':'iontests'};
 const PG=window.PAGS; if(PG){ const old=PG.mount; PG.mount=(el,id)=>{ const lab=PAGLAB[id]; if(lab&&window.LABS[lab]&&window.LK){ const L=window.LABS[lab]; L.id=lab; return window.LK.frame(el,L,(window.LABGUIDES||{})[lab]); } return old(el,id); }; }
 })();

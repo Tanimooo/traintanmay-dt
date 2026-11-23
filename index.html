@@ -255,7 +255,7 @@ footer a{text-underline-offset:3px}
         </svg></span>
         <span class="w-key">3</span>
         <span class="w-name">Chemistry</span>
-        <span class="w-sub">OCR A H432</span>
+        <span class="w-sub">AQA 7405</span>
         <span class="w-tag">Topic notes, PMT questions, past papers and videos</span>
       </a>
 
@@ -359,7 +359,7 @@ footer a{text-underline-offset:3px}
 /* Your subjects: pick the apps you actually use. The others fade back here and drop out of the
    subject bar and logo menu inside the apps. Stored as tt-profile, so it travels with "Save progress". */
 (function(){
-  var ALL=[['dt','Design & Technology','Edexcel 9DT0'],['physics','Physics','OCR A H556'],['chemistry','Chemistry','OCR A H432'],['maths','Maths','Edexcel 9MA0 · 9FM0'],['esat','ESAT','ENGAA · NSAA · TMUA']];
+  var ALL=[['dt','Design & Technology','Edexcel 9DT0'],['physics','Physics','OCR A H556'],['chemistry','Chemistry','AQA 7405'],['maths','Maths','Edexcel 9MA0 · 9FM0'],['esat','ESAT','ENGAA · NSAA · TMUA']];
   function get(){try{return JSON.parse(localStorage.getItem('tt-profile')||'null')}catch(e){return null}}
   function apply(){var p=get(),s=p&&p.subjects&&p.subjects.length?p.subjects:null;
     [].forEach.call(document.querySelectorAll('.world'),function(w){var on=!s||s.indexOf(w.getAttribute('data-go'))>=0;w.classList.toggle('w-off',!on);if(on)w.removeAttribute('title');else w.title='Not one of your subjects (change this with “Your subjects”)';});}

@@ -87,6 +87,10 @@
           var p = merged[merged.length - 1], gap = p ? it.x - (p.x + (p.w || 0)) : 0;
           if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1 && !(/^\d{1,2}\.$/.test(p.s) && /^[a-z]{2}|^[a-z]\(/i.test(it.s))) { // but not "5." + "f("
             p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
+          } else if (p && Math.abs(p.y - it.y) < 2 && p.x < vp.width * 0.15 && gap > -1 && gap < 14 && Math.abs((p.h || 0) - (it.h || 0)) < 2 &&
+                     ((/^\d$/.test(p.s) && /^\d$/.test(it.s)) || (/^\d\d$/.test(p.s) && it.s === '.') || (/^\d\d\.$/.test(p.s) && /^\d$/.test(it.s)))) {
+            // AQA prints question numbers one digit per box: "0" "1" "." "2" is question 01.2
+            p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
           } else merged.push(Object.assign({}, it)); // overlapping numbers (a renumbered pack) stay separate
         });
         // the usual text size on the page, so small superscripts ("sin² t") aren't read as question numbers
@@ -113,7 +117,7 @@
   // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
   function numAt(it, P, kind) {
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
-    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\.?\s+(?:[A-Z(]|[a-h][.)]\s)/.exec(it.s);
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\.?\s+(?:[A-Z(]|[a-h][.)]\s)/.exec(it.s) || /^(0[1-9]|[1-3]\d)\.\d$/.exec(it.s); // AQA part label "01.2"
     if (!m) return null;
     if (P.mh && it.h < P.mh * 0.75) return null; // a superscript or index, not a label
     // in a mark scheme table the numbers sit in the first column: a number further in is part of the working

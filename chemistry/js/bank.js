@@ -25,9 +25,9 @@ S.bank=S.bank||{}; S.mocks=S.mocks||[]; S.exam=S.exam||{};
 WQ.forEach(q=>{ const e=S.exam[q.wr.id]; if(e&&e.got!=null&&!(S.bank[q.id]&&S.bank[q.id].got!=null)) S.bank[q.id]={got:e.got,ts:e.ts||Date.now(),rev:1}; });
 const saveNow=()=>{ save(); try{ localStorage.setItem('tt-chem-progress-v1',JSON.stringify(S)); }catch(e){} }; // write straight away as well as via the app's short debounce
 const save=()=>{ WQ.forEach(q=>{ const r=S.bank[q.id]; if(r&&r.got!=null) S.exam[q.wr.id]=Object.assign(S.exam[q.wr.id]||{},{got:r.got,ts:r.ts,rev:1}); }); C.save(); };
-const SRC={J:'cur',G:'old',GM:'ext'};
-const SRCL={cur:'OCR A 2022–24 papers (Set J)',old:'OCR A 2016–21 papers (Set G)',ext:'Multiple-choice packs (Set G)',tt:'TrainTanmay exam-style questions'};
-const srcOf=q=>q.wr?'tt':(SRC[B.packs[q.p].set]||'ext');
+const SRC={A:'cur',AS:'as',L:'old',T:'tb'};
+const SRCL={cur:'AQA A-level papers (7405, 2017–25)',as:'AQA AS papers (7404, 2016–25)',old:'Legacy AQA unit papers (2010–16)',tb:'Legacy AQA topic booklets',tt:'TrainTanmay exam-style questions'};
+const srcOf=q=>q.wr?'tt':(SRC[B.packs[q.p].set]||'old');
 const pk=q=>q.wr?{title:'Exam-style question'}:B.packs[q.p];
 const qLabel=q=>q.wr?`Exam-style ${q.wr.id} · ${q.wr.style}`:`${pk(q).title} · Q${q.n}`;
 const pmtQ=q=>pk(q).qp_url+(q.qp?'#page='+q.qp:'');
@@ -38,7 +38,7 @@ const minsFor=m=>Math.max(1,Math.round(m*1.2));
    No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
 const live=(q,kind)=>{ const p=pk(q); return kind==='m'
-  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
+  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url||!q.mx?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
   : ttCrop.html({url:p.qp_url,q:String(q.n),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
   return live(q,kind); };
@@ -61,9 +61,9 @@ const fmtT=s=>{ s=Math.max(0,Math.round(s)); const m=Math.floor(s/60), x=s%60; r
 const para=s=>esc(s).split(/\n+/).map(l=>`<p>${l}</p>`).join('');
 
 function aiPrompt(q,qt,mt,ans,mode){
-  const base=`OCR A Level Chemistry A (H432) question (${q.m||'?'} marks).\n\nQUESTION TEXT (extracted from the paper, diagrams not included):\n${qt.slice(0,3500)}\n\nOFFICIAL MARK SCHEME (extracted):\n${mt.slice(0,3500)}\n`;
-  if(mode==='model') return `You are an expert OCR A Level Chemistry teacher. Write a full-mark model answer a top student would write for the question below, following the official mark scheme exactly. Rules: answer each part in order with its label (a)(i) etc; for calculations write the equation, substitute with units, and give the final answer to sensible significant figures with a unit; for explanations use the key words the mark scheme rewards; where a diagram or graph is required, describe precisely what to draw (axes, labels, shape, key points) in one or two lines. Plain text, no markdown headings.\n\n${base}`;
-  return `You are an experienced OCR A Level Chemistry A (H432) examiner. Mark the student's answer strictly against the official mark scheme, using OCR conventions (B, M, C, A marks, error carried forward). Reply in plain text: first line "Mark: X/${q.m||'?'}", then one short line per part saying which marking points were earned and what was missing, then one sentence on how to reach full marks.\n\n${base}\nSTUDENT ANSWER:\n${ans||'[no answer]'}`;
+  const base=`AQA A-level Chemistry (7405) question (${q.m||'?'} marks).\n\nQUESTION TEXT (extracted from the paper, diagrams not included):\n${qt.slice(0,3500)}\n\nOFFICIAL MARK SCHEME (extracted):\n${mt.slice(0,3500)}\n`;
+  if(mode==='model') return `You are an expert AQA A-level Chemistry teacher. Write a full-mark model answer a top student would write for the question below, following the official mark scheme exactly. Rules: answer each part in order with its label (a)(i) etc; for calculations write the equation, substitute with units, and give the final answer to sensible significant figures with a unit; for explanations use the key words the mark scheme rewards; where a diagram or graph is required, describe precisely what to draw (axes, labels, shape, key points) in one or two lines. Plain text, no markdown headings.\n\n${base}`;
+  return `You are an experienced AQA A-level Chemistry (7405) examiner. Mark the student's answer strictly against the official mark scheme, using AQA conventions (M1, M2… marking points, consequential marking, levels of response for 6-mark questions). Reply in plain text: first line "Mark: X/${q.m||'?'}", then one short line per part saying which marking points were earned and what was missing, then one sentence on how to reach full marks.\n\n${base}\nSTUDENT ANSWER:\n${ans||'[no answer]'}`;
 }
 async function runAI(q,ansText,mode,out,onMark){
   const cap=C.sample(); if(!cap){ out.innerHTML='<div class="aimark muted">AI help is not available in this view.</div>'; return; }
@@ -84,13 +84,13 @@ function filterQs(f){
 function viewBank(v){
   const pre=JSON.parse(sessionStorage.getItem('tt-bankf')||'{}');
   v.innerHTML=`<span class="eyebrow">Past paper and exam-style questions</span><h1>Practice questions</h1>
-  <p class="muted" style="max-width:78ch">${WQ.length?`${Q.length.toLocaleString()} questions with mark schemes: ${B.q.length.toLocaleString()} real exam questions from ${B.packs.length} PMT topic packs, plus ${WQ.length} exam-style questions written for H432.`:`${B.q.length.toLocaleString()} real OCR A exam questions with mark schemes, from ${B.packs.length} PMT topic packs (${B.q.filter(q=>q.mcq).length} of them multiple choice, marked for you).`} Filtering by a topic or module only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
-  <div class="filters bkfilters"><label class="field">Module<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
+  <p class="muted" style="max-width:78ch">${B.q.length.toLocaleString()} real AQA exam questions with mark schemes, from ${B.packs.filter(p=>p.set!=='T').length} past papers and ${B.packs.filter(p=>p.set==='T').length} topic booklets on PMT (${B.q.filter(q=>q.mcq).length} of them multiple choice, marked for you)${WQ.length?`, plus ${WQ.length} exam-style questions written for 7405`:''}. Each question is tagged with the AQA topics it uses. Filtering by a topic or section only shows questions that stay entirely within it; questions that mix topics appear when all their topics are included. Answer, reveal the mark scheme and self-mark, or build a <a href="#mock">practice test</a>.</p>
+  <div class="filters bkfilters"><label class="field">Section<select id="bm"><option value="">All</option>${MODS.map(m=>`<option value="${m.n}">Module ${m.n}</option>`).join('')}</select></label>
   <label class="field">Topic<select id="bt"><option value="">All topics</option>${topicOpts(pre.t)}</select></label>
   <label class="field">Source<select id="bs"><option value="">All sources</option>${Object.entries(SRCL).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
   <label class="field">Type<select id="by"><option value="">All</option><option value="mcq">Multiple choice</option><option value="str">Structured</option></select></label>
   <label class="field">Status<select id="bst"><option value="">Any</option><option value="todo">Not attempted</option><option value="wrong">Under 60%</option><option value="done">Marked</option></select></label>
-  <label class="field" style="flex:1;min-width:180px">Search<input type="search" id="bq" placeholder="e.g. terminal velocity"></label></div>
+  <label class="field" style="flex:1;min-width:180px">Search<input type="search" id="bq" placeholder="e.g. Born–Haber, buffer, NMR"></label></div>
   <div class="row" style="justify-content:space-between;margin:10px 0"><span class="muted" id="bcount"></span><a class="btn btn-sm primary" href="#mock" id="tomock">Build a practice test from these filters</a></div>
   <div class="bk-list" id="blist"></div><div style="text-align:center;margin:16px 0"><button class="btn" id="bmore" hidden>Show more</button></div>`;
   if(pre.t) $('#bt').value=pre.t; if(pre.m) $('#bm').value=pre.m; if(pre.src) $('#bs').value=pre.src; if(pre.type) $('#by').value=pre.type; if(pre.st) $('#bst').value=pre.st; if(pre.q) $('#bq').value=pre.q;
@@ -136,7 +136,7 @@ function viewBankQ(v,id){
 }
 
 /* ---------- mock tests ---------- */
-const DEF={topics:[],src:['cur','old','ext','tt'],types:['mcq','str'],mode:'random',marks:40,timed:true,reveal:'end',order:'paper'};
+const DEF={topics:[],src:['cur','as','old','tb','tt'],types:['mcq','str'],mode:'random',marks:40,timed:true,reveal:'end',order:'paper'};
 function pickQs(cfg){
   let pool=Q.filter(q=>(!cfg.topics.length||q.t.every(t=>cfg.topics.includes(t)))&&cfg.src.includes(srcOf(q))&&cfg.types.includes(q.mcq?'mcq':'str')&&(q.m||0)>0);
   const att=q=>S.bank[q.id]&&S.bank[q.id].got!=null, wrong=q=>att(q)&&S.bank[q.id].got<(q.m||1)*0.6;
@@ -160,8 +160,8 @@ function viewMock(v){
   const hist=S.mocks.slice().reverse();
   v.innerHTML=`<span class="eyebrow">Exam practice from the question bank</span><h1>Practice tests</h1><p class="muted" style="max-width:76ch">Build a timed paper from real PMT questions on any mix of topics. Sit it, then review every question against the official mark scheme, mark yourself (multiple choice is marked for you) and see a breakdown by topic.</p>
   <div class="grid g2" style="align-items:start;margin-top:14px"><div class="stack">
-   <div class="card"><div class="row" style="justify-content:space-between"><label class="field">Topics</label><div class="row" style="gap:6px"><button class="chip" data-qt="as">AS (Modules 1 to 4)</button><button class="chip" data-qt="all">Whole course</button><button class="chip" data-qt="none">Clear</button></div></div>
-    ${MODS.map(m=>`<div class="mk-mod"><button class="mk-modbtn" data-mod="${m.n}">Module ${m.n}</button><div class="chips">${T.filter(t=>t.mod===m.n).map(t=>`<button class="chip" data-t="${t.id}" aria-pressed="${cfg.topics.includes(t.id)}">${t.id} ${esc(t.title)}</button>`).join('')}</div></div>`).join('')}
+   <div class="card"><div class="row" style="justify-content:space-between"><label class="field">Topics</label><div class="row" style="gap:6px"><button class="chip" data-qt="as">AS content</button><button class="chip" data-qt="all">Whole course</button><button class="chip" data-qt="none">Clear</button></div></div>
+    ${MODS.map(m=>`<div class="mk-mod"><button class="mk-modbtn" data-mod="${m.n}">${esc(m.code==='P'?m.title:m.code+' '+m.title)}</button><div class="chips">${T.filter(t=>t.mod===m.n).map(t=>`<button class="chip" data-t="${t.id}" aria-pressed="${cfg.topics.includes(t.id)}">${t.id} ${esc(t.title)}</button>`).join('')}</div></div>`).join('')}
     <p class="muted" style="font-size:.8rem;margin:8px 0 0">No topics selected means the whole course.</p></div>
    <div class="card"><label class="field">Sources</label><div class="chips" id="msrc">${Object.entries(SRCL).map(([k,l])=>`<button class="chip" data-v="${k}" aria-pressed="${cfg.src.includes(k)}">${esc(l)}</button>`).join('')}</div>
     <label class="field" style="margin-top:14px">Question types</label><div class="chips" id="mtyp"><button class="chip" data-v="mcq" aria-pressed="${cfg.types.includes('mcq')}">Multiple choice</button><button class="chip" data-v="str" aria-pressed="${cfg.types.includes('str')}">Structured and extended</button></div></div>
@@ -181,7 +181,7 @@ function viewMock(v){
   const syncT=()=>{ $$('[data-t]',v).forEach(b=>b.setAttribute('aria-pressed',cfg.topics.includes(b.dataset.t))); store(); avail(); };
   $$('[data-t]',v).forEach(b=>b.onclick=()=>{ const t=b.dataset.t; cfg.topics=cfg.topics.includes(t)?cfg.topics.filter(x=>x!==t):cfg.topics.concat(t); syncT(); });
   $$('[data-mod]',v).forEach(b=>b.onclick=()=>{ const ids=T.filter(t=>t.mod===+b.dataset.mod).map(t=>t.id); const all=ids.every(i=>cfg.topics.includes(i)); cfg.topics=all?cfg.topics.filter(x=>!ids.includes(x)):Array.from(new Set(cfg.topics.concat(ids))); syncT(); });
-  $$('[data-qt]',v).forEach(b=>b.onclick=()=>{ cfg.topics=b.dataset.qt==='as'?T.filter(t=>t.mod<=4).map(t=>t.id):b.dataset.qt==='all'?T.map(t=>t.id):[]; syncT(); });
+  $$('[data-qt]',v).forEach(b=>b.onclick=()=>{ cfg.topics=b.dataset.qt==='as'?T.filter(t=>t.as).map(t=>t.id):b.dataset.qt==='all'?T.map(t=>t.id):[]; syncT(); });
   const multi=(id,key)=>$$('#'+id+' [data-v]').forEach(b=>b.onclick=()=>{ const val=b.dataset.v; let a=cfg[key]; a=a.includes(val)?a.filter(x=>x!==val):a.concat(val); if(!a.length) return; cfg[key]=a; $$('#'+id+' [data-v]').forEach(x=>x.setAttribute('aria-pressed',a.includes(x.dataset.v))); store(); avail(); });
   multi('msrc','src'); multi('mtyp','types');
   const single=(id,key)=>$$('#'+id+' [data-v]').forEach(b=>b.onclick=()=>{ cfg[key]=b.dataset.v; $$('#'+id+' [data-v]').forEach(x=>x.setAttribute('aria-pressed',x===b)); store(); avail(); });
