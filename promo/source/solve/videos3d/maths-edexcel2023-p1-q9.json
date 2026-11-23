@@ -7,14 +7,18 @@
   "site": {"kind": "paper", "page": "maths/index.html#cp-pure", "title": "9MA0/01 · June 2023 question paper",
            "url": "https://pmt.physicsandmathstutor.com/download/Maths/A-level/Papers/Edexcel/Paper-1/QP/June%202023%20QP.pdf", "pdfPage": 22, "drift": -25},
   "lines": [
-    {"say": "{t3}Three terms of a geometric sequence, {sl}and they all depend on k. {q}It converges. Find k, and the sum to infinity."},
+    {"say": "{c1}Three terms. {c2}A geometric sequence. {c3}All depending on k. {q}It converges. Find k, and the sum to infinity."},
     {"say": "Real Edexcel A-level question. {pz}Pause and try it!", "gap": 2.2},
-    {"say": "{r}Geometric means the same ratio every step, {sq}so the middle squared equals the first times the third."},
-    {"say": "{ex}Expand, tidy up, {fa}and factorise. {roots}k is twenty, or two thirds."},
-    {"say": "{k23}Try two thirds: six, ten, sixteen and two thirds. {up}The ratio's five thirds, so it explodes. {no}No good."},
-    {"say": "{k20}Now twenty: sixty-four, minus forty-eight, thirty-six. {fly}Ratio minus three quarters, so every term shrinks and flips."},
-    {"say": "{sum}Add them up, and the total zig-zags in. {lim}a over one minus r gives {ans}two hundred and fifty-six sevenths!"},
-    {"say": "{trap}Keep it as a fraction. Thirty-six point six loses the mark."},
-    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.4}
+    {"say": "{rem1}Quick reminder: geometric means you multiply by the same ratio, r, every time. {rat}So second over first equals third over second."},
+    {"say": "{cross}Cross-multiply, {sq}and the middle squared equals first times third."},
+    {"say": "{exL}Expand the left: one four four, minus seventy-two k, plus nine k squared. {exR}The right: three k squared, plus fifty-two k, plus sixty-four."},
+    {"say": "{col}Put it all on one side, {half}halve it, and there's the quadratic: three k squared, minus sixty-two k, plus forty, equals zero."},
+    {"say": "{fac}It factorises: three k minus two, times k minus twenty. {roots}So k is two thirds, or twenty."},
+    {"say": "{rem2}Now remember: a geometric series only converges if r is between minus one and one."},
+    {"say": "{k23}Two thirds gives six, ten, sixteen and two thirds. {r23}r is five thirds. Too big! {boom}It runs off to infinity."},
+    {"say": "{k20}Twenty gives sixty-four, minus forty-eight, thirty-six. {r20}r is minus three quarters. {ok}That works! {hop}Watch the running total bounce in."},
+    {"say": "{rem3}Sum to infinity is a over one minus r. {sub}Sixty-four over one plus three quarters, {ans}which is two hundred and fifty-six over seven."},
+    {"say": "{trap}Leave it as a fraction! Thirty-six point six won't get the mark."},
+    {"say": "{o}Try this question and more at TrainTanmay. It's completely free. Link in bio!", "gap": 1.4}
   ]
 }

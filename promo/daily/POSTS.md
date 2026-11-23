@@ -27,13 +27,13 @@ Before posting: merge the `crop.js` fix to the live site, so the ESAT question s
 
 ### Maths · maths-edexcel2023-p1-q9.mp4
 **YouTube title:** One value of k explodes. The other converges. (Edexcel A-level Maths 2023) #shorts
-**Caption:** 3k+4, 12−3k, k+16. Geometric, and it converges. Watch k = ⅔ blow up 💥 Real Edexcel question. Try it and more free, link in bio.
+**Caption:** 3k+4, 12−3k, k+16. Geometric, and it converges. Every step animated, and watch k = ⅔ blow up 💥 Real Edexcel question. Try it and more on TrainTanmay, completely free, link in bio.
 **Hashtags:** #alevelmaths #maths #edexcel #series #alevels
 **Pinned comment:** 256/7 or 36.6? 👇
 
 ### Chemistry · chem-ocr2023-p1-q7.mp4
 **YouTube title:** Double the concentration. Does the half-life change? 🧪 (OCR A-level Chemistry) #shorts
-**Caption:** Two flasks, one has twice as much. Time-lapse: who halves first? 👀 Real OCR A-level question. Try it and more free, link in bio.
+**Caption:** Double the concentration. Does the half-life change? Watch the graph prove it 📈 Real OCR A-level question. Try it and more on TrainTanmay, completely free, link in bio.
 **Hashtags:** #alevelchemistry #chemistry #ocr #kinetics #alevels
 **Pinned comment:** Did you say 8 minutes? 👇
 

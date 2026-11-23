@@ -3,17 +3,19 @@
   "theme": "chemistry",
   "tag": "OCR A 2023",
   "speed": 1.12,
-  "cover": "h2",
+  "cover": "ans",
   "site": {"kind": "paper", "page": "chemistry/index.html#papers", "title": "H432/01 · June 2023 question paper",
            "url": "https://pmt.physicsandmathstutor.com/download/Chemistry/A-level/Past-Papers/OCR-A/Paper-1/QP/June%202023%20QP.pdf", "pdfPage": 4, "drift": 110},
   "lines": [
-    {"say": "{f1}Same reaction, two flasks. {f2}The right one has double the concentration. {q}On the left, the half-life is sixteen minutes. On the right?"},
+    {"say": "{b1}Here's a reaction: X turning into products. {b2}Now double the starting concentration. {q}If the half-life on the left is sixteen minutes, what is it on the right?"},
     {"say": "Real OCR A-level question. {pz}Pause and try it!", "gap": 2.2},
-    {"say": "{tl}Let's time-lapse it. {go}It's first order, so the rate depends on concentration. {fast}The right flask reacts twice as fast."},
-    {"say": "{m16}But at sixteen minutes, {h1}the left has halved. {h2}And so has the right! Twice the rate, but twice as much to get through."},
-    {"say": "{m32}Thirty-two minutes: halved again. Both. {graph}Plot them, {shift}and it's the same curve, just shifted along."},
-    {"say": "{ans}So the half-life is still sixteen minutes! {rule}For first order, it doesn't depend on concentration."},
-    {"say": "{trap}If you said eight, you only thought about the faster rate."},
-    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.4}
+    {"say": "{rem}Quick reminder. {fo}First order means the rate equals k times the concentration of X. {hl}And half-life is the time it takes for the concentration to halve."},
+    {"say": "{go}Let's run it. {c1}The left starts at one, {dt1}and sixteen minutes later, it's down to a half."},
+    {"say": "{c2}The right starts at two. {fast}It reacts twice as fast at the start, because the rate depends on concentration. {m16}But after sixteen minutes... {h2}it's down to one. It's halved too!"},
+    {"say": "{why}Why? Twice the rate, but twice as much to get rid of. They cancel out."},
+    {"say": "{m32}Keep going. Thirty-two minutes: halved again. {m48}Forty-eight: halved again. {slide}Slide the first curve along, and it's exactly the same curve."},
+    {"say": "{form}That's why, for first order, t half equals ln two over k. {nox}There's no concentration in it! {ans}So the half-life is still sixteen minutes."},
+    {"say": "{trap}Eight minutes is the trap. It only thinks about the faster rate."},
+    {"say": "{o}Try this question and more at TrainTanmay. It's completely free. Link in bio!", "gap": 1.4}
   ]
 }

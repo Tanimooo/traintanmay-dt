@@ -1,122 +1,101 @@
-// OCR A June 2023 P1 Q7 — first-order half-life, as two flasks in a time-lapse.
-// Each molecule's reaction time is an exact first-order quantile: τ_i = −(16/ln2)·ln(1 − (i+½)/N), so the number left
-// at m minutes is N·2^(−m/16) (rounded), and both flasks halve at 16 and 32 min. The right flask has twice the
-// molecules, so it reacts twice as fast (twice the sparks per minute) yet halves in the same time.
+// OCR A June 2023 P1 Q7 — first-order half-life, 2D (orange).
+// First order: [X] = [X]₀·e^(−kt), k = ln2/16 min⁻¹, so t½ = ln2/k = 16 min for ANY starting [X].
+// Starting at 2.0 the rate is twice as fast (rate = k[X]) but there is twice as much to lose → same half-life.
+// Particles: each has an exact first-order quantile lifetime τ_i = −ln(1 − (i+½)/N)/k, so the count left is N·2^(−m/16).
 export default (X) => {
-  const { THREE, scene, TH, E, k, on, win, tv, clamp } = X;
-  const HL = 16, kk = Math.LN2 / HL;
-  // ---------- floor ----------
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), X.mat('#160a03', { roughness: .95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-  const grid = new THREE.GridHelper(80, 160, TH.brand, TH.deep); grid.material.transparent = true; grid.material.opacity = .14; grid.position.y = .002; scene.add(grid);
-  // ---------- conical flasks (lathe) ----------
-  const prof = [[0, 0], [.62, 0], [.66, .04], [.66, .08], [.24, 1.15], [.2, 1.25], [.2, 1.7], [.24, 1.74]].map(([x, y]) => new THREE.Vector2(x, y));
-  const glass = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: .05, metalness: 0, transparent: true, opacity: .22, side: THREE.DoubleSide, clearcoat: 1 });
-  const liqProf = [[0, .03], [.61, .03], [.62, .08], [.38, .72], [0, .72]].map(([x, y]) => new THREE.Vector2(x, y));
-  const flask = (x) => {
-    const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g);
-    g.add(new THREE.Mesh(new THREE.LatheGeometry(prof, 64), glass));
-    const liq = new THREE.Mesh(new THREE.LatheGeometry(liqProf, 64), new THREE.MeshStandardMaterial({ color: TH.deep, transparent: true, opacity: .32, roughness: .2, depthWrite: false })); g.add(liq);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(.62, .015, 8, 64), X.glow(TH.brand, { opacity: .8 })); ring.rotation.x = Math.PI / 2; ring.position.y = .02; g.add(ring);
-    return g;
-  };
-  const L = flask(-.85), R = flask(.85);
-  // ---------- molecules ----------
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const molGeo = new THREE.SphereGeometry(.045, 16, 12), molMat = X.mat(TH.brand, { emissive: TH.deep, emissiveIntensity: .35, roughness: .35 });
-  const sparkGeo = new THREE.SphereGeometry(.09, 12, 8);
-  const fill = (g, N) => {
-    const ms = [];
-    // lifetimes: exact quantiles, shuffled so the reacting molecules are scattered through the flask
-    const life = Array.from({ length: N }, (_, i) => -Math.log(1 - (i + .5) / N) / kk); for (let i = N - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [life[i], life[j]] = [life[j], life[i]]; }
-    for (let i = 0; i < N; i++) {
-      const y = .1 + rnd() * .55, rmax = .58 - (y - .08) * .36, a = rnd() * 6.283, r = Math.sqrt(rnd()) * rmax * .9;
-      const m = new THREE.Mesh(molGeo, molMat); const sp = new THREE.Mesh(sparkGeo, X.glow('#fff3b0', { opacity: 0 }));
-      m.userData = { p: new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r), ph: rnd() * 6.28, life: life[i] };
-      g.add(m); g.add(sp); ms.push([m, sp]);
-    }
-    return ms;
-  };
-  const molL = fill(L, 40), molR = fill(R, 80);
-  // ---------- time-lapse clock: minutes of reaction shown at video time t ----------
-  const minAt = t => {
-    if (!on('tl')) return 0;
-    const a = tv('tl'), b = tv('m16'), c = tv('m32');
-    if (t < b) return 15.2 * clamp((t - a) / (b - a));                     // time-lapse to just before 16
-    if (t < b + .6) return 15.2 + .8 * clamp((t - b) / .6);                 // land on 16
-    if (t < c) return 16;                                                   // freeze: compare
-    if (t < c + 1.4) return 16 + 16 * E.io((t - c) / 1.4);                  // fast forward to 32
-    if (t < tv('ans')) return 32;
-    return 32 + 16 * E.io((t - tv('ans')) / 3);                            // and on to 48
-  };
-  const TAB = []; for (let t = 0; t <= 120; t += 1 / 60) TAB.push(minAt(t));
-  const tWhen = m => { for (let i = 0; i < TAB.length; i++) if (TAB[i] >= m) return i / 60; return 1e9; };
-  [molL, molR].forEach(ms => ms.forEach(([m]) => { m.userData.tr = m.userData.life < 48.5 ? tWhen(m.userData.life) : 1e9; }));
-  const left = (ms, mins) => ms.filter(([m]) => m.userData.life > mins).length;
+  const { TH, E, on, tv, clamp } = X;
+  const ctx = X.canvas(), O = TH.brand, W = '#ffffff', RED = '#ff6b6b', CREAM = '#ffe2cc';
+  const kk = Math.LN2 / 16;
+  const lerp = (a, b, u) => a + (b - a) * u;
+  const FONT = s => `700 ${s}px 'IBM Plex Sans'`;
+  const txt = (s, x, y, size, col = W, align = 'center') => { ctx.font = FONT(size); ctx.fillStyle = col; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); };
+  const win = (a, b, fi = .4, fo = .4) => { const t = X.now(), ta = tv(a), tb = tv(b); if (ta === undefined || t < ta || (tb !== undefined && t > tb)) return 0; return Math.min(1, (t - ta) / fi, tb === undefined ? 1 : (tb - t) / fo); };
 
-  // ---------- graph panel (canvas texture) ----------
-  const cv = document.createElement('canvas'); cv.width = 1100; cv.height = 900; const cx = cv.getContext('2d');
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 2.45), new THREE.MeshBasicMaterial({ map: tex, transparent: true })); panel.position.set(0, 3.3, -.6); scene.add(panel);
-  const GX = m => 130 + m / 64 * 900, GY = c => 760 - c / 2.1 * 640;
-  const curve = (c0, sh = 0, col, w, dash) => { cx.strokeStyle = col; cx.lineWidth = w; cx.setLineDash(dash || []); cx.beginPath();
-    for (let m = 0; m <= 64 - sh; m += .5) { const x = GX(m + sh), y = GY(c0 * Math.exp(-kk * m)); m ? cx.lineTo(x, y) : cx.moveTo(x, y); } cx.stroke(); cx.setLineDash([]); };
-  function drawGraph(t) {
-    cx.clearRect(0, 0, 1100, 900);
-    cx.fillStyle = 'rgba(25,10,3,.85)'; cx.strokeStyle = TH.brand; cx.lineWidth = 6; cx.beginPath(); cx.roundRect(6, 6, 1088, 888, 36); cx.fill(); cx.stroke();
-    cx.strokeStyle = '#fff'; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(130, 90); cx.lineTo(130, 760); cx.lineTo(1050, 760); cx.stroke();
-    cx.fillStyle = '#fff'; cx.font = '700 40px IBM Plex Sans'; cx.fillText('[X]', 40, 110); cx.fillText('time / min', 820, 840);
-    [16, 32, 48].forEach(m => { cx.fillText(String(m), GX(m) - 20, 805); cx.strokeStyle = 'rgba(255,255,255,.15)'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(GX(m), 90); cx.lineTo(GX(m), 760); cx.stroke(); });
-    [['2.0', 2], ['1.0', 1], ['0.5', .5]].forEach(([s, c]) => cx.fillText(s, 50, GY(c) + 12));
-    const p = k('graph', 1.2, E.io);
-    cx.save(); cx.beginPath(); cx.rect(0, 0, GX(64 * p) + 4, 900); cx.clip();
-    curve(1, 0, '#ffffff', 9); curve(2, 0, TH.brand, 11); cx.restore();
-    if (on('shift')) { const u = E.io((t - tv('shift')) / 1.6); curve(1, 16 * u, '#fff3b0', 8, [22, 16]);
-      if (u >= 1) { cx.fillStyle = '#fff3b0'; cx.font = '800 48px IBM Plex Sans'; cx.fillText('same curve →', GX(20), GY(1.25)); } }
-    tex.needsUpdate = true;
+  // ---------- reaction clocks (minutes of reaction shown at video time t) ----------
+  // (pure functions of t: they're tabulated at setup, before the video clock runs, so no on())
+  const clockL = t => { if (t < tv('go')) return 0; if (t < tv('m32')) return 16 * E.io((t - tv('c1')) / Math.max(.5, tv('dt1') + .6 - tv('c1'))); return clockBoth(t); };
+  const clockR = t => { if (t < tv('c2')) return 0; if (t < tv('m32')) return 16 * E.io((t - tv('c2') - .3) / Math.max(.5, tv('h2') + .4 - tv('c2') - .3)); return clockBoth(t); };
+  const clockBoth = t => t < tv('m48') ? 16 + 16 * E.io((t - tv('m32')) / 1.4) : 32 + 16 * E.io((t - tv('m48')) / 1.4);
+
+  // ---------- particle boxes ----------
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const mk = (N, bx) => { const life = Array.from({ length: N }, (_, i) => -Math.log(1 - (i + .5) / N) / kk);
+    for (let i = N - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [life[i], life[j]] = [life[j], life[i]]; }
+    return life.map(l => ({ l, x: bx + 40 + rnd() * 360, y: 360 + rnd() * 170, ph: rnd() * 6.28 })); };
+  const PL = mk(40, 70), PR = mk(80, 570);
+  const TABL = [], TABR = []; for (let t = 0; t <= 140; t += 1 / 60) { TABL.push(clockL(t)); TABR.push(clockR(t)); }
+  const when = (tab, m) => { for (let i = 0; i < tab.length; i++) if (tab[i] >= m) return i / 60; return 1e9; };
+  PL.forEach(p => p.tr = p.l <= 48.5 ? when(TABL, p.l) : 1e9); PR.forEach(p => p.tr = p.l <= 48.5 ? when(TABR, p.l) : 1e9);
+  function box(t, bx, P, mins, label, a, col) {
+    if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
+    ctx.beginPath(); ctx.roundRect(bx, 330, 440, 230, 30); ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = col; ctx.stroke();
+    let left = 0;
+    P.forEach(p => { const d = t - p.tr; if (d < 0) { left++; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p.x + 6 * Math.sin(t * 2.3 + p.ph), p.y + 5 * Math.cos(t * 2.9 + p.ph), 9, 0, 7); ctx.fill(); }
+      else if (d < .4) { ctx.globalAlpha = a * (1 - d / .4); ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(p.x, p.y, 9 + d * 50, 0, 7); ctx.fill(); ctx.globalAlpha = a; } });
+    txt(label, bx + 220, 300, 34, col); txt(`${left} left`, bx + 220, 600, 40, W);
+    if (on('go')) txt(`${Math.round(mins)} min`, bx + 365, 360, 30, CREAM);
+    ctx.restore();
   }
+
+  // ---------- the graph ----------
+  const GX = m => 150 + m * 13.4, GY = c => 1180 - c * 230;
+  const curve = (c0, m1, col, w, sh = 0, dash) => { if (m1 <= 0) return; ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; if (dash) ctx.setLineDash(dash); ctx.beginPath();
+    for (let m = 0; m <= m1 + 1e-6; m += .25) { const x = GX(m + sh), y = GY(c0 * Math.exp(-kk * m)); m ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.restore(); };
+  function graph(t) {
+    const a = win('go', 'o', .5, .4); if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2;
+    [16, 32, 48, 64].forEach(m => { ctx.beginPath(); ctx.moveTo(GX(m), 680); ctx.lineTo(GX(m), 1180); ctx.stroke(); txt(String(m), GX(m), 1215, 32, W); });
+    [[.5, '0.5'], [1, '1.0'], [2, '2.0']].forEach(([c, s]) => { ctx.beginPath(); ctx.moveTo(150, GY(c)); ctx.lineTo(1010, GY(c)); ctx.stroke(); txt(s, 105, GY(c), 32, W); });
+    ctx.strokeStyle = W; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(150, 660); ctx.lineTo(150, 1180); ctx.lineTo(1020, 1180); ctx.stroke();
+    txt('[X]', 150, 635, 34, W); txt('time / min', 930, 1255, 30, W);
+    const mL = clockL(t), mR = clockR(t);
+    // after the slide the first curve is a ghost; the second stays bold
+    curve(1, mL, CREAM, 8); curve(2, mR, O, 10);
+    // starting slopes (rate) — twice as steep for 2.0
+    const ta = win('fast', 'm16', .3, .3); if (ta > 0) { ctx.save(); ctx.globalAlpha = a * ta; ctx.strokeStyle = RED; ctx.lineWidth = 7;
+      [[1, 1], [2, 2]].forEach(([c0]) => { ctx.beginPath(); ctx.moveTo(GX(0), GY(c0)); ctx.lineTo(GX(9), GY(c0 - c0 * kk * 9)); ctx.stroke(); });
+      txt('rate ×2', GX(14), GY(1.85), 44, RED); ctx.restore(); }
+    // halving markers
+    const mark = (c0, m, col, y) => { ctx.save(); ctx.setLineDash([10, 8]); ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(GX(m), GY(c0 * Math.pow(.5, m / 16))); ctx.lineTo(GX(m), 1180); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(GX(m), GY(c0 * Math.pow(.5, m / 16)), 12, 0, 7); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(GX(m - 16) + 6, y); ctx.lineTo(GX(m) - 6, y); ctx.stroke(); if (col === O) txt('16 min', (GX(m - 16) + GX(m)) / 2, y - 24, 28, col); };
+    [16, 32, 48].forEach(m => { if (mL >= m - .01) mark(1, m, CREAM, 1160); if (mR >= m - .01) mark(2, m, O, 1135); });
+    // the first curve slides 16 min along and lands on the second
+    if (on('slide')) { const u = E.io((t - tv('slide')) / 1.5); curve(1, 48 - 16 * u, '#fff3b0', 7, 16 * u, [22, 14]); if (u >= 1) txt('same curve!', GX(38), GY(.95), 46, '#fff3b0'); }
+    ctx.restore();
+  }
+
   // ---------- overlays ----------
-  const top = (g) => () => g.position.clone().add(new THREE.Vector3(0, 2.05, 0));
-  X.label(t => `<b style="font-size:44px">${left(molL, minAt(t))}</b> left`, top(L), 'f1', 'graph', { size: 30, bg: '#fff', fg: '#000' });
-  X.label(t => `<b style="font-size:44px">${left(molR, minAt(t))}</b> left`, top(R), 'f2', 'graph', { size: 30, bg: '#fff', fg: '#000' });
-  X.label('1.0 mol dm⁻³', new THREE.Vector3(-.85, -.18, .7), 'f1', 'graph', { size: 28, bg: TH.deep });
-  X.label('2.0 mol dm⁻³', new THREE.Vector3(.85, -.18, .7), 'f2', 'graph', { size: 28, bg: TH.brand });
-  X.label('t½ = 16 min', new THREE.Vector3(-.85, 2.6, 0), 'q', 'pz', { size: 30, bg: TH.deep });
-  X.label('t½ = ?', new THREE.Vector3(.85, 2.6, 0), 'q', 'pz', { size: 44, bg: TH.brand });
-  X.badge('⏩ TIME-LAPSE', 'tl', 'graph', { bg: TH.brand, fg: '#fff', y: 250 });
-  X.live(t => `<span style="font-family:JetBrains Mono;font-size:76px">${minAt(t).toFixed(0).padStart(2, '0')} min</span>`, 'tl', 'graph', { top: '340px' });
-  X.label('rate ×2 ⚡', new THREE.Vector3(.85, 1.55, .5), 'fast', 'm16', { size: 32, bg: TH.brand });
-  X.big('½', 'h1', 'm32', { y: 1080, size: 150, color: '#fff' }).style.left = '-270px';
-  X.big('½', 'h2', 'm32', { y: 1080, size: 150, color: TH.brand }).style.left = '270px';
-  X.big('t½ = 16 min', 'ans', 'trap', { y: 1010, size: 130, color: '#fff', box: true });
-  X.big('doesn’t depend on [X]', 'rule', 'trap', { y: 1170, size: 60, color: TH.brand, box: true });
-  X.big('8 min? ✗', 'trap', 'o', { y: 300, size: 140, color: '#ffb4a2', from: 'left', box: true });
-  X.big('faster rate… but 2× as much to react', 'trap+1', 'o', { y: 1060, size: 52, color: '#fff', box: true });
-  ['f1', 'f2', 'tl', 'graph', 'trap', 'o'].forEach(m => X.cue('whoosh', m));
-  ['h1', 'h2', 'm32', 'shift'].forEach(m => X.cue('pop', m)); X.cue('slam', 'q'); X.cue('ding', 'ans'); X.cue('buzz', 'trap'); X.cue('riser', 'pz+1');
-  // a tick for every 4 reactions on screen would be noise; tick on the clock instead
-  for (let m = 4; m <= 32; m += 4) X.cue('tick', tWhen(m));
-  // ---------- camera ----------
-  X.cam([
-    { t: 0, p: [-1.6, 1.4, 2.6], l: [-.85, .5, 0], fov: 40 },
-    { t: 'f2', p: [1.4, 1.5, 3.0], l: [.85, .6, 0], fov: 40 },
-    { t: 'q', p: [0, 1.9, 6.4], l: [0, 1.0, 0], fov: 40, shake: true },
-    { t: 'tl', p: [0, 1.3, 5.0], l: [0, .75, 0], fov: 40 },
-    { t: 'fast', p: [1.0, 1.2, 3.4], l: [.6, .5, 0], fov: 40 },
-    { t: 'm16', p: [0, 1.4, 5.0], l: [0, .8, 0], fov: 40 },
-    { t: 'graph', p: [0, 3.2, 6.6], l: [0, 3.0, -.6], fov: 40, ease: E.out },
-    { t: 'ans', p: [0, 3.0, 7.4], l: [0, 2.6, -.3], fov: 40 },
-    { t: 'trap', p: [.6, 1.6, 5.6], l: [.3, 1.0, 0], fov: 40 },
-    { t: 'o', p: [0, 2.0, 7.4], l: [0, 1.6, 0], fov: 40 },
-  ]);
+  X.big('t½ = 16 min', 'q', 'pz', { y: 640, size: 64, color: CREAM, box: true }).style.left = '-260px';
+  X.big('t½ = ?', 'q', 'pz', { y: 640, size: 84, color: O, box: true }).style.left = '260px';
+  X.ring('pz+0.9', 2.0);
+  X.badge('🧠 REMEMBER', 'rem', 'go', { bg: O, fg: '#fff', y: 640 });
+  X.eq('\\text{rate} = k[\\text{X}]', 'fo', 'go', { y: 780, size: 96, color: O });
+  X.big('half-life = time to halve', 'hl', 'go', { y: 1080, size: 64, color: W, box: true });
+  X.badge('⏩ TIME-LAPSE', 'go', 'why', { bg: O, fg: '#fff', y: 230 });
+  X.big('2× the rate<br>but 2× as much to lose', 'why', 'm32', { y: 760, size: 62, color: W, box: true });
+  X.eq('t_{1/2} = \\frac{\\ln 2}{k}', 'form', 'trap', { y: 215, size: 80, color: O });
+  X.big('no [X] in it!', 'nox', 'ans', { y: 520, size: 60, color: W, box: true, from: 'right' });
+  X.big('t½ = 16 min', 'ans', 'trap', { y: 510, size: 90, color: O, box: true });
+  X.big('8 min ✗', 'trap', 'o', { y: 330, size: 120, color: RED, box: true, from: 'left' });
+  X.big('only thinks about the faster rate', 'trap+0.6', 'o', { y: 500, size: 50, color: W, box: true });
+  ['b1', 'b2', 'rem', 'go', 'c2', 'why', 'slide', 'form', 'o'].forEach(m => X.cue('whoosh', m));
+  ['fo', 'hl', 'dt1', 'fast', 'h2', 'm32', 'm48', 'nox'].forEach(m => X.cue('pop', m));
+  X.cue('slam', 'q'); X.cue('slam', 'ans'); X.cue('ding', 'ans'); X.cue('buzz', 'trap'); X.cue('riser', 'pz+0.8');
+  for (let m = 4; m <= 48; m += 4) { X.cue('tick', when(TABL, m)); X.cue('tick', when(TABR, m)); }
+
   return (t) => {
-    [[molL, L], [molR, R]].forEach(([ms, g], gi) => {
-      const vis = gi === 0 ? on('f1') : on('f2'); g.visible = vis; g.scale.setScalar(Math.max(.001, k(gi === 0 ? 'f1' : 'f2', .5, E.back)));
-      ms.forEach(([m, sp], i) => {
-        const u = m.userData, gone = t >= u.tr;
-        m.visible = !gone; if (!gone) m.position.copy(u.p).add(new THREE.Vector3(Math.sin(t * 2.1 + u.ph) * .03, Math.sin(t * 2.7 + u.ph * 2) * .025, Math.cos(t * 1.9 + u.ph) * .03));
-        const d = t - u.tr; sp.visible = d >= 0 && d < .45; if (sp.visible) { sp.position.copy(u.p); sp.scale.setScalar(.5 + 2.2 * d); sp.material.opacity = 1 - d / .45; }
-      });
-    });
-    panel.visible = on('graph') && !on('trap'); panel.scale.setScalar(.5 + .5 * k('graph', .6, E.back)); if (panel.visible) drawGraph(t);
+    ctx.clearRect(0, 0, 1080, 1920);
+    const gx = 540 + 220 * Math.sin(t * .4), gy = 820 + 160 * Math.cos(t * .33), gr = ctx.createRadialGradient(gx, gy, 0, gx, gy, 720);
+    gr.addColorStop(0, 'rgba(255,138,76,.14)'); gr.addColorStop(1, 'rgba(255,138,76,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, 1080, 1920);
+    const sh = ['ans'].map(m => on(m) && t - tv(m) < .4 ? (1 - (t - tv(m)) / .4) * 12 : 0)[0];
+    ctx.save(); ctx.translate(Math.sin(t * 90) * sh, Math.cos(t * 77) * sh);
+    const boxA = win('b1', 'form', .4, .4), boxB = win('b2', 'form', .4, .4);
+    // boxes slide in from the sides
+    ctx.save(); ctx.translate(-300 * (1 - E.back(clamp((t - tv('b1')) / .5))), 0); box(t, 70, PL, clockL(t), '1.0 mol dm⁻³', boxA, CREAM); ctx.restore();
+    ctx.save(); ctx.translate(300 * (1 - E.back(clamp((t - tv('b2')) / .5))), 0); box(t, 570, PR, clockR(t), '2.0 mol dm⁻³', boxB, O); ctx.restore();
+    graph(t);
+    ctx.restore();
   };
 };

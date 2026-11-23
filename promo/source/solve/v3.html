@@ -123,6 +123,8 @@ const X = {
     const r = d.querySelector('.r'), tx = d.querySelector('text');
     items.push(() => { const a = win(NOW, tv(t0), tv(t0) + dur, .15, .15); d.style.opacity = a; if (!a) return; const u = clamp((NOW - tv(t0)) / dur);
       r.setAttribute('stroke-dashoffset', 276.5 * u); tx.textContent = Math.ceil(dur * (1 - u)) || ''; }); return d; },
+  // full-screen 2D canvas under the overlays, for 2D videos (draw on it in update(t))
+  canvas() { const c = document.createElement('canvas'); c.width = 1080; c.height = 1920; c.style.left = '0'; c.style.top = '0'; $ui.insertBefore(c, $ui.firstChild); return c.getContext('2d'); },
   sfx: [],   // [{t, kind}] picked up by the mixer
   cue(kind, t) { X.sfx.push({ kind, t: tv(t) }); },
 };
