@@ -142,8 +142,10 @@ async function openPdf(path, title, page){
    <a class="btn btn-sm" href="${esc(path)}" target="_blank" rel="noopener">${I.ext} New tab</a>
    <button class="iconbtn" id="pdfclose" aria-label="Close">${I.close}</button></div><div class="pdfpages" id="pdfpages"></div></div>`;
   m.hidden=false;
-  const close=()=>{m.hidden=true; m.innerHTML=''; document.removeEventListener('keydown',kd);};
-  const kd=e=>{ if(e.key==='Escape') close(); };
+  let ann=null; // zoom, pen, highlighter and sticky notes (../annotate.js)
+  const shut=()=>{ if(ann){ ann.destroy(); ann=null; } m.hidden=true; m.innerHTML=''; document.removeEventListener('keydown',kd);};
+  const close=()=>{ if(!ann) return shut(); ann.confirmClose(ok=>{ if(ok) shut(); }); }; // unsaved marks: ask first
+  const kd=e=>{ if(e.key==='Escape' && !document.querySelector('.tta-dlg')) close(); };
   document.addEventListener('keydown',kd);
   $('#pdfclose').onclick=close; m.onclick=e=>{ if(e.target===m) close(); };
   $('#pdfdl').onclick=()=>downloadFile(path,title);
@@ -152,6 +154,7 @@ async function openPdf(path, title, page){
   try{
     const doc=await pdfjsLib.getDocument({url:path, disableWorker:false}).promise;
     $('#pdfinfo').textContent=`${doc.numPages} pages`;
+    if(window.ttAnnot){ ann=ttAnnot.mount(box, doc, {url:new URL(path, location.href).href, save:true, scroll:box, page:page||0}); return; }
     const w=Math.min(box.clientWidth-28, 900);
     let target=null;
     for(let p=1;p<=doc.numPages;p++){

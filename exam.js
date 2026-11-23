@@ -17,6 +17,7 @@
     '.tte-pages{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px}' +
     '.tte-pages canvas{width:100%;display:block;background:#fff;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,.4)}' +
     '.tte-ph{aspect-ratio:1/1.414;background:#2a2d34;border-radius:4px}' +
+    '.tte-pages.tta-on{max-width:none;display:block}.tte .tta-bar{margin-right:52px}' +
     '.tte-side{width:240px;flex:none;display:flex;flex-direction:column;gap:14px;padding:20px 18px;border-left:1px solid #2c2f37;background:#121418}' +
     '.tte.ex .tte-side{background:#000;border-color:#1c1c1c}' +
     '.tte-side h2{margin:0;font-size:1rem;line-height:1.3}.tte-side small{opacity:.6}' +
@@ -34,10 +35,10 @@
     '@media (max-width:760px){.tte{flex-direction:column}.tte-side{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;border-left:0;border-top:1px solid #2c2f37;order:2;padding:10px 12px;gap:10px}.tte-clock{font-size:1.8rem}.tte-side .tall{display:none}}';
   document.head.appendChild(css);
 
-  var root = null, cleanup = [], bh = null;
+  var root = null, cleanup = [], bh = null, ann = null;
   var B = function () { return window.ttBack; };
   /* tear down whatever is showing. keepBack: another view replaces it straight away, so its Back step stays */
-  function teardown() { cleanup.forEach(function (f) { try { f(); } catch (e) {} }); cleanup = []; if (root) { root.remove(); root = null; } document.documentElement.style.overflow = ''; }
+  function teardown() { if (ann) { try { ann.destroy(); } catch (e) {} ann = null; } cleanup.forEach(function (f) { try { f(); } catch (e) {} }); cleanup = []; if (root) { root.remove(); root = null; } document.documentElement.style.overflow = ''; }
   function close(then) { teardown(); var h = bh; bh = null; if (h && B()) B().done(h, typeof then === 'function' ? then : null); else if (typeof then === 'function') then(); }
   /* Back while a paper is open does what its × does */
   function onBack(fn) { if (!B()) return; if (bh) bh.onBack = fn; else bh = B().open(fn); }
@@ -48,6 +49,9 @@
     var fallback = function () { box.innerHTML = '<iframe src="' + esc(url) + '#navpanes=0&view=FitH" style="width:100%;height:calc(100vh - 60px);border:0;background:#fff;border-radius:4px" title="Paper"></iframe>'; };
     if (!window.ttCrop) return fallback();
     window.ttCrop._open(url).then(function (doc) {
+      if (!box.isConnected) return;
+      // zoom, pen, highlighter, eraser and sticky notes (annotate.js); marks can be saved per paper
+      if (window.ttAnnot) { box.classList.add('tta-on'); ann = window.ttAnnot.mount(box, doc, { url: url, save: true, scroll: box.parentNode }); return; }
       box.innerHTML = '';
       var io = new IntersectionObserver(function (ents) {
         ents.forEach(function (en) {
@@ -81,9 +85,12 @@
       (o.note ? '<p style="margin:0;opacity:.8">' + esc(o.note) + '</p>' : '') +
       '<a class="b" href="' + esc(o.url) + '" target="_blank" rel="noopener">Open in new tab ↗</a><button type="button" data-close>Close</button>';
     r.insertAdjacentHTML('beforeend', '<button class="tte-x" type="button" aria-label="Close" data-close>×</button>');
-    [].forEach.call(r.querySelectorAll('[data-close]'), function (b) { b.onclick = function () { close(); }; });
-    onBack(function () { bh = null; if (root === r) close(); });
-    var key = function (e) { if (e.key === 'Escape' && root === r) close(); };
+    // every way out (×, Close, Esc, Back) asks first if there are unsaved marks on the paper
+    var leave = function () { if (root !== r) return; if (!ann) return close(); ann.confirmClose(function (ok) { if (ok && root === r) close(); }); };
+    [].forEach.call(r.querySelectorAll('[data-close]'), function (b) { b.onclick = leave; });
+    var back = function () { bh = null; if (root !== r) return; if (ann && ann.dirty()) { onBack(back); leave(); } else close(); };
+    onBack(back);
+    var key = function (e) { if (e.key === 'Escape' && root === r && !document.querySelector('.tta-dlg')) leave(); };
     document.addEventListener('keydown', key); cleanup.push(function () { document.removeEventListener('keydown', key); });
     r.querySelector('[data-close]').focus();
   }

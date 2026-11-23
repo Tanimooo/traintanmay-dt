@@ -39,7 +39,7 @@
   document.head.appendChild(css);
 
   var ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h6M8 15h3"/></svg>';
-  var fab = null, panel = null, cur = 0, docs = {}, bh = null;
+  var fab = null, panel = null, cur = 0, docs = {}, bh = null, ann = null, seen = {};
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   function cfg() { return window.TT_DS_CFG || null; }
   function hash() { return location.hash.slice(1); }
@@ -70,6 +70,8 @@
     if (!get) return fallback();
     get.then(function (doc) {
       if (!box.isConnected) return;
+      // the same zoom and drawing tools as papers, but nothing on a data sheet is ever saved
+      if (window.ttAnnot) { if (ann) ann.destroy(); ann = window.ttAnnot.mount(box, doc, { url: url, save: false, scroll: box, pages: pages, turn: turn, maxW: 1100 }); return; }
       box.innerHTML = '';
       var io = new IntersectionObserver(function (ents) {
         ents.forEach(function (en) {
@@ -97,6 +99,8 @@
     [].forEach.call(panel.querySelectorAll('.ttds-tabs button'), function (b, j) { b.setAttribute('aria-selected', j === cur ? 'true' : 'false'); });
     if (ext) { ext.hidden = !s.url; if (s.url) ext.href = s.url; }
     body.scrollTop = 0;
+    if (ann) { ann.destroy(); ann = null; }
+    if (s.url) seen[s.url] = 1;
     if (s.url) drawPdf(body, s.url, s.noFrame, s.pages, s.turn);
     else { body.innerHTML = ''; try { s.render(body); } catch (e) { body.innerHTML = '<div class="ttds-msg">This sheet could not be shown.</div>'; } }
   }
@@ -120,6 +124,8 @@
   function close() {
     if (!panel) return;
     panel.remove(); panel = null; document.documentElement.classList.remove('ttds-on');
+    if (ann) { ann.destroy(); ann = null; }
+    if (window.ttAnnot) Object.keys(seen).forEach(window.ttAnnot.forget); seen = {}; // marks on data sheets go when the sheet closes
     if (bh) { var h = bh; bh = null; window.ttBack.done(h); }
     sync(); if (fab && !fab.hidden) fab.focus({ preventScroll: true });
   }
