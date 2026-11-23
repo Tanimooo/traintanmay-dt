@@ -16,11 +16,38 @@
   var CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   var PDFJS = (function () { try { return new URL('vendor/pdfjs/', (document.currentScript && document.currentScript.src) || location.href).href; } catch (e) { return CDN; } })();
   var CORS_OK = /(^|\.)(physicsandmathstutor\.com|supabase\.co|designandtechbase\.com)$/;
-  // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through our own
-  // Cloudflare Worker, which fetches the file live from the source and passes it straight on (it stores nothing).
+  // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through a proxy of ours that
+  // fetches the file live from the source and passes it straight on (neither stores anything):
+  //   1. the Cloudflare Worker (fast, sends the file in pieces as PDF.js asks for them)
+  //   2. a Google Apps Script (cloud/pdf-proxy.gs), for school and office networks that block workers.dev:
+  //      script.google.com is almost never blocked. Paste its web app address into GAS to turn it on.
   var PROXY = 'https://traintanmay.halkblackgamer.workers.dev/?url=';
+  var GAS = '';
   var PROXIED = /(^|\.)(madasmaths\.com|uat-wp\.s3\.eu-west-2\.amazonaws\.com)$/;
+  var WORKER_WAIT = 8000; // a filter that silently drops the Worker shouldn't keep you waiting longer than this
+  var PK = 'tt-pdf-proxy'; // which proxy worked last time on this network ('gas' = skip straight to Google)
   function src(u) { try { return PROXIED.test(new URL(u).hostname) ? PROXY + encodeURIComponent(u) : u; } catch (e) { return u; } }
+  function proxied(u) { try { return PROXIED.test(new URL(u).hostname); } catch (e) { return false; } }
+  function viaGas(L, url) {
+    return fetch(GAS + '?url=' + encodeURIComponent(url)).then(function (r) { if (!r.ok) throw new Error('gas ' + r.status); return r.json(); }).then(function (j) {
+      if (!j || !j.pdf) throw new Error(j && j.error || 'gas');
+      var b = atob(j.pdf), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+      return L.getDocument({ data: a }).promise;
+    });
+  }
+  function viaWorker(L, url) {
+    var task = L.getDocument({ url: src(url), disableAutoFetch: true });
+    if (!GAS) return task.promise;
+    var t; var late = new Promise(function (ok, no) { t = setTimeout(function () { no(new Error('worker timeout')); try { task.destroy(); } catch (e) {} }, WORKER_WAIT); });
+    return Promise.race([task.promise, late]).then(function (d) { clearTimeout(t); return d; }, function (e) { clearTimeout(t); throw e; });
+  }
+  function fetchDoc(L, url) {
+    if (!proxied(url)) return L.getDocument({ url: url, disableAutoFetch: true }).promise;
+    var mem = function (v) { try { sessionStorage.setItem(PK, v); } catch (e) {} };
+    var gasFirst = false; try { gasFirst = GAS && sessionStorage.getItem(PK) === 'gas'; } catch (e) {}
+    if (gasFirst) return viaGas(L, url).catch(function () { mem(''); return viaWorker(L, url); });
+    return viaWorker(L, url).catch(function (e) { if (!GAS) throw e; return viaGas(L, url).then(function (d) { mem('gas'); return d; }); });
+  }
   var libP = null, docs = {};
 
   function lib() {
@@ -34,7 +61,7 @@
       .catch(function (e) { libP = null; e.why = 'reader'; throw e; }));
   }
   function open(url) {
-    return docs[url] || (docs[url] = lib().then(function (L) { return L.getDocument({ url: src(url), disableAutoFetch: true }).promise; })
+    return docs[url] || (docs[url] = lib().then(function (L) { return fetchDoc(L, url); })
       .catch(function (e) { delete docs[url]; throw e; }));
   }
   var textCache = {};
