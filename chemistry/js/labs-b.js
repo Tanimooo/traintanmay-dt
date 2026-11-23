@@ -19,7 +19,7 @@ const HALF=[
  {id:'ag',n:'Ag⁺/Ag',E:0.80,e:1,ox:[1,'Ag⁺'],red:[1,'Ag'],metal:'rgb(215,215,220)',sol:'rgba(200,210,230,.35)'},
  {id:'br',n:'Br₂/Br⁻ (Pt)',E:1.09,e:2,ox:[1,'Br₂'],red:[2,'Br⁻'],pt:true,halide:true,sol:'rgba(200,110,40,.45)'},
  {id:'cl',n:'Cl₂/Cl⁻ (Pt)',E:1.36,e:2,ox:[1,'Cl₂'],red:[2,'Cl⁻'],pt:true,gas:true,halide:true,sol:'rgba(200,230,150,.4)'}];
-L.cells={title:'Electrochemical cell builder',cat:'Electrochemistry',topic:'5.2.3',
+L.cells={title:'Electrochemical cell builder',cat:'Electrochemistry',topic:'3.1.11',
 desc:'Connect any two half-cells and read the cell potential. See which electrode is positive, which way the electrons flow, what happens in the salt bridge, and how changing a concentration changes E.',
 icon:'<path d="M14 54h30v50H14zM76 54h30v50H76z" fill="none" stroke="currentColor" stroke-width="4"/><path d="M29 54V24h62v30" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="60" cy="24" r="12" fill="var(--surface)" stroke="currentColor" stroke-width="4"/><path d="M38 70c0-14 44-14 44 0" fill="none" stroke="currentColor" stroke-width="6" opacity=".5"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -81,7 +81,7 @@ const CMPS=[
  {f:'KBr',cat:'K',an:'Br'},{f:'NaI',cat:'Na',an:'I'},{f:'NaCl',cat:'Na',an:'Cl'},{f:'(NH₄)₂CO₃',cat:'NH4',an:'CO3'},{f:'FeBr₂',cat:'Fe2',an:'Br'}];
 const HYDROX={Cu:['blue precipitate','rgb(60,120,220)'],Fe2:['green precipitate','rgb(80,115,70)'],Fe3:['orange-brown precipitate','rgb(170,90,30)'],Mn:['light brown precipitate','rgb(195,165,125)'],Cr:['grey-green precipitate','rgb(110,130,105)']};
 const CATN={Cu:'Cu²⁺',Fe2:'Fe²⁺',Fe3:'Fe³⁺',Mn:'Mn²⁺',Cr:'Cr³⁺',NH4:'NH₄⁺',Na:'Na⁺',K:'K⁺'}, ANN={SO4:'SO₄²⁻',Cl:'Cl⁻',Br:'Br⁻',I:'I⁻',CO3:'CO₃²⁻'};
-L.iontests={title:'Ion tests bench',cat:'Analysis',topic:'5.3.2',anim:false,
+L.iontests={title:'Ion tests bench',cat:'Analysis',topic:'3.2.6',anim:false,
 desc:'Identify unknown solutions with test-tube tests: sodium hydroxide, ammonia, nitric acid, barium nitrate, silver nitrate and the ammonium test. Results depend on the order you do them in, just like the real thing.',
 icon:'<path d="M46 6v84a14 14 0 0 0 28 0V6" fill="none" stroke="currentColor" stroke-width="5"/><path d="M47 60h26v30a13 13 0 0 1-26 0z" fill="currentColor" opacity=".35"/><path d="M47 84h26v6a13 13 0 0 1-26 0z" fill="currentColor"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -225,7 +225,7 @@ function lobe(x,q,rd,s,pal,flat){ const a=0.5*s, b=0.31*s, sx=Math.hypot(rd[0],r
    x.beginPath(); x.ellipse(0,0,A,b,0,0,7); x.lineWidth=1.1; x.strokeStyle=pal.lpLine; x.stroke(); }
   const off=(A-b)*0.45, dr=Math.max(2.3,s*0.04); [-1,1].forEach(k=>{ x.beginPath(); x.arc(off,k*b*0.34,dr,0,7); x.fillStyle=pal.accent; x.fill(); if(!flat){ x.beginPath(); x.arc(off-dr*0.3,k*b*0.34-dr*0.3,dr*0.4,0,7); x.fillStyle='rgba(255,255,255,.7)'; x.fill(); } });
   x.restore(); }
-L.shapes={title:'3D shapes of molecules',cat:'Atoms & bonding',topic:'2.2.2',anim:false,
+L.shapes={title:'3D shapes of molecules',cat:'Atoms & bonding',topic:'3.1.3',anim:false,
 desc:'Spin molecules in 3D to see how bonding pairs and lone pairs arrange themselves, with every bond angle marked. Flip to an exam-style wedge-and-dash drawing, and explore E/Z isomers of but-2-ene and the optical isomers of alanine.',
 icon:'<circle cx="60" cy="62" r="14" fill="currentColor"/><g stroke="currentColor" stroke-width="5"><path d="M60 62L60 16M60 62L22 86M60 62L98 86M60 62l18 10"/></g><circle cx="60" cy="14" r="9" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="20" cy="88" r="9" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="100" cy="88" r="9" fill="none" stroke="currentColor" stroke-width="4"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -472,7 +472,7 @@ const SPX={
   ms:[[72,25,'M⁺, Mᵣ = 72'],[57,15,'C₂H₅CO⁺'],[43,100,'CH₃CO⁺'],[29,30,'C₂H₅⁺']]}};
 const PASCAL=n=>{ let r=[1]; for(let i=1;i<n;i++){ const nr=[1]; for(let j=1;j<r.length;j++) nr.push(r[j-1]+r[j]); nr.push(1); r=nr; } return r; };
 const MULT=['','singlet','doublet','triplet','quartet','quintet','sextet','septet'];
-L.spectra={title:'Interactive spectra: IR, NMR and mass spec',cat:'Analysis',topic:'6.3.2',anim:false,
+L.spectra={title:'Interactive spectra: IR, NMR and mass spec',cat:'Analysis',topic:'3.3.15',anim:false,
 desc:'Real-looking IR, ¹H NMR, ¹³C NMR and mass spectra for common compounds. Point at any peak to see which part of the molecule causes it and why it looks the way it does.',
 icon:'<path d="M6 100h108" stroke="currentColor" stroke-width="4"/><path d="M14 100V70M30 100V30M34 100V40M38 100V30M62 100V54M66 100V48M70 100V54M96 100V20" stroke="currentColor" stroke-width="4"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);

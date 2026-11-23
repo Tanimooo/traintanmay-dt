@@ -27,7 +27,7 @@ const INDS={
 const uniCol=pH=>{ const stops=[[1,'rgb(200,30,40)'],[3,'rgb(238,110,40)'],[5,'rgb(240,200,40)'],[7,'rgb(70,170,70)'],[9,'rgb(40,120,190)'],[11,'rgb(70,60,170)'],[13,'rgb(110,40,140)']]; if(pH<=1) return stops[0][1]; for(let i=1;i<stops.length;i++){ if(pH<=stops[i][0]) return mix(stops[i-1][1],stops[i][1],(pH-stops[i-1][0])/(stops[i][0]-stops[i-1][0])); } return stops[stops.length-1][1]; };
 const indCol=(ind,pH)=>ind.uni?uniCol(pH):mix(ind.a,ind.b,1/(1+Math.pow(10,ind.pk-pH)));
 
-L.titration={title:'Titration lab',cat:'Acids & bases',topic:'5.1.3',anim:false,
+L.titration={title:'Titration lab',cat:'Acids & bases',topic:'3.1.12',anim:false,
 desc:'Run a burette into an acid, watch the indicator change and plot the pH curve as you go. Choose strong or weak acids and bases, pick an indicator, or find the concentration of an unknown acid.',
 icon:'<path d="M54 6h12v62l-6 8-6-8z" fill="none" stroke="currentColor" stroke-width="4"/><path d="M40 84h40l14 26H26z" fill="currentColor" opacity=".35" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><circle cx="60" cy="80" r="3" fill="currentColor"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -102,7 +102,7 @@ const RXNS={
  neut:{n:'HCl(aq) + NaOH(aq) (neutralisation)',dH:-57.1,lit:'−57.1 kJ mol⁻¹ (per mole of water)',per:'water formed',two:true},
  zn:{n:'Zn(s) + CuSO₄(aq) (displacement, excess zinc)',dH:-217,lit:'−217 kJ mol⁻¹ (per mole of CuSO₄)',per:'CuSO₄'},
  nh4:{n:'NH₄NO₃(s) dissolving in water (endothermic)',dH:25.7,lit:'+25.7 kJ mol⁻¹ (per mole of NH₄NO₃)',per:'NH₄NO₃',solid:80.0}};
-L.calorimetry={title:'Calorimetry lab',cat:'Energetics',topic:'3.2.1',
+L.calorimetry={title:'Calorimetry lab',cat:'Energetics',topic:'3.1.4',
 desc:'Measure an enthalpy change in a polystyrene cup. Record the temperature every 30 s, mix at 3 minutes, then extrapolate the cooling line back to find the true temperature change and ΔH.',
 icon:'<path d="M34 30h52l-8 76H42z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="M60 8v64" stroke="currentColor" stroke-width="4"/><circle cx="60" cy="78" r="8" fill="currentColor"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -154,7 +154,7 @@ mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
 /* energies in kJ mol⁻¹; Maxwell–Boltzmann energy distribution f(E) ∝ √E e^(−E/RT) */
 const RkJ=8.314e-3;
 /* schematic energy scale (as in textbook diagrams): kT is 20 units at 300 K, so the tail above Ea is visible */ const kTs=T=>20*T/300; const fracAbove=(Ea,T)=>{ const kT=kTs(T); let s=0,tot=0; const dE=kT/40; for(let E=dE/2;E<kT*40;E+=dE){ const f=Math.sqrt(E)*Math.exp(-E/kT); tot+=f; if(E>=Ea) s+=f; } return s/tot; };
-L.boltzmann={title:'Rates: Boltzmann distribution and collisions',cat:'Rates & equilibrium',topic:'3.2.2',
+L.boltzmann={title:'Rates: Boltzmann distribution and collisions',cat:'Rates & equilibrium',topic:'3.1.5',
 desc:'Particles of A and B collide in a box and only react if the collision has at least the activation energy. Change temperature, concentration and add a catalyst, and see the Boltzmann distribution and the rate change together.',
 icon:'<path d="M8 104C30 104 30 24 52 24S80 92 112 102" fill="none" stroke="currentColor" stroke-width="5"/><path d="M80 104V60" stroke="currentColor" stroke-width="4" stroke-dasharray="6 5"/><path d="M80 104C86 86 96 96 112 102V104Z" fill="currentColor" opacity=".45"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);
@@ -210,7 +210,7 @@ const SYSTEMS={
    note:'Pink [Co(H₂O)₆]²⁺ and blue [CoCl₄]²⁻. Adding concentrated HCl adds Cl⁻, so the equilibrium shifts right (bluer). Adding water dilutes everything; with four Cl⁻ on the left, dilution shifts it back left (pinker). The forward reaction is endothermic, so heating turns it blue. (K values here are illustrative.)'},
  ester:{n:'CH₃COOH + C₂H₅OH ⇌ CH₃COOC₂H₅ + H₂O (ΔH ≈ 0)',sp:['CH₃COOH','C₂H₅OH','ester','H₂O'],nu:[-1,-1,1,1],K298:4.0,dH:-2,col:()=> 'rgba(200,200,210,.35)',start:[1.0,1.0,0,0],
    note:'K<sub>c</sub> ≈ 4 and barely changes with temperature (ΔH is almost zero). Adding more ethanol shifts the equilibrium right and increases the yield of ester; removing water would too. A catalyst (H₂SO₄) only makes equilibrium arrive sooner.'}};
-L.equilibrium={title:'Equilibrium and Le Chatelier',cat:'Rates & equilibrium',topic:'3.2.3',
+L.equilibrium={title:'Equilibrium and Le Chatelier',cat:'Rates & equilibrium',topic:'3.1.6',
 desc:'Disturb an equilibrium by changing concentration, pressure or temperature, then watch the concentrations, the colour and the reaction quotient settle back to K.',
 icon:'<path d="M14 46h80l-14-12M106 74H26l14 12" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>',
 mount(el){ const S=LK.scope(); const ct=LK.ctrl(el);

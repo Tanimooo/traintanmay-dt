@@ -89,42 +89,42 @@ const RX=s=>'$$'+s+'$$';
 
 /* ---------- the drills ---------- */
 const D=[
-{id:'moles',topic:'2.1.3',title:'Moles from mass',desc:'$n=\\dfrac{m}{M}$, and back again.',gen(){ const [f,M]=P(CMP);
+{id:'moles',topic:'3.1.2',title:'Moles from mass',desc:'$n=\\dfrac{m}{M}$, and back again.',gen(){ const [f,M]=P(CMP);
   if(Math.random()<.5){ const m=R(0.5,25,2), n=m/M; return {q:`How many moles are in ${f2(m)} g of ${f}? ($M = ${f1(M)}\\ \\text{g mol}^{-1}$)`,ans:n,unit:'mol',steps:[RX(T`n=\dfrac{m}{M}=\dfrac{${f2(m)}}{${f1(M)}}=`+B(N(n))+u('mol'))]}; }
   const n=R(0.010,0.500,3), m=n*M; return {q:`What is the mass of ${n.toFixed(3)} mol of ${f}? ($M = ${f1(M)}\\ \\text{g mol}^{-1}$)`,ans:m,unit:'g',steps:[RX(T`m=n\times M=${n.toFixed(3)}\times ${f1(M)}=`+B(N(m))+u('g'))]}; }},
-{id:'gas',topic:'2.1.3',title:'Gas volumes at RTP',desc:'Molar gas volume, 24.0 dm³ mol⁻¹.',gen(){ if(Math.random()<.5){ const n=R(0.020,0.800,3), V=n*24.0; return {q:`What volume, in dm³, does ${n.toFixed(3)} mol of a gas occupy at RTP?`,ans:V,unit:'dm³',steps:[RX(T`V=n\times 24.0=${n.toFixed(3)}\times 24.0=`+B(N(V))+T`\ \text{dm}^3`)]}; }
+{id:'gas',topic:'3.1.2',title:'Gas volumes at RTP',desc:'Molar gas volume, 24.0 dm³ mol⁻¹.',gen(){ if(Math.random()<.5){ const n=R(0.020,0.800,3), V=n*24.0; return {q:`What volume, in dm³, does ${n.toFixed(3)} mol of a gas occupy at RTP?`,ans:V,unit:'dm³',steps:[RX(T`V=n\times 24.0=${n.toFixed(3)}\times 24.0=`+B(N(V))+T`\ \text{dm}^3`)]}; }
   const V=R(60,960,0), n=V/24000; return {q:`How many moles of gas are in ${V} cm³ at RTP?`,ans:n,unit:'mol',steps:[`One mole of gas occupies 24 000 cm³ at RTP.`,RX(T`n=\dfrac{V}{24\,000}=\dfrac{${V}}{24\,000}=`+B(N(n))+u('mol'))]}; }},
-{id:'idealgas',topic:'2.1.3',title:'Ideal gas equation: find Mᵣ',desc:'$pV=nRT$ with unit conversions.',gen(){ const [,M]=P([['propanone',58.0],['ethanol',46.0],['hexane',86.0],['methanol',32.0],['butan-1-ol',74.0],['ethyl ethanoate',88.0]]);
-  const Tk=R(80,130,0)+273, p=R(98,104,0), V=R(40,120,1), m=+(((p*1e3*V*1e-6)/(8.314*Tk))*M).toFixed(3), nn=(p*1e3*V*1e-6)/(8.314*Tk), Mr=m/nn;
-  return {q:`A ${m.toFixed(3)} g sample of a volatile liquid vaporises to give ${f1(V)} cm³ of gas at ${Tk-273} °C and ${p} kPa. Calculate its relative molecular mass. ($R = 8.314\\ \\text{J mol}^{-1}\\ \\text{K}^{-1}$)`,ans:Mr,unit:'',steps:[
+{id:'idealgas',topic:'3.1.2',title:'Ideal gas equation: find Mᵣ',desc:'$pV=nRT$ with unit conversions.',gen(){ const [,M]=P([['propanone',58.0],['ethanol',46.0],['hexane',86.0],['methanol',32.0],['butan-1-ol',74.0],['ethyl ethanoate',88.0]]);
+  const Tk=R(80,130,0)+273, p=R(98,104,0), V=R(40,120,1), m=+(((p*1e3*V*1e-6)/(8.31*Tk))*M).toFixed(3), nn=(p*1e3*V*1e-6)/(8.31*Tk), Mr=m/nn;
+  return {q:`A ${m.toFixed(3)} g sample of a volatile liquid vaporises to give ${f1(V)} cm³ of gas at ${Tk-273} °C and ${p} kPa. Calculate its relative molecular mass. ($R = 8.31\\ \\text{J K}^{-1}\\ \\text{mol}^{-1}$)`,ans:Mr,unit:'',steps:[
    `Convert to SI units: $p = ${p}\\times10^{3}\\ \\text{Pa}$, $V = ${f1(V)}\\times10^{-6}\\ \\text{m}^3$, $T = ${Tk}\\ \\text{K}$.`,
-   RX(T`n=\dfrac{pV}{RT}=\dfrac{${p}\times10^{3}\times ${f1(V)}\times10^{-6}}{8.314\times ${Tk}}=${N(nn,4)}\ \text{mol}`),
+   RX(T`n=\dfrac{pV}{RT}=\dfrac{${p}\times10^{3}\times ${f1(V)}\times10^{-6}}{8.31\times ${Tk}}=${N(nn,4)}\ \text{mol}`),
    RX(T`M_r=\dfrac{m}{n}=\dfrac{${m.toFixed(3)}}{${N(nn,4)}}=`+B(N(Mr)))]}; }},
-{id:'empirical',topic:'2.1.3',title:'Empirical formula',desc:'From percentage composition by mass.',text:true,gen(){ const f=P(['CH2O','C2H6O','C3H6O','C2H4O','CH4O','C4H10O','C3H8O','C2H5','CH2','C3H4','C4H8O','C5H12O','C3H8O3','CH3O','C2H3O','CHO2']);
+{id:'empirical',topic:'3.1.2',title:'Empirical formula',desc:'From percentage composition by mass.',text:true,gen(){ const f=P(['CH2O','C2H6O','C3H6O','C2H4O','CH4O','C4H10O','C3H8O','C2H5','CH2','C3H4','C4H8O','C5H12O','C3H8O3','CH3O','C2H3O','CHO2']);
   const at={C:12.0,H:1.0,O:16.0}, o=parseFormula(f); const M=Object.entries(o).reduce((t,[e,c])=>t+at[e]*c,0); const pc=Object.entries(o).map(([e,c])=>[e,+(at[e]*c/M*100).toFixed(1)]);
   const mol=pc.map(([e,p])=>[e,p,p/at[e]]), mn=Math.min(...mol.map(x=>x[2]));
   return {q:`A compound contains ${pc.map(([e,p])=>`${p}% ${e}`).join(', ')} by mass. Find its empirical formula. Type it like C2H6O.`,ans:o,show:sub(f),unit:'',steps:[
    tbl(['Element','% by mass','Moles $= \\dfrac{\\%}{A_r}$','Ratio $\\left(\\div\\ \\text{smallest}\\right)$'],mol.map(([e,p,n])=>[e,String(p),`$\\dfrac{${p}}{${f1(at[e])}} = ${n.toFixed(3)}$`,`$${(n/mn).toFixed(2)}$`])),
    `If any ratio isn't a whole number (e.g. 1.5 or 1.33), multiply them all by 2 or 3. Empirical formula: <b>${sub(f)}</b>`]}; }},
-{id:'titration',topic:'2.1.4',title:'Acid–base titration',desc:'Concentration from a titre and the reacting ratio.',gen(){ const rx=P([{eq:[[[2,'NaOH'],[1,'H₂SO₄']],[[1,'Na₂SO₄'],[2,'H₂O']]],k:'H₂SO₄',u:'NaOH',r:2,rt:'2 : 1'},{eq:[[[1,'NaOH'],[1,'HCl']],[[1,'NaCl'],[1,'H₂O']]],k:'HCl',u:'NaOH',r:1,rt:'1 : 1'},{eq:[[[1,'Na₂CO₃'],[2,'HCl']],[[2,'NaCl'],[1,'H₂O'],[1,'CO₂']]],k:'HCl',u:'Na₂CO₃',r:0.5,rt:'1 : 2'},{eq:[[[1,'KOH'],[1,'HNO₃']],[[1,'KNO₃'],[1,'H₂O']]],k:'HNO₃',u:'KOH',r:1,rt:'1 : 1'}]);
+{id:'titration',topic:'3.1.2',title:'Acid–base titration',desc:'Concentration from a titre and the reacting ratio.',gen(){ const rx=P([{eq:[[[2,'NaOH'],[1,'H₂SO₄']],[[1,'Na₂SO₄'],[2,'H₂O']]],k:'H₂SO₄',u:'NaOH',r:2,rt:'2 : 1'},{eq:[[[1,'NaOH'],[1,'HCl']],[[1,'NaCl'],[1,'H₂O']]],k:'HCl',u:'NaOH',r:1,rt:'1 : 1'},{eq:[[[1,'Na₂CO₃'],[2,'HCl']],[[2,'NaCl'],[1,'H₂O'],[1,'CO₂']]],k:'HCl',u:'Na₂CO₃',r:0.5,rt:'1 : 2'},{eq:[[[1,'KOH'],[1,'HNO₃']],[[1,'KNO₃'],[1,'H₂O']]],k:'HNO₃',u:'KOH',r:1,rt:'1 : 1'}]);
   const c=R(0.0500,0.200,3), t=Math.round(R(15,30,2)*20)/20, nk=c*t/1000, nu=nk*rx.r, cu=nu/0.0250;
   return {q:`25.0 cm³ of ${rx.u} solution is titrated with ${c.toFixed(3)} mol dm⁻³ ${rx.k}. The mean titre is ${t.toFixed(2)} cm³. Calculate the concentration of the ${rx.u}.${eqn(...rx.eq)}`,ans:cu,unit:'mol dm⁻³',steps:[
    RX(T`n(${ch(rx.k)})=c\times V=${c.toFixed(3)}\times\dfrac{${t.toFixed(2)}}{1000}=${N(nk,4)}\ \text{mol}`),
    `The ratio ${rx.u} : ${rx.k} is ${rx.rt}, so`+RX(T`n(${ch(rx.u)})=${N(nu,4)}\ \text{mol}`),
    RX(T`c(${ch(rx.u)})=\dfrac{n}{V}=\dfrac{${N(nu,4)}}{0.0250}=`+B(N(cu))+MOLDM)]}; }},
-{id:'yield',topic:'2.1.3',title:'Percentage yield',desc:'Theoretical yield from the equation, then %.',gen(){ const rx=P([{eq:[[[1,'CaCO₃']],[[1,'CaO'],[1,'CO₂']]],r:['CaCO₃',100.1],p:['CaO',56.1]},{eq:[[[2,'Mg'],[1,'O₂']],[[2,'MgO']]],r:['Mg',24.3],p:['MgO',40.3]},{eq:[[[1,'CH₃COOH'],[1,'C₂H₅OH']],[[1,'CH₃COOC₂H₅'],[1,'H₂O']]],r:['CH₃COOH',60.0],p:['CH₃COOC₂H₅',88.0]},{eq:[[[1,'C₆H₁₁OH']],[[1,'C₆H₁₀'],[1,'H₂O']]],r:['C₆H₁₁OH',100.0],p:['C₆H₁₀',82.0]},{eq:[[[1,'C₆H₆'],[1,'HNO₃']],[[1,'C₆H₅NO₂'],[1,'H₂O']]],r:['C₆H₆',78.0],p:['C₆H₅NO₂',123.0]}]);
+{id:'yield',topic:'3.1.2',title:'Percentage yield',desc:'Theoretical yield from the equation, then %.',gen(){ const rx=P([{eq:[[[1,'CaCO₃']],[[1,'CaO'],[1,'CO₂']]],r:['CaCO₃',100.1],p:['CaO',56.1]},{eq:[[[2,'Mg'],[1,'O₂']],[[2,'MgO']]],r:['Mg',24.3],p:['MgO',40.3]},{eq:[[[1,'CH₃COOH'],[1,'C₂H₅OH']],[[1,'CH₃COOC₂H₅'],[1,'H₂O']]],r:['CH₃COOH',60.0],p:['CH₃COOC₂H₅',88.0]},{eq:[[[1,'C₆H₁₁OH']],[[1,'C₆H₁₀'],[1,'H₂O']]],r:['C₆H₁₁OH',100.0],p:['C₆H₁₀',82.0]},{eq:[[[1,'C₆H₆'],[1,'HNO₃']],[[1,'C₆H₅NO₂'],[1,'H₂O']]],r:['C₆H₆',78.0],p:['C₆H₅NO₂',123.0]}]);
   const m=R(2,20,2), n=m/rx.r[1], th=n*rx.p[1], act=+(th*R(0.45,0.92,2)).toFixed(2), y=act/th*100;
   return {q:`${f2(m)} g of ${rx.r[0]} reacts completely and ${f2(act)} g of ${rx.p[0]} is collected. Calculate the percentage yield. (Mᵣ: ${rx.r[0]} ${f1(rx.r[1])}, ${rx.p[0]} ${f1(rx.p[1])})${eqn(...rx.eq)}`,ans:y,unit:'%',steps:[
    RX(T`n(${ch(rx.r[0])})=\dfrac{${f2(m)}}{${f1(rx.r[1])}}=${N(n,4)}\ \text{mol}`),
    `The ratio is 1 : 1, so the theoretical mass of ${rx.p[0]} is`+RX(T`${N(n,4)}\times ${f1(rx.p[1])}=${N(th,4)}\ \text{g}`),
    RX(T`\%\ \text{yield}=\dfrac{\text{actual}}{\text{theoretical}}\times 100=\dfrac{${f2(act)}}{${N(th,4)}}\times 100=`+B(N(y))+T`\,\%`)]}; }},
-{id:'atomecon',topic:'2.1.3',title:'Atom economy',desc:'$\\dfrac{\\text{mass of desired product}}{\\bigsum\\text{mass of products}}\\times 100$',gen(){ const rx=P([{eq:[[[1,'C₆H₁₂O₆']],[[2,'C₂H₅OH'],[2,'CO₂']]],d:[2,46.0,'C₂H₅OH'],o:[[2,44.0,'CO₂']]},{eq:[[[1,'CaCO₃']],[[1,'CaO'],[1,'CO₂']]],d:[1,56.1,'CaO'],o:[[1,44.0,'CO₂']]},{eq:[[[1,'C₂H₅Br'],[1,'NaOH']],[[1,'C₂H₅OH'],[1,'NaBr']]],d:[1,46.0,'C₂H₅OH'],o:[[1,102.9,'NaBr']]},{eq:[[[1,'CH₄'],[1,'H₂O']],[[1,'CO'],[3,'H₂']]],d:[3,2.0,'H₂'],o:[[1,28.0,'CO']]},{eq:[[[1,'Fe₂O₃'],[3,'CO']],[[2,'Fe'],[3,'CO₂']]],d:[2,55.8,'Fe'],o:[[3,44.0,'CO₂']]},{eq:[[[1,'C₂H₅OH']],[[1,'C₂H₄'],[1,'H₂O']]],d:[1,28.0,'C₂H₄'],o:[[1,18.0,'H₂O']]}]);
+{id:'atomecon',topic:'3.1.2',title:'Atom economy',desc:'$\\dfrac{\\text{mass of desired product}}{\\bigsum\\text{mass of products}}\\times 100$',gen(){ const rx=P([{eq:[[[1,'C₆H₁₂O₆']],[[2,'C₂H₅OH'],[2,'CO₂']]],d:[2,46.0,'C₂H₅OH'],o:[[2,44.0,'CO₂']]},{eq:[[[1,'CaCO₃']],[[1,'CaO'],[1,'CO₂']]],d:[1,56.1,'CaO'],o:[[1,44.0,'CO₂']]},{eq:[[[1,'C₂H₅Br'],[1,'NaOH']],[[1,'C₂H₅OH'],[1,'NaBr']]],d:[1,46.0,'C₂H₅OH'],o:[[1,102.9,'NaBr']]},{eq:[[[1,'CH₄'],[1,'H₂O']],[[1,'CO'],[3,'H₂']]],d:[3,2.0,'H₂'],o:[[1,28.0,'CO']]},{eq:[[[1,'Fe₂O₃'],[3,'CO']],[[2,'Fe'],[3,'CO₂']]],d:[2,55.8,'Fe'],o:[[3,44.0,'CO₂']]},{eq:[[[1,'C₂H₅OH']],[[1,'C₂H₄'],[1,'H₂O']]],d:[1,28.0,'C₂H₄'],o:[[1,18.0,'H₂O']]}]);
   const md=rx.d[0]*rx.d[1], tot=md+rx.o.reduce((t,[c,m])=>t+c*m,0), ae=md/tot*100;
   const term=(c,m)=>(c===1?'':c+T`\times `)+f1(m);
   return {q:`Calculate the atom economy for making ${rx.d[2]} by this reaction. (Mᵣ: ${[[rx.d[1],rx.d[2]],...rx.o.map(x=>[x[1],x[2]])].map(([m,n])=>n+' '+f1(m)).join(', ')})${eqn(...rx.eq)}`,ans:ae,unit:'%',steps:[
    RX(T`\text{atom economy}=\dfrac{\text{mass of desired product}}{\bigsum\text{mass of all products}}\times 100`),
    RX(T`=\dfrac{${term(rx.d[0],rx.d[1])}}{${[term(rx.d[0],rx.d[1]),...rx.o.map(([c,m])=>term(c,m))].join(' + ')}}\times 100=\dfrac{${f1(md)}}{${f1(tot)}}\times 100=`+B(N(ae))+T`\,\%`)]}; }},
-{id:'calorimetry',topic:'3.2.1',title:'Calorimetry: q = mcΔT',desc:'Enthalpy of combustion or neutralisation from a temperature change.',gen(){
+{id:'calorimetry',topic:'3.1.4',title:'Calorimetry: q = mcΔT',desc:'Enthalpy of combustion or neutralisation from a temperature change.',gen(){
   if(Math.random()<.5){ const [nm,M,dh]=P([['methanol',32.0,-726],['ethanol',46.0,-1367],['propan-1-ol',60.0,-2021],['butan-1-ol',74.0,-2676]]); const mw=P([100,150,200,250]), m=R(0.30,1.20,3), q=-dh*R(0.45,0.75,2)*(m/M)*1000, dT=+(q/(mw*4.18)).toFixed(1), Q=mw*4.18*dT, n=m/M, H=-Q/n/1000;
     return {q:`Burning ${m.toFixed(3)} g of ${nm} ($M = ${f1(M)}$) heats ${mw} g of water by ${f1(dT)} °C. Calculate the enthalpy change of combustion of ${nm}. ($c = 4.18\\ \\text{J g}^{-1}\\ \\text{K}^{-1}$)`,ans:H,unit:'kJ mol⁻¹',steps:[
      `Energy transferred to the water (m is the mass of <b>water</b>, not fuel):`+RX(T`q=mc\Delta T=${mw}\times 4.18\times ${f1(dT)}=${N(Q,4)}\ \text{J}=${N(Q/1000,4)}\ \text{kJ}`),
@@ -135,26 +135,26 @@ const D=[
    `The mass heated is the total volume of solution, ${f1(2*V)} g:`+RX(T`q=mc\Delta T=${f1(2*V)}\times 4.18\times ${f1(dT)}=${N(Q,4)}\ \text{J}`),
    RX(T`n(\mathrm{H_2O})=n(\mathrm{HCl})=${f2(c)}\times\dfrac{${f1(V)}}{1000}=${N(n,3)}\ \text{mol}`),
    RX(T`\Delta_{neut}H=-\dfrac{q}{n}=-\dfrac{${N(Q/1000,4)}}{${N(n,3)}}=`+B(N(H))+KJ)]}; }},
-{id:'hessf',topic:'3.2.1',title:'Hess cycle: formation data',desc:'$\\Delta H=\\bigsum\\Delta_f H_{\\text{products}}-\\bigsum\\Delta_f H_{\\text{reactants}}$',gen(){ const x=P(HF), H=sumD(x.p,DF)-sumD(x.r,DF), used=[...new Set([...x.r,...x.p].map(a=>a[1]))];
+{id:'hessf',topic:'3.1.4',title:'Hess cycle: formation data',desc:'$\\Delta H=\\bigsum\\Delta_f H_{\\text{products}}-\\bigsum\\Delta_f H_{\\text{reactants}}$',gen(){ const x=P(HF), H=sumD(x.p,DF)-sumD(x.r,DF), used=[...new Set([...x.r,...x.p].map(a=>a[1]))];
   return {q:`Use the enthalpy changes of formation (kJ mol⁻¹) to calculate $\\Delta_r H$ for:${eqn(x.r,x.p)}${dataList(used,DF,T`\Delta_f H`)}`,ans:H,unit:'kJ mol⁻¹',steps:[
    RX(T`\Delta_r H=\bigsum\Delta_f H(\text{products})-\bigsum\Delta_f H(\text{reactants})`),
    RX(T`\bigsum\Delta_f H(\text{products})=${termsD(x.p,DF)}=${sumD(x.p,DF)}`),
    RX(T`\bigsum\Delta_f H(\text{reactants})=${termsD(x.r,DF)}=${sumD(x.r,DF)}`),
    RX(T`\Delta_r H=${sumD(x.p,DF)}-${par(sumD(x.r,DF))}=`+B(H)+KJ)]}; }},
-{id:'hessc',topic:'3.2.1',title:'Hess cycle: combustion data',desc:'$\\Delta H=\\bigsum\\Delta_c H_{\\text{reactants}}-\\bigsum\\Delta_c H_{\\text{products}}$',gen(){ const x=P(HC), H=sumD(x.r,DC)-sumD(x.p,DC), used=[...new Set([...x.r,...x.p].map(a=>a[1]))].filter(s=>DC[s]!==0);
+{id:'hessc',topic:'3.1.4',title:'Hess cycle: combustion data',desc:'$\\Delta H=\\bigsum\\Delta_c H_{\\text{reactants}}-\\bigsum\\Delta_c H_{\\text{products}}$',gen(){ const x=P(HC), H=sumD(x.r,DC)-sumD(x.p,DC), used=[...new Set([...x.r,...x.p].map(a=>a[1]))].filter(s=>DC[s]!==0);
   return {q:`Use the enthalpy changes of combustion (kJ mol⁻¹) to calculate ${x.name}:${eqn(x.r,x.p)}${dataList(used,DC,T`\Delta_c H`)}`,ans:H,unit:'kJ mol⁻¹',steps:[
    RX(T`\Delta H=\bigsum\Delta_c H(\text{reactants})-\bigsum\Delta_c H(\text{products})`),
    RX(T`\bigsum\Delta_c H(\text{reactants})=${termsD(x.r,DC)}=${sumD(x.r,DC)}`),
    RX(T`\bigsum\Delta_c H(\text{products})=${termsD(x.p,DC)}=${sumD(x.p,DC)}`),
    RX(T`\Delta H=${sumD(x.r,DC)}-${par(sumD(x.p,DC))}=`+B(H)+KJ)]}; }},
-{id:'bonds',topic:'3.2.1',title:'Bond enthalpies',desc:'$\\Delta H=\\bigsum\\text{broken}-\\bigsum\\text{made}$',gen(){ const x=P(BR), b=Object.entries(x.b).reduce((t,[k,n])=>t+n*BE[k],0), m=Object.entries(x.m).reduce((t,[k,n])=>t+n*BE[k],0), keys=[...new Set([...Object.keys(x.b),...Object.keys(x.m)])];
+{id:'bonds',topic:'3.1.4',title:'Bond enthalpies',desc:'$\\Delta H=\\bigsum\\text{broken}-\\bigsum\\text{made}$',gen(){ const x=P(BR), b=Object.entries(x.b).reduce((t,[k,n])=>t+n*BE[k],0), m=Object.entries(x.m).reduce((t,[k,n])=>t+n*BE[k],0), keys=[...new Set([...Object.keys(x.b),...Object.keys(x.m)])];
   const list=o=>Object.entries(o).map(([k,n])=>(n===1?'':n)+bond(k)).join(' + '), nums=o=>Object.entries(o).map(([k,n])=>(n===1?'':n)+'('+BE[k]+')').join(' + ');
   return {q:`Use average bond enthalpies (kJ mol⁻¹) to calculate ΔH for:${eqn(...x.eq)}<p>${keys.map(k=>'$'+bond(k)+' = '+BE[k]+'$').join(', &nbsp; ')}</p>`,ans:b-m,unit:'kJ mol⁻¹',steps:[
    RX(T`\Delta H=\bigsum(\text{bonds broken})-\bigsum(\text{bonds made})`),
    `Bonds broken (endothermic):`+RX(list(x.b)+'='+nums(x.b)+'='+b+T`\ \text{kJ}`),
    `Bonds made (exothermic):`+RX(list(x.m)+'='+nums(x.m)+'='+m+T`\ \text{kJ}`),
    RX(T`\Delta H=${b}-${m}=`+B(b-m)+KJ)]}; }},
-{id:'kc',topic:'5.1.2',title:'Kc from equilibrium amounts',desc:'Initial / change / equilibrium tables.',gen(){ const t=P(['ester','hi','n2o4']);
+{id:'kc',topic:'3.1.10',title:'Kc from equilibrium amounts',desc:'Initial / change / equilibrium tables.',gen(){ const t=P(['ester','hi','n2o4']);
   if(t==='ester'){ const a=R(0.50,2.00,2), b=R(0.50,2.00,2), x=+(Math.min(a,b)*R(0.4,0.8,2)).toFixed(3), K=x*x/((a-x)*(b-x));
     return {q:`${f2(a)} mol of ethanoic acid and ${f2(b)} mol of ethanol are mixed and reach equilibrium. ${x.toFixed(3)} mol of ethyl ethanoate is present. Calculate $K_c$.${RX(ch('CH₃COOH')+' + '+ch('C₂H₅OH')+T` \rightleftharpoons `+ch('CH₃COOC₂H₅')+' + '+ch('H₂O'))}`,ans:K,unit:'(no units)',steps:[
      tbl(['','CH₃COOH','C₂H₅OH','ester','H₂O'],[['Initial / mol',f2(a),f2(b),'0','0'],['Change / mol','−'+x.toFixed(3),'−'+x.toFixed(3),'+'+x.toFixed(3),'+'+x.toFixed(3)],['Equilibrium / mol',(a-x).toFixed(3),(b-x).toFixed(3),x.toFixed(3),x.toFixed(3)]]),
@@ -170,7 +170,7 @@ const D=[
    tbl(['','N₂O₄','NO₂'],[['Initial / mol',f2(a),'0'],['Change / mol','−'+(y/2).toFixed(4),'+'+y.toFixed(3)],['Equilibrium / mol',(a-y/2).toFixed(4),y.toFixed(3)],['Concentration / mol dm⁻³',N(cN,4).includes('times')?sf(cN,4):N(cN,4),sf(cO,4)]]),
    `The moles top and bottom differ, so you must use concentrations (moles ÷ ${V.toFixed(V<1?3:2)} dm³):`,
    RX(T`K_c=\dfrac{[\mathrm{NO_2}]^2}{[\mathrm{N_2O_4}]}=\dfrac{(${N(cO,4)})^2}{${N(cN,4)}}=`+B(N(K))+MOLDM)]}; }},
-{id:'kp',topic:'5.1.2',title:'Kp from partial pressures',desc:'Mole fractions × total pressure.',gen(){ if(Math.random()<.5){ const a=R(0.20,1.20,2), b=R(0.20,1.20,2), Pt=P([100,150,200,250]), xa=a/(a+b), xb=b/(a+b), pa=xa*Pt, pb=xb*Pt, K=pb*pb/pa;
+{id:'kp',topic:'3.1.10',title:'Kp from partial pressures',desc:'Mole fractions × total pressure.',gen(){ if(Math.random()<.5){ const a=R(0.20,1.20,2), b=R(0.20,1.20,2), Pt=P([100,150,200,250]), xa=a/(a+b), xb=b/(a+b), pa=xa*Pt, pb=xb*Pt, K=pb*pb/pa;
     return {q:`An equilibrium mixture contains ${f2(a)} mol N₂O₄ and ${f2(b)} mol NO₂ at a total pressure of ${Pt} kPa. Calculate $K_p$.${RX(T`\mathrm{N_2O_4(g)} \rightleftharpoons 2\,\mathrm{NO_2(g)}`)}`,ans:K,unit:'kPa',steps:[
      RX(T`x(\mathrm{N_2O_4})=\dfrac{${f2(a)}}{${f2(a+b)}}=${xa.toFixed(3)}$$$$ x(\mathrm{NO_2})=\dfrac{${f2(b)}}{${f2(a+b)}}=${xb.toFixed(3)}`),
      RX(T`p=x\times P_{\text{total}}:\quad p(\mathrm{N_2O_4})=${N(pa,4)}\ \text{kPa},\quad p(\mathrm{NO_2})=${N(pb,4)}\ \text{kPa}`),
@@ -180,7 +180,7 @@ const D=[
    `Total moles = ${f2(n)}. Partial pressure = mole fraction × total pressure:`,
    RX(T`p(\mathrm{SO_2})=\dfrac{${f2(s)}}{${f2(n)}}\times ${Pt}=${N(ps,4)}\quad p(\mathrm{O_2})=${N(po,4)}\quad p(\mathrm{SO_3})=${N(pt,4)}\ \text{kPa}`),
    RX(T`K_p=\dfrac{p(\mathrm{SO_3})^2}{p(\mathrm{SO_2})^2\,p(\mathrm{O_2})}=\dfrac{(${N(pt,4)})^2}{(${N(ps,4)})^2\times ${N(po,4)}}=`+B(N(K))+T`\ \text{kPa}^{-1}`)]}; }},
-{id:'phstrong',topic:'5.1.3',title:'pH of strong acids and bases',desc:'$\\mathrm{pH}=-\\log[\\mathrm{H^+}]$, and $K_w$ for bases.',ph:true,gen(){ const t=P(['a','a','r','b','b2']);
+{id:'phstrong',topic:'3.1.12',title:'pH of strong acids and bases',desc:'$\\mathrm{pH}=-\\log[\\mathrm{H^+}]$, and $K_w$ for bases.',ph:true,gen(){ const t=P(['a','a','r','b','b2']);
   if(t==='a'){ const c=+(R(0.001,0.5,4)).toPrecision(3), pH=-Math.log10(c); return {q:`Calculate the pH of ${c} mol dm⁻³ hydrochloric acid.`,ans:pH,unit:'',steps:[`HCl is a strong acid, so it fully dissociates: $[\\mathrm{H^+}] = ${c}$ mol dm⁻³.`,RX(T`\mathrm{pH}=-\log[\mathrm{H^+}]=-\log(${c})=`+B(pH.toFixed(2)))]}; }
   if(t==='r'){ const pH=R(0.5,3.5,2), c=Math.pow(10,-pH); return {q:`A solution of nitric acid has a pH of ${pH.toFixed(2)}. What is its concentration?`,ans:c,unit:'mol dm⁻³',tol:0.02,steps:[RX(T`[\mathrm{H^+}]=10^{-\mathrm{pH}}=10^{-${pH.toFixed(2)}}=`+B(N(c))+MOLDM),`HNO₃ is strong and monobasic, so this is also the concentration of the acid.`]}; }
   const two=t==='b2', c=+(R(0.002,0.2,4)).toPrecision(3), oh=two?2*c:c, h=1e-14/oh, pH=-Math.log10(h);
@@ -188,7 +188,7 @@ const D=[
    RX(T`[\mathrm{OH^-}]=${two?T`2\times ${c}=`:''}${N(oh)}`+MOLDM),
    RX(T`[\mathrm{H^+}]=\dfrac{K_w}{[\mathrm{OH^-}]}=\dfrac{1.00\times 10^{-14}}{${N(oh)}}=${N(h)}`+MOLDM),
    RX(T`\mathrm{pH}=-\log(${N(h)})=`+B(pH.toFixed(2)))]}; }},
-{id:'phweak',topic:'5.1.3',title:'pH of weak acids',desc:'$[\\mathrm{H^+}]=\\sqrt{K_a[\\mathrm{HA}]}$',ph:true,gen(){ const [nm,Ka]=P([['ethanoic acid',1.74e-5],['methanoic acid',1.78e-4],['propanoic acid',1.35e-5],['benzoic acid',6.31e-5]]); const c=+(R(0.010,0.500,3)).toPrecision(3);
+{id:'phweak',topic:'3.1.12',title:'pH of weak acids',desc:'$[\\mathrm{H^+}]=\\sqrt{K_a[\\mathrm{HA}]}$',ph:true,gen(){ const [nm,Ka]=P([['ethanoic acid',1.74e-5],['methanoic acid',1.78e-4],['propanoic acid',1.35e-5],['benzoic acid',6.31e-5]]); const c=+(R(0.010,0.500,3)).toPrecision(3);
   if(Math.random()<.7){ const h=Math.sqrt(Ka*c), pH=-Math.log10(h); return {q:`Calculate the pH of ${c} mol dm⁻³ ${nm}. ($K_a = ${N(Ka)}\\ \\text{mol dm}^{-3}$)`,ans:pH,unit:'',steps:[
      `Assume $[\\mathrm{H^+}] = [\\mathrm{A^-}]$ and $[\\mathrm{HA}]_{\\text{eqm}} \\approx ${c}$, so $K_a = \\dfrac{[\\mathrm{H^+}]^2}{[\\mathrm{HA}]}$:`,
      RX(T`[\mathrm{H^+}]=\sqrt{K_a\times[\mathrm{HA}]}=\sqrt{${N(Ka)}\times ${c}}=${N(h)}`+MOLDM),
@@ -197,7 +197,7 @@ const D=[
   return {q:`A ${c} mol dm⁻³ solution of a weak monobasic acid has pH ${pH.toFixed(2)}. Calculate $K_a$.`,ans:K,unit:'mol dm⁻³',tol:0.03,steps:[
    RX(T`[\mathrm{H^+}]=10^{-${pH.toFixed(2)}}=${N(h)}`+MOLDM),
    RX(T`K_a=\dfrac{[\mathrm{H^+}]^2}{[\mathrm{HA}]}=\dfrac{(${N(h)})^2}{${c}}=`+B(N(K))+MOLDM)]}; }},
-{id:'buffer',topic:'5.1.3',title:'Buffer pH',desc:'$[\\mathrm{H^+}]=K_a\\dfrac{[\\mathrm{HA}]}{[\\mathrm{A^-}]}$',ph:true,gen(){ const Ka=P([1.74e-5,1.35e-5,1.78e-4,6.31e-5]);
+{id:'buffer',topic:'3.1.12',title:'Buffer pH',desc:'$[\\mathrm{H^+}]=K_a\\dfrac{[\\mathrm{HA}]}{[\\mathrm{A^-}]}$',ph:true,gen(){ const Ka=P([1.74e-5,1.35e-5,1.78e-4,6.31e-5]);
   if(Math.random()<.5){ const a=+R(0.050,0.500,3).toFixed(3), b=+R(0.050,0.500,3).toFixed(3), h=Ka*a/b, pH=-Math.log10(h);
     return {q:`A buffer contains ${a.toFixed(3)} mol dm⁻³ of a weak acid HA and ${b.toFixed(3)} mol dm⁻³ of its sodium salt. $K_a = ${N(Ka)}$ mol dm⁻³. Calculate the pH.`,ans:pH,unit:'',steps:[
      RX(T`[\mathrm{H^+}]=K_a\times\dfrac{[\mathrm{HA}]}{[\mathrm{A^-}]}=${N(Ka)}\times\dfrac{${a.toFixed(3)}}{${b.toFixed(3)}}=${N(h)}`+MOLDM),
@@ -208,23 +208,23 @@ const D=[
    `The OH⁻ turns that much HA into A⁻:`+RX(T`n(\mathrm{HA})=${N(na,3)}-${N(nb,3)}=${N(ha,3)}$$$$ n(\mathrm{A^-})=${N(nb,3)}`),
    `Both are in the same volume, so use moles directly:`+RX(T`[\mathrm{H^+}]=K_a\times\dfrac{n(\mathrm{HA})}{n(\mathrm{A^-})}=${N(Ka)}\times\dfrac{${N(ha,3)}}{${N(nb,3)}}=${N(h)}`),
    RX(T`\mathrm{pH}=-\log(${N(h)})=`+B(pH.toFixed(2)))]}; }},
-{id:'orders',topic:'5.1.1',title:'Orders from initial rates',desc:'Read the orders and k from a rates table.',gen(){ const a=P([0,1,2]), b=P([0,1,2,1]), k=+R(0.5,9.5,1), A0=0.010, B0=P([0.010,0.020]), fa=P([2,3]), fb=P([2,3]);
+{id:'orders',topic:'3.1.9',title:'Orders from initial rates',desc:'Read the orders and k from a rates table.',gen(){ const a=P([0,1,2]), b=P([0,1,2,1]), k=+R(0.5,9.5,1), A0=0.010, B0=P([0.010,0.020]), fa=P([2,3]), fb=P([2,3]);
   const rate=(x,y)=>k*Math.pow(x,a)*Math.pow(y,b); const rows=[[A0,B0],[A0*fa,B0],[A0*fa,B0*fb]].map(([x,y])=>[x,y,rate(x,y)]);
   const table=tbl(['Run','[A] / mol dm⁻³','[B] / mol dm⁻³','Initial rate / mol dm⁻³ s⁻¹'],rows.map((r,i)=>[i+1,sf(r[0],2),sf(r[1],2),`$${N(r[2],3)}$`]));
   const why=[`Runs 1 → 2: [A] × ${fa} with [B] constant, and the rate × ${sf(rows[1][2]/rows[0][2],3)}. Since $${fa}^{${a}} = ${Math.pow(fa,a)}$, the order in A is <b>${a}</b>.`,`Runs 2 → 3: [B] × ${fb} with [A] constant, and the rate × ${sf(rows[2][2]/rows[1][2],3)}. Since $${fb}^{${b}} = ${Math.pow(fb,b)}$, the order in B is <b>${b}</b>.`];
   const which=P(['A','B','overall','k']); const units=['s⁻¹','dm³ mol⁻¹ s⁻¹','dm⁶ mol⁻² s⁻¹','dm⁹ mol⁻³ s⁻¹'];
   if(which==='k'){ const ov=a+b; return {q:`For the reaction A + B → products:${table}Find the orders, then calculate the rate constant $k$ (give the number; units ${ov===0?'mol dm⁻³ s⁻¹':units[ov-1]}).`,ans:k,unit:ov===0?'mol dm⁻³ s⁻¹':units[ov-1],steps:[...why,RX(T`\text{rate}=k[\mathrm{A}]^{${a}}[\mathrm{B}]^{${b}}\ \Rightarrow\ k=\dfrac{\text{rate}}{[\mathrm{A}]^{${a}}[\mathrm{B}]^{${b}}}=\dfrac{${N(rows[0][2],3)}}{(${A0})^{${a}}(${B0})^{${b}}}=`+B(N(k)))]}; }
   const ans=which==='A'?a:which==='B'?b:a+b; return {q:`For the reaction A + B → products:${table}What is the ${which==='overall'?'overall order':'order with respect to '+which}?`,ans,int:true,unit:'',steps:[...why,RX(T`\text{rate}=k[\mathrm{A}]^{${a}}[\mathrm{B}]^{${b}}`),`Answer: <b>${ans}</b>`]}; }},
-{id:'halflife',topic:'5.1.1',title:'Half-life and k',desc:'First order: $k=\\dfrac{\\ln 2}{t_{1/2}}$',gen(){ if(Math.random()<.5){ const t=R(10,600,0), k=Math.LN2/t; return {q:`A first-order reaction has a half-life of ${t} s. Calculate the rate constant.`,ans:k,unit:'s⁻¹',steps:[RX(T`k=\dfrac{\ln 2}{t_{1/2}}=\dfrac{0.693}{${t}}=`+B(N(k))+T`\ \text{s}^{-1}`)]}; }
+{id:'halflife',topic:'3.1.9',title:'Half-life and k',desc:'First order: $k=\\dfrac{\\ln 2}{t_{1/2}}$',gen(){ if(Math.random()<.5){ const t=R(10,600,0), k=Math.LN2/t; return {q:`A first-order reaction has a half-life of ${t} s. Calculate the rate constant.`,ans:k,unit:'s⁻¹',steps:[RX(T`k=\dfrac{\ln 2}{t_{1/2}}=\dfrac{0.693}{${t}}=`+B(N(k))+T`\ \text{s}^{-1}`)]}; }
   const k=+(R(0.001,0.08,4)).toPrecision(3), t=Math.LN2/k; return {q:`A first-order reaction has $k = ${N(k)}\\ \\text{s}^{-1}$. Calculate its half-life.`,ans:t,unit:'s',steps:[RX(T`t_{1/2}=\dfrac{\ln 2}{k}=\dfrac{0.693}{${N(k)}}=`+B(N(t))+T`\ \text{s}`)]}; }},
-{id:'arrhenius',topic:'5.1.1',title:'Arrhenius equation',desc:'$E_a$ from a gradient; $k$ from $A$, $E_a$ and $T$.',gen(){ if(Math.random()<.5){ const g=R(3000,15000,0), Ea=g*8.314/1000; return {q:`A graph of $\\ln k$ against $\\dfrac{1}{T}$ is a straight line with gradient $-${g}$ K. Calculate the activation energy in kJ mol⁻¹. ($R = 8.314\\ \\text{J mol}^{-1}\\ \\text{K}^{-1}$)`,ans:Ea,unit:'kJ mol⁻¹',steps:[
+{id:'arrhenius',topic:'3.1.9',title:'Arrhenius equation',desc:'$E_a$ from a gradient; $k$ from $A$, $E_a$ and $T$.',gen(){ if(Math.random()<.5){ const g=R(3000,15000,0), Ea=g*8.31/1000; return {q:`A graph of $\\ln k$ against $\\dfrac{1}{T}$ is a straight line with gradient $-${g}$ K. Calculate the activation energy in kJ mol⁻¹. ($R = 8.31\\ \\text{J K}^{-1}\\ \\text{mol}^{-1}$)`,ans:Ea,unit:'kJ mol⁻¹',steps:[
     `The straight-line form of the Arrhenius equation is`+RX(T`\ln k=-\dfrac{E_a}{R}\cdot\dfrac{1}{T}+\ln A`)+`so the gradient is $-\\dfrac{E_a}{R}$.`,
-    RX(T`E_a=${g}\times 8.314=${N(g*8.314,4)}\ \text{J mol}^{-1}=`+B(N(Ea))+KJ)]}; }
-  const A=+(Math.pow(10,R(9,13,1))).toPrecision(2), Ea=R(40,110,0), Tk=R(290,420,0), x=Ea*1000/(8.314*Tk), k=A*Math.exp(-x);
-  return {q:`Calculate $k$ at ${Tk} K for a reaction with $A = ${N(A,2)}\\ \\text{s}^{-1}$ and $E_a = ${Ea}\\ \\text{kJ mol}^{-1}$. ($R = 8.314\\ \\text{J mol}^{-1}\\ \\text{K}^{-1}$)`,ans:k,unit:'s⁻¹',tol:0.02,steps:[
-   `Convert $E_a$ to J mol⁻¹ first:`+RX(T`\dfrac{E_a}{RT}=\dfrac{${Ea*1000}}{8.314\times ${Tk}}=${x.toFixed(3)}`),
+    RX(T`E_a=${g}\times 8.31=${N(g*8.31,4)}\ \text{J mol}^{-1}=`+B(N(Ea))+KJ)]}; }
+  const A=+(Math.pow(10,R(9,13,1))).toPrecision(2), Ea=R(40,110,0), Tk=R(290,420,0), x=Ea*1000/(8.31*Tk), k=A*Math.exp(-x);
+  return {q:`Calculate $k$ at ${Tk} K for a reaction with $A = ${N(A,2)}\\ \\text{s}^{-1}$ and $E_a = ${Ea}\\ \\text{kJ mol}^{-1}$. ($R = 8.31\\ \\text{J K}^{-1}\\ \\text{mol}^{-1}$)`,ans:k,unit:'s⁻¹',tol:0.02,steps:[
+   `Convert $E_a$ to J mol⁻¹ first:`+RX(T`\dfrac{E_a}{RT}=\dfrac{${Ea*1000}}{8.31\times ${Tk}}=${x.toFixed(3)}`),
    RX(T`k=Ae^{-E_a/RT}=${N(A,2)}\times e^{-${x.toFixed(3)}}=`+B(N(k))+T`\ \text{s}^{-1}`)]}; }},
-{id:'bornhaber',topic:'5.2.1',title:'Born–Haber cycles',desc:'Lattice enthalpy from the other steps.',gen(){ const c=P(Object.keys(BH.F)); const m=c.match(/^(Li|Na|K|Mg|Ca)/)[1], x=c.replace(m,'').replace('₂',''), two=c.includes('₂'), M=BH.M[m], X=BH.X[x], ox=x==='O', fH=BH.F[c];
+{id:'bornhaber',topic:'3.1.8',title:'Born–Haber cycles',desc:'Lattice enthalpy from the other steps.',gen(){ const c=P(Object.keys(BH.F)); const m=c.match(/^(Li|Na|K|Mg|Ca)/)[1], x=c.replace(m,'').replace('₂',''), two=c.includes('₂'), M=BH.M[m], X=BH.X[x], ox=x==='O', fH=BH.F[c];
   const steps=[[T`\Delta_{at}H(\mathrm{${m}})`,M[0],1],[T`\text{IE}_1(\mathrm{${m}})`,M[1],1]]; if(M[2]&&(two||ox)) steps.push([T`\text{IE}_2(\mathrm{${m}})`,M[2],1]);
   const nx=two?2:1; steps.push([T`\Delta_{at}H(\mathrm{${x}})`,X[0],nx],[T`\text{EA}_1(\mathrm{${x}})`,X[1],nx]); if(ox) steps.push([T`\text{EA}_2(\mathrm{O})`,X[2],1]);
   const sum=steps.reduce((t,s)=>t+s[1]*s[2],0), L=fH-sum;
@@ -233,17 +233,17 @@ const D=[
    RX(T`\Delta_f H=${steps.map(s=>(s[2]>1?s[2]:'')+s[0]).join('+')}+\Delta_{LE}H`),
    RX(T`\text{sum of steps}=${steps.map(s=>(s[2]>1?s[2]:'')+'('+s[1]+')').join('+')}=${sum}`),
    RX(T`\Delta_{LE}H=${fH}-${par(sum)}=`+B(L)+KJ)]}; }},
-{id:'solution',topic:'5.2.1',title:'Enthalpy of solution',desc:'$\\Delta_{sol}H=-\\Delta_{LE}H+\\bigsum\\Delta_{hyd}H$',gen(){ const c=P(Object.keys(LE)), [l,cat,an]=LE[c], s=-l+HYD[cat]+HYD[an];
+{id:'solution',topic:'3.1.8',title:'Enthalpy of solution',desc:'$\\Delta_{sol}H=-\\Delta_{LE}H+\\bigsum\\Delta_{hyd}H$',gen(){ const c=P(Object.keys(LE)), [l,cat,an]=LE[c], s=-l+HYD[cat]+HYD[an];
   return {q:`Calculate the enthalpy change of solution of ${c}. Values in kJ mol⁻¹:$$\\Delta_{LE}H(${ch(c)}) = ${l},\\quad \\Delta_{hyd}H(${ch(cat)}) = ${HYD[cat]},\\quad \\Delta_{hyd}H(${ch(an)}) = ${HYD[an]}$$`,ans:s,unit:'kJ mol⁻¹',steps:[
    `Dissolving = breaking up the lattice (the reverse of lattice enthalpy) + hydrating each ion:`,
    RX(T`\Delta_{sol}H=-\Delta_{LE}H+\Delta_{hyd}H(${ch(cat)})+\Delta_{hyd}H(${ch(an)})`),
    RX(T`=${-l}+(${HYD[cat]})+(${HYD[an]})=`+B(sg(s))+KJ)]}; }},
-{id:'entropy',topic:'5.2.2',title:'Entropy changes',desc:'$\\Delta S=\\bigsum S_{\\text{products}}-\\bigsum S_{\\text{reactants}}$',gen(){ const x=P(SR), sp=sumD(x.p,SS), sr=sumD(x.r,SS), S=sp-sr, used=[...new Set([...x.r,...x.p].map(a=>a[1]))];
+{id:'entropy',topic:'3.1.8',title:'Entropy changes',desc:'$\\Delta S=\\bigsum S_{\\text{products}}-\\bigsum S_{\\text{reactants}}$',gen(){ const x=P(SR), sp=sumD(x.p,SS), sr=sumD(x.r,SS), S=sp-sr, used=[...new Set([...x.r,...x.p].map(a=>a[1]))];
   return {q:`Calculate $\\Delta S$ for the reaction below. Standard entropies in J K⁻¹ mol⁻¹:${eqn(x.r,x.p)}${dataList(used,SS,'S')}`,ans:S,unit:'J K⁻¹ mol⁻¹',steps:[
    RX(T`\Delta S=\bigsum S(\text{products})-\bigsum S(\text{reactants})`),
    RX(T`=\big[${termsD(x.p,SS)}\big]-\big[${termsD(x.r,SS)}\big]`),
    RX(T`=${N(sp,4)}-${N(sr,4)}=`+B(N(S,4))+T`\ \text{J K}^{-1}\,\text{mol}^{-1}`)]}; }},
-{id:'gibbs',topic:'5.2.2',title:'Gibbs free energy',desc:'$\\Delta G=\\Delta H-T\\Delta S$ and the feasibility temperature.',gen(){ const H=R(-250,250,0)||50, S=R(-300,300,0)||80;
+{id:'gibbs',topic:'3.1.8',title:'Gibbs free energy',desc:'$\\Delta G=\\Delta H-T\\Delta S$ and the feasibility temperature.',gen(){ const H=R(-250,250,0)||50, S=R(-300,300,0)||80;
   if(Math.random()<.55||Math.sign(H)!==Math.sign(S)){ const Tk=R(250,1200,0), G=H-Tk*S/1000; return {q:`For a reaction, $\\Delta H = ${sg(H)}\\ \\text{kJ mol}^{-1}$ and $\\Delta S = ${sg(S)}\\ \\text{J K}^{-1}\\ \\text{mol}^{-1}$. Calculate $\\Delta G$ at ${Tk} K.`,ans:G,unit:'kJ mol⁻¹',steps:[
      `Convert ΔS to kJ: $\\Delta S = ${sg(S)}\\ \\text{J K}^{-1}\\ \\text{mol}^{-1} = ${sg(S/1000)}\\ \\text{kJ K}^{-1}\\ \\text{mol}^{-1}$`,
      RX(T`\Delta G=\Delta H-T\Delta S=${H}-(${Tk}\times ${par(S/1000)})=`+B(N(G))+KJ),
@@ -251,11 +251,11 @@ const D=[
   const Tk=H/(S/1000); return {q:`For a reaction, $\\Delta H = ${sg(H)}\\ \\text{kJ mol}^{-1}$ and $\\Delta S = ${sg(S)}\\ \\text{J K}^{-1}\\ \\text{mol}^{-1}$. Calculate the temperature at which $\\Delta G = 0$.`,ans:Tk,unit:'K',steps:[
    RX(T`\Delta G=0\ \Rightarrow\ \Delta H=T\Delta S\ \Rightarrow\ T=\dfrac{\Delta H}{\Delta S}=\dfrac{${H}}{${S/1000}}=`+B(N(Tk))+T`\ \text{K}`),
    `The reaction is feasible ${H>0?'above':'below'} this temperature.`]}; }},
-{id:'ecell',topic:'5.2.3',title:'Cell potentials',desc:'$E^{\\ominus}_{\\text{cell}}=E^{\\ominus}_{+}-E^{\\ominus}_{-}$',gen(){ let a=P(EO), b=P(EO); while(b===a) b=P(EO); const [hi,lo]=a[1]>b[1]?[a,b]:[b,a], E=hi[1]-lo[1];
+{id:'ecell',topic:'3.1.11',title:'Cell potentials',desc:'$E^{\\ominus}_{\\text{cell}}=E^{\\ominus}_{+}-E^{\\ominus}_{-}$',gen(){ let a=P(EO), b=P(EO); while(b===a) b=P(EO); const [hi,lo]=a[1]>b[1]?[a,b]:[b,a], E=hi[1]-lo[1];
   return {q:`Calculate the standard cell potential for a cell made from these two half-cells:$$\\begin{aligned}${half(a[0])}&\\qquad E^{\\ominus}=${a[1].toFixed(2)}\\ \\text{V}\\\\${half(b[0])}&\\qquad E^{\\ominus}=${b[1].toFixed(2)}\\ \\text{V}\\end{aligned}$$`,ans:E,unit:'V',steps:[
    `The more positive half-cell, $${half(hi[0])}$, is the positive electrode and is reduced.`,
    RX(T`E^{\ominus}_{\text{cell}}=E^{\ominus}_{\text{positive}}-E^{\ominus}_{\text{negative}}=${hi[1].toFixed(2)}-${par(+lo[1].toFixed(2))}=`+B(E.toFixed(2))+T`\ \text{V}`)]}; }},
-{id:'redoxtit',topic:'5.2.3',title:'Redox titrations',desc:'Manganate(VII) and iodine–thiosulfate.',gen(){ if(Math.random()<.5){ const c=P([0.0100,0.0200,0.0150]), t=Math.round(R(10,28,2)*20)/20, n=c*t/1000, fe=5*n*10, m=fe*55.8;
+{id:'redoxtit',topic:'3.1.11',title:'Redox titrations',desc:'Manganate(VII) and iodine–thiosulfate.',gen(){ if(Math.random()<.5){ const c=P([0.0100,0.0200,0.0150]), t=Math.round(R(10,28,2)*20)/20, n=c*t/1000, fe=5*n*10, m=fe*55.8;
     return {q:`An iron tablet is dissolved in acid and made up to 250.0 cm³. 25.0 cm³ portions need ${t.toFixed(2)} cm³ of ${c.toFixed(4)} mol dm⁻³ KMnO₄. Calculate the mass of iron in the tablet. ($A_r$ Fe = 55.8)${RX(T`\mathrm{MnO_4^-} + 8\,\mathrm{H^+} + 5\,\mathrm{Fe^{2+}} \longrightarrow \mathrm{Mn^{2+}} + 4\,\mathrm{H_2O} + 5\,\mathrm{Fe^{3+}}`)}`,ans:m,unit:'g',steps:[
      RX(T`n(\mathrm{MnO_4^-})=${c.toFixed(4)}\times\dfrac{${t.toFixed(2)}}{1000}=${N(n,4)}\ \text{mol}`),
      `The ratio MnO₄⁻ : Fe²⁺ is 1 : 5:`+RX(T`n(\mathrm{Fe^{2+}})\ \text{in}\ 25.0\ \text{cm}^3=5\times ${N(n,4)}=${N(5*n,4)}\ \text{mol}`),
@@ -265,7 +265,7 @@ const D=[
    RX(T`n(\mathrm{S_2O_3^{2-}})=${c.toFixed(3)}\times\dfrac{${t.toFixed(2)}}{1000}=${N(n,4)}\ \text{mol}`),
    RX(T`2\,\mathrm{Cu^{2+}}\equiv\mathrm{I_2}\equiv 2\,\mathrm{S_2O_3^{2-}}\ \Rightarrow\ n(\mathrm{Cu^{2+}})=n(\mathrm{S_2O_3^{2-}})=${N(n,4)}\ \text{mol}`),
    RX(T`[\mathrm{Cu^{2+}}]=\dfrac{${N(n,4)}}{0.0250}=`+B(N(cu))+MOLDM)]}; }},
-{id:'rf',topic:'6.3.1',title:'Rf values',desc:'$R_f=\\dfrac{\\text{spot distance}}{\\text{solvent front distance}}$',gen(){ const f=R(5.0,9.5,1), s=R(0.8,f-0.3,1), r=s/f; return {q:`On a TLC plate the solvent front moved ${f1(f)} cm from the baseline and a spot moved ${f1(s)} cm. Calculate $R_f$.`,ans:r,unit:'',steps:[RX(T`R_f=\dfrac{\text{distance moved by spot}}{\text{distance moved by solvent front}}=\dfrac{${f1(s)}}{${f1(f)}}=`+B(r.toFixed(2)))]}; }}
+{id:'rf',topic:'3.3.16',title:'Rf values',desc:'$R_f=\\dfrac{\\text{spot distance}}{\\text{solvent front distance}}$',gen(){ const f=R(5.0,9.5,1), s=R(0.8,f-0.3,1), r=s/f; return {q:`On a TLC plate the solvent front moved ${f1(f)} cm from the baseline and a spot moved ${f1(s)} cm. Calculate $R_f$.`,ans:r,unit:'',steps:[RX(T`R_f=\dfrac{\text{distance moved by spot}}{\text{distance moved by solvent front}}=\dfrac{${f1(s)}}{${f1(f)}}=`+B(r.toFixed(2)))]}; }}
 ];
 const BYID=Object.fromEntries(D.map(d=>[d.id,d]));
 
