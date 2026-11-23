@@ -4,6 +4,18 @@
 (three.js): no question card on screen, the camera moves around the scene, things get built, fall, spin, spark and
 flip; slow motion, freeze-frames, rewinds and time-lapses where they help. The real question is shown at the end, on the website.
 
+## Feedback on day 1 (23 Nov) — follow this from day 2
+- **Worked well:** D&T (flexography press) and Physics (light gate). 3D is right when it shows a *real physical thing*:
+  a machine, a mechanism, an experiment, a process.
+- **3D only when it helps visualisation.** Otherwise use clean, punchy **2D** animation.
+- **Maths:** no 3D needed. 2D: equations that build and transform, graphs that draw, and quick
+  "remember this formula?" moments (e.g. pop up S∞ = a/(1−r) and ask if they knew it) before using it.
+- **Chemistry:** an animated 2D graph carrying the whole explanation would have been better than the 3D flasks
+  (which didn't look good). Use 2D graphs/diagrams by default; 3D only if it clearly looks good and adds something
+  (e.g. molecule shapes).
+- Keep: subject colours, snappy cuts, slow-mo/time-lapse where useful, ESAT-only options, D&T theory explained in full,
+  question shown on the site at the end, one TrainTanmay mention.
+
 ## Rules for every video
 - **Show, don't tell:** the question itself is animated (the ball drops through the laser, the flasks fill, the towers
   grow). Words on screen are short kinetic headlines, not paragraphs.
