@@ -22,7 +22,7 @@
   //   2. a Google Apps Script (cloud/pdf-proxy.gs), for school and office networks that block workers.dev:
   //      script.google.com is almost never blocked. Paste its web app address into GAS to turn it on.
   var PROXY = 'https://traintanmay.halkblackgamer.workers.dev/?url=';
-  var GAS = '';
+  var GAS = 'https://script.google.com/macros/s/AKfycbxr9jRtcY-qzZAi_8qlBhbtxvutAf0_HXOBoRg_KhjJJ63nqasCcmSue8JtBn1FJMjO/exec';
   var PROXIED = /(^|\.)(madasmaths\.com|uat-wp\.s3\.eu-west-2\.amazonaws\.com)$/;
   var WORKER_WAIT = 8000; // a filter that silently drops the Worker shouldn't keep you waiting longer than this
   var PK = 'tt-pdf-proxy'; // which proxy worked last time on this network ('gas' = skip straight to Google)
