@@ -185,3 +185,31 @@ footer a{color:var(--lime)}
   @keyframes mDrop{from{opacity:0;translate:0 -14px;scale:.985}}
 }
 @media (prefers-reduced-motion:reduce){.heroart,.qtile .ic,.viscard .ic{transition:none!important;rotate:none}}
+
+/* ---- quicker layout (Nov 2026): three big ways in, course cards with one-tap links ---- */
+.hero.hero-s{padding:22px 26px;grid-template-columns:minmax(0,1fr) 200px}
+.hero.hero-s h1{font-size:clamp(1.6rem,3.4vw,2.3rem);margin:6px 0 14px}
+.hero.hero-s .heroart{max-width:200px}
+@media (max-width:760px){.hero.hero-s{grid-template-columns:minmax(0,1fr)}.hero.hero-s .heroart{display:none}}
+.go3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px}
+@media (max-width:900px){.go3{grid-template-columns:1fr}}
+.gtile{display:flex;gap:14px;align-items:center;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;transition:border-color .15s,transform .2s,box-shadow .2s}
+.gtile:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:var(--shadow)}
+.gtile .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);flex:none}
+.gtile .ic svg{width:24px;height:24px}
+.gtile b{display:block;font-size:1.08rem}
+.gtile span span{font-size:.84rem;color:var(--muted)}
+.gtile .go{margin-left:auto;font-weight:800;font-size:1.2rem;color:var(--brand)}
+.gtile.main{background:var(--brand);border-color:var(--brand);color:var(--brand-ink,#fff)}
+.gtile.main .ic{background:rgba(255,255,255,.18);color:inherit}
+.gtile.main span span,.gtile.main .go{color:inherit;opacity:.9}
+.ccard .cmain{display:flex;flex-direction:column;gap:9px;text-decoration:none;color:inherit}
+.ccard .ql{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.ccard .ql a{font-size:.8rem;font-weight:600;padding:5px 10px;border-radius:99px;border:1px solid var(--line);text-decoration:none;color:var(--ink-2);background:var(--surface)}
+.ccard .ql a:hover{border-color:var(--brand);color:var(--brand)}
+.ccard .ql a.pr{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+.h1sub{display:block;font-size:.55em;color:var(--muted);margin-top:4px}
+/* the Start button stays on screen while you pick topics */
+.builder .bfoot{position:sticky;bottom:0;z-index:5;background:var(--surface);justify-content:flex-start;gap:14px;padding:12px 170px 12px 0;margin-bottom:-4px}
+@media (max-width:760px){.builder .bfoot{padding-right:150px}}
+.jump .btn.primary{color:var(--brand-ink,#fff)}

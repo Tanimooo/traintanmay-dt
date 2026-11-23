@@ -34,8 +34,13 @@
     '@media (max-width:760px){.tte{flex-direction:column}.tte-side{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;border-left:0;border-top:1px solid #2c2f37;order:2;padding:10px 12px;gap:10px}.tte-clock{font-size:1.8rem}.tte-side .tall{display:none}}';
   document.head.appendChild(css);
 
-  var root = null, cleanup = [];
-  function close() { cleanup.forEach(function (f) { try { f(); } catch (e) {} }); cleanup = []; if (root) { root.remove(); root = null; } document.documentElement.style.overflow = ''; }
+  var root = null, cleanup = [], bh = null;
+  var B = function () { return window.ttBack; };
+  /* tear down whatever is showing. keepBack: another view replaces it straight away, so its Back step stays */
+  function teardown() { cleanup.forEach(function (f) { try { f(); } catch (e) {} }); cleanup = []; if (root) { root.remove(); root = null; } document.documentElement.style.overflow = ''; }
+  function close(then) { teardown(); var h = bh; bh = null; if (h && B()) B().done(h, typeof then === 'function' ? then : null); else if (typeof then === 'function') then(); }
+  /* Back while a paper is open does what its × does */
+  function onBack(fn) { if (!B()) return; if (bh) bh.onBack = fn; else bh = B().open(fn); }
 
   /* draw every page, lazily as you scroll */
   function pages(box, url) {
@@ -62,7 +67,7 @@
   }
 
   function shell(o, exam) {
-    close();
+    teardown();
     root = document.createElement('div'); root.className = 'tte' + (exam ? ' ex' : ''); root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', o.title || 'Paper');
     root.innerHTML = '<div class="tte-main"><div class="tte-pages"></div></div><aside class="tte-side"></aside>';
     document.body.appendChild(root); document.documentElement.style.overflow = 'hidden';
@@ -76,7 +81,8 @@
       (o.note ? '<p style="margin:0;opacity:.8">' + esc(o.note) + '</p>' : '') +
       '<a class="b" href="' + esc(o.url) + '" target="_blank" rel="noopener">Open in new tab ↗</a><button type="button" data-close>Close</button>';
     r.insertAdjacentHTML('beforeend', '<button class="tte-x" type="button" aria-label="Close" data-close>×</button>');
-    [].forEach.call(r.querySelectorAll('[data-close]'), function (b) { b.onclick = close; });
+    [].forEach.call(r.querySelectorAll('[data-close]'), function (b) { b.onclick = function () { close(); }; });
+    onBack(function () { bh = null; if (root === r) close(); });
     var key = function (e) { if (e.key === 'Escape' && root === r) close(); };
     document.addEventListener('keydown', key); cleanup.push(function () { document.removeEventListener('keydown', key); });
     r.querySelector('[data-close]').focus();
@@ -117,8 +123,11 @@
       var secs = Math.round(used);
       if (o.key) { var t = lsGet(TIMES) || {}; t[o.key] = { secs: secs, at: Date.now(), mins: o.mins }; lsSet(TIMES, t); }
       done = true; lsSet(ACTIVE, null); unfull();
-      if (o.onEnd) try { o.onEnd(secs); } catch (e) {}
-      view({ url: o.url, title: o.title, source: o.source, note: 'Time used: ' + fmt(secs).replace(/^\+/, '') + '. Mark it now: open the mark scheme from the paper list.' });
+      // drop the exam's Back step first, so the app can move to the score page and the paper opens over that
+      close(function () {
+        if (o.onEnd) try { o.onEnd(secs); } catch (e) {}
+        view({ url: o.url, title: o.title, source: o.source, note: 'Time used: ' + fmt(secs).replace(/^\+/, '') + '. Mark it now: open the mark scheme from the paper list.' });
+      });
     };
     var ask = function () {
       if (asking || done) return; asking = true;
@@ -129,6 +138,9 @@
       q.querySelector('[data-l]').onclick = function () { q.remove(); asking = false; finish(); };
     };
     r.querySelector('[data-finish]').onclick = ask;
+    // Back during an exam: same as Esc or Finish, it asks first (and puts the Back step back in case you keep going)
+    var back = function () { bh = null; if (done || root !== r) return; onBack(back); ask(); };
+    onBack(back);
     // Esc: the browser leaves full screen by itself, so we ask as soon as it does
     var fsc = function () { if (!document.fullscreenElement && !done) ask(); };
     var key = function (e) { if (e.key === 'Escape' && !done && !document.fullscreenElement) { e.preventDefault(); ask(); } };

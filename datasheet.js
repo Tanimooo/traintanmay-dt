@@ -39,7 +39,7 @@
   document.head.appendChild(css);
 
   var ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h6M8 15h3"/></svg>';
-  var fab = null, panel = null, cur = 0, docs = {};
+  var fab = null, panel = null, cur = 0, docs = {}, bh = null;
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   function cfg() { return window.TT_DS_CFG || null; }
   function hash() { return location.hash.slice(1); }
@@ -112,6 +112,7 @@
     document.documentElement.classList.add('ttds-on');
     [].forEach.call(panel.querySelectorAll('.ttds-tabs button'), function (b) { b.onclick = function () { show(+b.dataset.i); }; });
     panel.querySelector('.x').onclick = close;
+    if (window.ttBack) bh = window.ttBack.open(function () { bh = null; close(); }); // Back closes it, like ×
     show(Math.min(cur, list.length - 1));
     panel.querySelector('.x').focus({ preventScroll: true });
     sync();
@@ -119,6 +120,7 @@
   function close() {
     if (!panel) return;
     panel.remove(); panel = null; document.documentElement.classList.remove('ttds-on');
+    if (bh) { var h = bh; bh = null; window.ttBack.done(h); }
     sync(); if (fab && !fab.hidden) fab.focus({ preventScroll: true });
   }
 

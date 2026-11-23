@@ -53,7 +53,7 @@
         var LBL = /^[\d()a-z.]{1,4}$/i, merged = [];
         items.forEach(function (it) {
           var p = merged[merged.length - 1], gap = p ? it.x - (p.x + (p.w || 0)) : 0;
-          if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1) {
+          if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1 && !(/^\d{1,2}\.$/.test(p.s) && /^[a-z]{2}|^[a-z]\(/i.test(it.s))) { // but not "5." + "f("
             p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
           } else merged.push(Object.assign({}, it)); // overlapping numbers (a renumbered pack) stay separate
         });
@@ -81,7 +81,7 @@
   // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
   function numAt(it, P, kind) {
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
-    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\.?\s+(?:[A-Z(]|[a-h][.)]\s)/.exec(it.s);
     if (!m) return null;
     if (P.mh && it.h < P.mh * 0.75) return null; // a superscript or index, not a label
     // in a mark scheme table the numbers sit in the first column: a number further in is part of the working
@@ -432,7 +432,8 @@
     var back = document.createElement('div'); back.className = 'ttc-pop';
     back.innerHTML = '<div class="ttc-pbox" role="dialog" aria-modal="true" aria-label="Worked solutions"><div class="ttc-phead"><b>' + E(card.title || 'Worked solutions') + '</b><span>Question ' + E(o.q) + ' · live from ' + E(card.source || host(o.url)) + '</span><button type="button" class="ttc-px" aria-label="Close">×</button></div><div class="ttc-pbody"></div></div>';
     document.body.appendChild(back); document.documentElement.style.overflow = 'hidden';
-    var close = function () { back.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', key); };
+    var bh = window.ttBack ? window.ttBack.open(function () { bh = null; close(); }) : null; // Back closes it, like ×
+    var close = function () { if (!back.isConnected) return; back.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', key); if (bh) { window.ttBack.done(bh); bh = null; } };
     var key = function (e) { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', key);
     back.onclick = function (e) { if (e.target === back) close(); };
