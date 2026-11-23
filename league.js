@@ -14,6 +14,11 @@
      leagues/{CODE}/scores/{uid}    { dev: {deviceId: {w, s, pw, ps}}, updated }   w = week (Monday date), s = seconds */
 (function () {
   if (window.ttLeague || window.top !== window) return;
+  /* real-world time (ttclock.js), falling back to the device clock until it loads */
+  var T0 = Date.now();
+  function NOW() { return window.ttClock ? window.ttClock.now() : Date.now(); }
+  function clockOK() { return window.ttClock ? window.ttClock.ready : Date.now() - T0 > 6000; }
+
   var MAX_LEAGUES = 5; // leagues per person; a league has no size limit
   var me = document.currentScript;
   var TRACK = !(me && me.hasAttribute('data-notrack')) && !/help\.html$/.test(location.pathname);
@@ -33,7 +38,7 @@
     return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour, mi: +p.minute };
   }
   function weekInfo(t) {
-    var u = uk(t || Date.now()), day = Date.UTC(u.y, u.m - 1, u.d), wd = (new Date(day).getUTCDay() + 6) % 7; // 0 = Monday
+    var u = uk(t || NOW()), day = Date.UTC(u.y, u.m - 1, u.d), wd = (new Date(day).getUTCDay() + 6) % 7; // 0 = Monday
     var mon = day - wd * 864e5, iso = function (x) { return new Date(x).toISOString().slice(0, 10); };
     var left = (7 - wd) * 1440 - (u.h * 60 + u.mi); // minutes until next Monday 00:00 UK
     return { week: iso(mon), prev: iso(mon - 7 * 864e5), left: left, mon: mon };
@@ -46,18 +51,18 @@
     if (st.w !== w.week) { // a new week: last week's count moves to pw/ps, this week starts at 0
       st = { w: w.week, s: 0, pw: st.w === w.prev ? st.w : (st.pw === w.prev ? st.pw : null), ps: st.w === w.prev ? (st.s || 0) : (st.pw === w.prev ? st.ps || 0 : 0) };
       if (!st.pw) { st.pw = null; st.ps = 0; }
-      put(K_TIME, JSON.stringify(st));
+      if (clockOK()) put(K_TIME, JSON.stringify(st)); // never start a new week on an unchecked clock
     }
     return st;
   }
   function addSeconds(n) { var st = local(); st.s = Math.min(7 * 86400, (st.s || 0) + n); put(K_TIME, JSON.stringify(st)); dirty = true; }
 
   var SOFT = 2 * 60000, ASK = 8 * 60000, ANSWER = 30000;
-  var lastInput = Date.now(), lastTick = Date.now(), TAB = rnd(8, 'abcdefghijklmnopqrstuvwxyz'), dirty = false;
+  var lastInput = NOW(), lastTick = NOW(), TAB = rnd(8, 'abcdefghijklmnopqrstuvwxyz'), dirty = false;
   var pending = 0, away = false, ask = null; // held seconds, gave no answer, the open "Still revising?" card
   function focusCounting() { try { return !!(window.ttFocus && window.ttFocus.counting()); } catch (e) { return false; } }
   function here() { // any sign of a person: held time counts, and the clock runs again
-    lastInput = Date.now(); away = false;
+    lastInput = NOW(); away = false;
     if (pending) { addSeconds(pending); pending = 0; }
     if (ask) hideAsk();
   }
@@ -81,22 +86,23 @@
     el.innerHTML = '<svg viewBox="0 0 46 46" aria-hidden="true"><circle class="rg" cx="23" cy="23" r="19"/><circle class="ar" cx="23" cy="23" r="19"/></svg><span class="n" aria-hidden="true">30</span>' +
       '<span><b>Still revising?</b><small>Tap to keep your study time counting.</small></span><button type="button">I’m here</button>';
     (document.fullscreenElement || document.body).appendChild(el);
-    var end = Date.now() + ANSWER, ar = el.querySelector('.ar'), n = el.querySelector('.n');
-    var paint = function () { var left = Math.max(0, end - Date.now()); n.textContent = Math.ceil(left / 1000); ar.style.strokeDashoffset = String(119.4 * (1 - left / ANSWER)); };
+    var end = NOW() + ANSWER, ar = el.querySelector('.ar'), n = el.querySelector('.n');
+    var paint = function () { var left = Math.max(0, end - NOW()); n.textContent = Math.ceil(left / 1000); ar.style.strokeDashoffset = String(119.4 * (1 - left / ANSWER)); };
     ask = { el: el, t: setTimeout(giveUp, ANSWER), i: setInterval(paint, 1000) };
     requestAnimationFrame(paint);
     el.querySelector('button').onclick = here; // the click also counts as input, but say so plainly
   }
   if (TRACK) {
     ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'].forEach(function (t) { document.addEventListener(t, here, { capture: true, passive: true }); });
-    var mv = 0; document.addEventListener('pointermove', function () { var n = Date.now(); if (n - mv > 3000) { mv = n; here(); } }, { capture: true, passive: true });
+    var mv = 0; document.addEventListener('pointermove', function () { var n = NOW(); if (n - mv > 3000) { mv = n; here(); } }, { capture: true, passive: true });
     window.addEventListener('scroll', here, { capture: true, passive: true });
     document.addEventListener('visibilitychange', function () {
-      lastTick = Date.now(); // time while the tab was hidden never counts, even in the first tick back
+      lastTick = NOW(); // time while the tab was hidden never counts, even in the first tick back
       if (document.visibilityState === 'visible' && pending && !ask && !focusCounting()) showAsk(); // held time from before you left: ask about it
     });
     setInterval(function () {
-      var now = Date.now(), dt = Math.max(0, Math.min(now - lastTick, 15000)); lastTick = now;
+      var now = NOW(), dt = Math.max(0, Math.min(now - lastTick, 15000)); lastTick = now;
+      if (!clockOK()) return;
       if (focusCounting()) { if (ask) hideAsk(); pending = 0; return; } // a Focus session is counting this time
       if (document.visibilityState !== 'visible' || away) return;
       // two tabs open at once only count once: whichever tab ticked last in the past few seconds owns the clock

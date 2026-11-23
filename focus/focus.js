@@ -12,6 +12,11 @@
   'use strict';
   var F = window.ttFocus;
   if (!F) return;
+  /* real-world time (ttclock.js), falling back to the device clock until it loads */
+  var T0 = Date.now();
+  function NOW() { return window.ttClock ? window.ttClock.now() : Date.now(); }
+  function clockOK() { return window.ttClock ? window.ttClock.ready : Date.now() - T0 > 6000; }
+
   var K = { cal: 'tt-focus-cal', goals: 'tt-focus-goals', notes: 'tt-focus-notes', log: 'tt-focus-log', prefs: 'tt-focus-prefs' };
 
   /* ---------- small helpers ---------- */
@@ -25,7 +30,7 @@
   function pad(n) { return String(n).padStart(2, '0'); }
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function parseISO(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
-  function today() { return iso(new Date()); }
+  function today() { return iso(new Date(NOW())); }
   function addDays(s, n) { var d = parseISO(s); d.setDate(d.getDate() + n); return iso(d); }
   function monday(s) { var d = parseISO(s), wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return iso(d); }
   function daysBetween(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 864e5); }
@@ -186,7 +191,8 @@
         '<div class="row" style="justify-content:center;margin-top:12px">' +
         (F.canPopOut() ? '<button type="button" class="btn sm ghost" id="btnPop">' + IC.pop + 'Pop out timer</button>' : '') +
         (F.isHidden() ? '<button type="button" class="btn sm ghost" id="btnShow">' + IC.show + 'Show floating timer</button>' : '') +
-        '<button type="button" class="btn sm ghost zen-exit" id="btnZenX">' + IC.x + 'Leave full screen</button></div>';
+        '<button type="button" class="btn sm ghost zen-exit" id="btnZenX">' + IC.x + 'Leave full screen</button></div>' +
+        (F.canPopOut() && F.showInstallTip() ? '<div class="itip setup-extra" id="itip"><span>Tip: install TrainTanmay as an app, so the popped-out timer isn\u2019t tied to a browser tab.</span>' + (F.canInstall() ? '<button type="button" class="btn sm pr" id="btnInst">Install</button>' : '<span class="muted">' + esc(F.installHowTo) + '</span>') + '<button type="button" class="btn sm ghost tipx" id="btnTipX" aria-label="Hide this tip">' + IC.x + '</button></div>' : '');
       if (r.goal || r.todo) {
         var td = r.todo && F.todos().items[r.todo];
         h += '<div class="goalbox">' + (r.goal ? '<div class="small muted">Goal</div><b>' + esc(r.goal) + '</b>' : '') +
@@ -237,6 +243,8 @@
       $('#btnAdd', v).onclick = function () { F.extend(5); toast('5 more minutes added.'); paintRing(); };
       $('#btnStop', v).onclick = function () { var ph = F.phase(F.run()); if (ph.k === 'done' || confirm('Stop this session now? Your focus time so far is kept.')) stopNow(); };
       var pb = $('#btnPop', v); if (pb) pb.onclick = function () { F.popOut(); };
+      var ib = $('#btnInst', v); if (ib) ib.onclick = function () { F.install().then(function (shown) { if (!shown) toast(F.installHowTo); render(); }); };
+      var tx = $('#btnTipX', v); if (tx) tx.onclick = function () { F.hideInstallTip(); render(); };
       var sb = $('#btnShow', v); if (sb) sb.onclick = function () { F.show(); render(); toast('The floating timer is back.'); };
       $('#btnZenX', v).onclick = function () { if (document.fullscreenElement) document.exitFullscreen(); };
       var rt = $('#runTodo', v); if (rt) rt.onchange = function () { F.setTodo(r.todo, { done: rt.checked }); if (rt.checked) { var b = rt.getBoundingClientRect(); confetti(b.left + 10, b.top); } };
@@ -620,7 +628,7 @@
         var e = x.e, a = toMin(e.start), b = Math.max(a + 15, toMin(e.end) || a + 60), L = lanes[e.id] || { i: 0, n: 1 };
         h += '<div class="blk" data-src="' + x.src + '" data-id="' + esc(e.id) + '" tabindex="0" style="top:' + (a * HH / 60) + 'px;height:' + ((b - a) * HH / 60 - 2) + 'px;left:calc(' + (100 * L.i / L.n) + '% + 3px);right:auto;width:calc(' + (100 / L.n) + '% - 6px);--c:' + evCol(e) + '"><span class="tm">' + esc(e.start) + (e.end ? '–' + esc(e.end) : '') + '</span>' + (e.kind === 'deadline' ? '⚑ ' : '') + esc(e.title) + '<span class="rz" data-rz></span></div>';
       });
-      if (d === t) { var n = new Date(), nm = n.getHours() * 60 + n.getMinutes(); h += '<div class="now" style="top:' + (nm * HH / 60) + 'px"></div>'; }
+      if (d === t) { var n = new Date(NOW()), nm = n.getHours() * 60 + n.getMinutes(); h += '<div class="now" style="top:' + (nm * HH / 60) + 'px"></div>'; }
       h += '</div>';
     });
     return h + '</div></div></div>';
@@ -707,8 +715,8 @@
       var d = $('#cD', m.box).value || today(), all = $('#cAll', m.box).checked, s = all ? '' : $('#cS', m.box).value, en = all ? '' : $('#cE', m.box).value;
       if (s && en && toMin(en) <= toMin(s)) en = fromMin(toMin(s) + 60);
       var c2 = cal(), base = { title: t.slice(0, 120), kind: kind, date: d, start: s, end: en, subj: chipVal(m.box, 'cs'), note: $('#cN', m.box).value.trim(), done: id ? $('#cDone', m.box).checked : false };
-      if (id) { c2.events[id] = Object.assign(c2.events[id] || { id: id, t: Date.now() }, base); }
-      else { var rep = +(($('#cRep', m.box) || {}).value || 0); for (var i = 0; i < Math.max(1, rep); i++) { var nid = uid() + i; c2.events[nid] = Object.assign({ id: nid, t: Date.now() }, base, { date: addDays(d, 7 * i) }); } }
+      if (id) { c2.events[id] = Object.assign(c2.events[id] || { id: id, t: NOW() }, base); }
+      else { var rep = +(($('#cRep', m.box) || {}).value || 0); for (var i = 0; i < Math.max(1, rep); i++) { var nid = uid() + i; c2.events[nid] = Object.assign({ id: nid, t: NOW() }, base, { date: addDays(d, 7 * i) }); } }
       putJ(K.cal, c2); m.close(); render(); toast(id ? 'Saved.' : kind === 'deadline' ? 'Deadline added. The countdown is on.' : 'Added to your calendar.');
     };
     $('#cT', m.box).onkeydown = function (ev) { if (ev.key === 'Enter') m.box.querySelector('[data-s]').click(); };
@@ -729,7 +737,7 @@
     var h = '<div class="vhead"><div><h1>Goals</h1><p>Set a weekly focus target and the bigger things you are working towards.</p></div></div><div class="ggrid"><div class="card target">' +
       '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc8ff"/><stop offset="1" stop-color="#2186d8"/></linearGradient></defs></svg>' +
       '<h2>This week</h2><div class="big-ring"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="trk" cx="100" cy="100" r="86"/><circle class="arc" cx="100" cy="100" r="86" stroke-dasharray="540.4" stroke-dashoffset="' + (540.4 * (1 - pct)).toFixed(1) + '"' + (pct ? '' : ' style="opacity:0"') + '/></svg><div class="in"><b>' + mins(wk) + '</b><span class="muted small">of ' + mins(tgt) + '</span></div></div>' +
-      '<p class="small muted" style="margin:0">' + (pct >= 1 ? 'Target hit! 🎉 Anything more is a bonus.' : mins(Math.max(0, tgt - wk)) + ' to go · about ' + mins(Math.max(0, tgt - wk) / Math.max(1, 7 - (new Date().getDay() + 6) % 7)) + ' a day for the rest of the week') + '</p>' +
+      '<p class="small muted" style="margin:0">' + (pct >= 1 ? 'Target hit! 🎉 Anything more is a bonus.' : mins(Math.max(0, tgt - wk)) + ' to go · about ' + mins(Math.max(0, tgt - wk) / Math.max(1, 7 - (new Date(NOW()).getDay() + 6) % 7)) + ' a day for the rest of the week') + '</p>' +
       '<div class="wbars">' + DOW.map(function (_, i) { var s = pd[addDays(mon, i)] || 0; return '<div style="height:100%" title="' + DOW[i] + ': ' + mins(s) + '"><i style="height:' + (100 * s / max).toFixed(1) + '%"></i></div>'; }).join('') + '</div><div class="wlab">' + DOW.map(function (d) { return '<span>' + d[0] + '</span>'; }).join('') + '</div>' +
       '<div class="row" style="justify-content:center;margin-top:16px"><label class="f" for="wT" style="margin:0">Weekly target</label><span class="stepper"><button type="button" data-wt="-1" aria-label="One hour less">−</button><input type="number" id="wT" min="1" max="80" value="' + Math.round(g.weekly / 60) + '"><button type="button" data-wt="1" aria-label="One hour more">+</button></span><span class="muted small">hours</span></div></div>';
     h += '<div><div class="card" style="margin-bottom:16px"><form id="gAdd" class="row"><input type="text" name="t" class="grow" style="width:auto;flex:1 1 220px" maxlength="120" placeholder="New goal, e.g. Get an A* in Physics Paper 1" aria-label="New goal"><input type="date" name="due" style="width:auto" aria-label="Target date"><button class="btn pr" type="submit">' + IC.plus + 'Add goal</button></form></div>';
@@ -748,14 +756,14 @@
     var setW = function (hrs) { var g2 = goals(); g2.weekly = Math.max(1, Math.min(80, Math.round(hrs) || 10)) * 60; putJ(K.goals, g2); render(); };
     $$('[data-wt]', v).forEach(function (b) { b.onclick = function () { setW(goals().weekly / 60 + +b.getAttribute('data-wt')); }; });
     $('#wT', v).onchange = function () { setW(+this.value); };
-    var f = $('#gAdd', v); f.onsubmit = function (e) { e.preventDefault(); var t = f.t.value.trim(); if (!t) return; var g2 = goals(), id = uid(); g2.items[id] = { id: id, text: t, due: f.due.value || null, why: '', done: false, t: Date.now(), steps: {} }; putJ(K.goals, g2); render(); var j = $('#v-goals [data-g="' + id + '"] [data-sadd] input'); if (j) j.focus(); };
+    var f = $('#gAdd', v); f.onsubmit = function (e) { e.preventDefault(); var t = f.t.value.trim(); if (!t) return; var g2 = goals(), id = uid(); g2.items[id] = { id: id, text: t, due: f.due.value || null, why: '', done: false, t: NOW(), steps: {} }; putJ(K.goals, g2); render(); var j = $('#v-goals [data-g="' + id + '"] [data-sadd] input'); if (j) j.focus(); };
     $$('[data-g]', v).forEach(function (card) {
       var id = card.getAttribute('data-g');
       var upd = function (fn) { var g2 = goals(); if (!g2.items[id]) return; fn(g2.items[id]); putJ(K.goals, g2); };
-      card.querySelector('[data-gdone]').onchange = function () { var c = this; upd(function (x) { x.done = c.checked; x.doneAt = c.checked ? Date.now() : null; }); if (c.checked) { var b = c.getBoundingClientRect(); confetti(b.left + 10, b.top); toast('Goal achieved. Proud of you!'); } setTimeout(render, c.checked ? 500 : 0); };
+      card.querySelector('[data-gdone]').onchange = function () { var c = this; upd(function (x) { x.done = c.checked; x.doneAt = c.checked ? NOW() : null; }); if (c.checked) { var b = c.getBoundingClientRect(); confetti(b.left + 10, b.top); toast('Goal achieved. Proud of you!'); } setTimeout(render, c.checked ? 500 : 0); };
       $$('[data-step]', card).forEach(function (c) { c.onchange = function () { var sid = c.getAttribute('data-step'); upd(function (x) { if (x.steps[sid]) x.steps[sid].done = c.checked; }); render(); }; });
       $$('[data-sdel]', card).forEach(function (b) { b.onclick = function () { var sid = b.getAttribute('data-sdel'); upd(function (x) { delete x.steps[sid]; }); render(); }; });
-      var sf = card.querySelector('[data-sadd]'); if (sf) sf.onsubmit = function (e) { e.preventDefault(); var i = sf.querySelector('input'), t = i.value.trim(); if (!t) return; var sid = uid(); upd(function (x) { x.steps = x.steps || {}; x.steps[sid] = { id: sid, text: t.slice(0, 120), done: false, o: Date.now() }; }); render(); var j = $('#v-goals [data-g="' + id + '"] [data-sadd] input'); if (j) j.focus(); };
+      var sf = card.querySelector('[data-sadd]'); if (sf) sf.onsubmit = function (e) { e.preventDefault(); var i = sf.querySelector('input'), t = i.value.trim(); if (!t) return; var sid = uid(); upd(function (x) { x.steps = x.steps || {}; x.steps[sid] = { id: sid, text: t.slice(0, 120), done: false, o: NOW() }; }); render(); var j = $('#v-goals [data-g="' + id + '"] [data-sadd] input'); if (j) j.focus(); };
       card.querySelector('[data-gedit]').onclick = function () { goalDlg(id); };
     });
   };
@@ -807,7 +815,7 @@
       $$('[data-n]', v).forEach(function (c) { c.onclick = function () { noteDlg(c.getAttribute('data-n')); }; c.onkeydown = function (e) { if (e.key === 'Enter') noteDlg(c.getAttribute('data-n')); }; });
     } else {
       wireChips(v, 'dk', function () {});
-      $('#dAdd', v).onsubmit = function (e) { e.preventDefault(); var t = $('#dT', v).value.trim(); if (!t) return $('#dT', v).focus(); var L = log(), id = uid(); L[id] = { id: id, kind: 'dev', t: Date.now(), text: t, dk: chipVal(v, 'dk') || 'note', subj: $('#dS', v).value }; putJ(K.log, L); render(); toast('Logged. Keep going.'); };
+      $('#dAdd', v).onsubmit = function (e) { e.preventDefault(); var t = $('#dT', v).value.trim(); if (!t) return $('#dT', v).focus(); var L = log(), id = uid(); L[id] = { id: id, kind: 'dev', t: NOW(), text: t, dk: chipVal(v, 'dk') || 'note', subj: $('#dS', v).value }; putJ(K.log, L); render(); toast('Logged. Keep going.'); };
       $$('[data-ddel]', v).forEach(function (b) { b.onclick = function () { var L = log(), id = b.getAttribute('data-ddel'), old = L[id]; delete L[id]; putJ(K.log, L); render(); toast('Deleted.', 'Undo', function () { var L2 = log(); L2[id] = old; putJ(K.log, L2); render(); }); }; });
     }
   };
@@ -816,9 +824,9 @@
     var save = function () {
       if (gone || !m) return;
       var t = $('#nT', m.box).value.trim(), b = $('#nB', m.box).value; if (!t && !b.trim() && !saved) return;
-      var N = notes(), cur = N.items[nid] || { id: nid, t: Date.now() };
+      var N = notes(), cur = N.items[nid] || { id: nid, t: NOW() };
       if (saved && N.items[nid] && cur.title === t.slice(0, 120) && cur.body === b && (cur.color || '') === color && !!cur.pin === pin) return; // nothing changed
-      N.items[nid] = Object.assign(cur, { title: t.slice(0, 120), body: b, color: color, pin: pin, upd: Date.now() }); putJ(K.notes, N); saved = true;
+      N.items[nid] = Object.assign(cur, { title: t.slice(0, 120), body: b, color: color, pin: pin, upd: NOW() }); putJ(K.notes, N); saved = true;
       var s2 = $('#nSaved', m.box); if (s2) s2.textContent = 'Saved';
     };
     m = modal('<div class="fields"><input type="text" id="nT" maxlength="120" placeholder="Title" value="' + esc(n ? n.title : '') + '" style="font:700 20px var(--f-display);border:0;padding:4px 0;background:transparent;box-shadow:none" aria-label="Title">' +

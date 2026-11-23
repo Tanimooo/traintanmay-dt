@@ -161,6 +161,10 @@ label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin
 .dots i.done{background:var(--acc)}.dots i.b.done{background:var(--brk)}
 .dots i.cur{background:linear-gradient(90deg,var(--acc) var(--p),var(--line2) var(--p))}
 .dots i.b.cur{background:linear-gradient(90deg,var(--brk) var(--p),var(--line2) var(--p))}
+.itip{position:relative;padding-right:44px!important;display:flex;gap:8px 10px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:520px;margin:12px auto 0;padding:9px 12px;border-radius:14px;background:var(--acc-soft);font-size:13px;color:var(--ink);text-align:left}
+.itip>span:first-child{flex:1 1 220px}
+.itip .muted{flex-basis:100%;font-size:12px}
+.itip .tipx{position:absolute;right:6px;top:6px;padding:5px}
 .goalbox{margin:18px auto 0;max-width:520px;width:100%;text-align:left;padding:12px 14px;border-radius:14px;background:var(--card2);border:1px solid var(--line)}
 .goalbox b{font-family:var(--f-display)}
 .park{width:100%;max-width:520px;margin:14px auto 0;text-align:left}

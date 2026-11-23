@@ -13,11 +13,13 @@
   ];
   try { if (here !== 'help' && here !== 'focus') localStorage.setItem('tt-last', here); } catch (e) {}
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
+  /* real-world clock for study time and Focus: loaded first, and scripts added here run in the order added */
+  if (!window.ttClock) { var cj = document.createElement('script'); cj.src = base + 'ttclock.js?v=20261124a'; cj.async = false; document.head.appendChild(cj); }
   if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261123h'; document.head.appendChild(sj); }
   /* study leagues: counts active revision minutes on this page and shows the weekly leaderboard */
-  if (!window.ttLeague) { var lj = document.createElement('script'); lj.src = base + 'league.js?v=20261123a'; document.head.appendChild(lj); }
+  if (!window.ttLeague) { var lj = document.createElement('script'); lj.src = base + 'league.js?v=20261124a'; lj.async = false; document.head.appendChild(lj); }
   /* Focus: the session clock and floating timer that follow you between apps (focus/ is the full page) */
-  if (!window.ttFocus) { var fb = document.createElement('script'); fb.src = base + 'focusbar.js?v=20261123a'; document.head.appendChild(fb); }
+  if (!window.ttFocus) { var fb = document.createElement('script'); fb.src = base + 'focusbar.js?v=20261124a'; fb.async = false; document.head.appendChild(fb); }
   /* shared by every app: loading a backup only adds (never removes), and clearing progress asks three times */
   window.ttAddIn = function (cur, inc) { return window.ttSave && ttSave.merge ? ttSave.merge(cur, inc) : Object.assign({}, inc, cur); };
   window.ttSure3 = function (what, fn) {

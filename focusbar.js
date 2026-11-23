@@ -8,6 +8,11 @@
    Storage (synced by save.js): tt-focus-todos, tt-focus-log and the Focus page's own keys. */
 (function () {
   if (window.ttFocus || window.top !== window) return;
+  /* real-world time (ttclock.js), falling back to the device clock until it loads */
+  var T0 = Date.now();
+  function NOW() { return window.ttClock ? window.ttClock.now() : Date.now(); }
+  function clockOK() { return window.ttClock ? window.ttClock.ready : Date.now() - T0 > 6000; }
+
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/focusbar\.js.*$/, '');
   var K_RUN = 'tt-focus-run', K_POS = 'tt-focus-pos', K_BEAT = 'tt-focus-beat', K_TODO = 'tt-focus-todos', K_LOG = 'tt-focus-log';
   var ONPAGE = /\/focus\/(index\.html)?$/.test(location.pathname);
@@ -18,7 +23,7 @@
   function getJ(k, d) { try { var v = JSON.parse(get(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
   function putJ(k, v) { put(k, v == null ? null : JSON.stringify(v)); }
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function uid() { return NOW().toString(36) + Math.random().toString(36).slice(2, 7); }
   var TAB = uid();
   function emit() { try { window.dispatchEvent(new CustomEvent('tt-focus')); } catch (e) {} }
 
@@ -27,7 +32,7 @@
   function run() { var r = getJ(K_RUN, null); return r && r.t0 && r.seg ? r : null; }
   function upd(fn) { var r = run(); if (!r) return null; var o = fn(r) || r; putJ(K_RUN, o); emit(); return o; }
   function plan(r) { return r.seg.reduce(function (t, s) { return t + s.d; }, 0); }
-  function elapsed(r, now) { return Math.max(0, Math.min(plan(r), ((r.pausedAt || now || Date.now()) - r.t0 - (r.paused || 0)))); }
+  function elapsed(r, now) { return Math.max(0, Math.min(plan(r), ((r.pausedAt || now || NOW()) - r.t0 - (r.paused || 0)))); }
   function studiedMs(r, el) { var t = 0, a = 0; r.seg.forEach(function (s) { if (s.k === 'w') t += Math.max(0, Math.min(s.d, el - a)); a += s.d; }); return t; }
   function phase(r, now) {
     var el = elapsed(r, now), a = 0, works = r.seg.filter(function (s) { return s.k === 'w'; }).length, wi = 0;
@@ -48,17 +53,17 @@
       for (var i = 0; i < n; i++) { seg.push({ k: 'w', d: w }); if (i < n - 1) seg.push({ k: 'b', d: (i + 1) % 4 === 0 ? L : b }); }
     } else seg.push({ k: 'w', d: Math.max(1, Math.min(240, o.min || 25)) * 60000 });
     var old = run(); if (old) stop(true);
-    var r = { id: uid(), t0: Date.now(), seg: seg, paused: 0, pausedAt: null, label: (o.label || '').slice(0, 80), subj: o.subj || '', goal: (o.goal || '').slice(0, 300), todo: o.todo || null, credited: 0, ended: null, lastSeg: 0, pomo: !!o.pomo };
+    var r = { id: uid(), t0: NOW(), seg: seg, paused: 0, pausedAt: null, label: (o.label || '').slice(0, 80), subj: o.subj || '', goal: (o.goal || '').slice(0, 300), todo: o.todo || null, credited: 0, ended: null, lastSeg: 0, pomo: !!o.pomo };
     putJ(K_RUN, r); unlockAudio(); askNotify(); hidden = false; mini = false; savePos();
     emit(); paint(true);
     return r;
   }
-  function pause() { upd(function (r) { if (!r.pausedAt && phase(r).k !== 'done') r.pausedAt = Date.now(); }); paint(); }
-  function resume() { upd(function (r) { if (r.pausedAt) { r.paused += Date.now() - r.pausedAt; r.pausedAt = null; } }); paint(); }
+  function pause() { upd(function (r) { if (!r.pausedAt && phase(r).k !== 'done') r.pausedAt = NOW(); }); paint(); }
+  function resume() { upd(function (r) { if (r.pausedAt) { r.paused += NOW() - r.pausedAt; r.pausedAt = null; } }); paint(); }
   function toggle() { var r = run(); if (!r) return; if (r.pausedAt) resume(); else pause(); }
   function extend(min) {
     upd(function (r) {
-      var now = Date.now(), wasDone = phase(r, now).k === 'done';
+      var now = NOW(), wasDone = phase(r, now).k === 'done';
       if (wasDone && !r.pausedAt) { r.pausedAt = null; r.paused = (now - r.t0) - plan(r); } // carry on from the end, not from when it ended
       r.seg.push({ k: 'w', d: min * 60000 }); r.ended = null;
       if (wasDone) r.lastSeg = r.seg.length - 1;
@@ -73,7 +78,7 @@
   /* finish: log it (if any real time was spent) and clear the clock. Returns the log entry. */
   function stop(quiet) {
     var r = run(); if (!r) return null;
-    var now = Date.now();
+    var now = NOW();
     if (r.pausedAt) { r.paused += now - r.pausedAt; r.pausedAt = null; }
     credit(r, true);
     var el = elapsed(r, now), st = Math.round(studiedMs(r, el) / 1000), entry = null;
@@ -91,14 +96,14 @@
   function saveTodos(d) { putJ(K_TODO, d); emit(); }
   function addTodo(text, extra) {
     text = String(text || '').trim().slice(0, 200); if (!text) return null;
-    var d = todos(), id = uid(), it = Object.assign({ id: id, list: 'inbox', text: text, done: false, due: null, pri: 0, subj: '', t: Date.now() }, extra || {});
+    var d = todos(), id = uid(), it = Object.assign({ id: id, list: 'inbox', text: text, done: false, due: null, pri: 0, subj: '', t: NOW() }, extra || {});
     d.items[id] = it; saveTodos(d); return it;
   }
-  function setTodo(id, ch) { var d = todos(); if (!d.items[id]) return; Object.keys(ch).forEach(function (k) { if (ch[k] === undefined) delete d.items[id][k]; else d.items[id][k] = ch[k]; }); if ('done' in ch) d.items[id].doneAt = ch.done ? Date.now() : null; saveTodos(d); }
-  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function setTodo(id, ch) { var d = todos(); if (!d.items[id]) return; Object.keys(ch).forEach(function (k) { if (ch[k] === undefined) delete d.items[id][k]; else d.items[id][k] = ch[k]; }); if ('done' in ch) d.items[id].doneAt = ch.done ? NOW() : null; saveTodos(d); }
+  function todayISO() { var d = new Date(NOW()); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   /* the few tasks worth showing in a small space: the session's own task, then overdue, today, soonest, newest */
   function topTodos(n) {
-    var d = todos(), t = todayISO(), r = run(), all = Object.keys(d.items).map(function (k) { return d.items[k]; }).filter(function (x) { return !x.done || (x.doneAt && Date.now() - x.doneAt < 6e4); });
+    var d = todos(), t = todayISO(), r = run(), all = Object.keys(d.items).map(function (k) { return d.items[k]; }).filter(function (x) { return !x.done || (x.doneAt && NOW() - x.doneAt < 6e4); });
     function rank(x) { if (r && r.todo === x.id) return -1e15; if (x.due && x.due <= t) return -1e14 + Date.parse(x.due); if (x.due) return -1e13 + Date.parse(x.due); return -x.t - (x.pri || 0) * 1e12; }
     return all.sort(function (a, b) { return rank(a) - rank(b); }).slice(0, n || 6);
   }
@@ -123,19 +128,19 @@
 
   /* ---- the clock tick: one tab leads (credits the league, chimes, notifies); every tab paints ---- */
   function leader() {
-    var now = Date.now(), b = (get(K_BEAT) || '').split(':');
+    var now = NOW(), b = (get(K_BEAT) || '').split(':');
     if (b[1] && b[1] !== TAB && now - (+b[0] || 0) < 2500) return false; // hidden tabs tick slowly, so a visible one soon takes over
     put(K_BEAT, now + ':' + TAB); return true;
   }
   function tick() {
     var r = run();
-    if (r && leader()) {
+    if (r && clockOK() && leader()) { // credit and chime only on checked, real time
       var ph = phase(r), changed = false;
       if (ph.i !== (r.lastSeg || 0)) {
         r.lastSeg = ph.i; changed = true;
         if (ph.k === 'b') { chime('b'); notify('Break time', 'Nice work. Stand up, stretch, look away from the screen.'); }
         else if (ph.k === 'w') { chime('w'); notify('Back to it', 'Focus block ' + ph.n + ' of ' + ph.of + (r.label ? ': ' + r.label : '') + '.'); }
-        else if (ph.k === 'done') { r.ended = Date.now(); chime('done'); notify('Session complete', 'You focused for ' + fmtMin(studiedMs(r, ph.el)) + '. Log how it went on the Focus page.'); }
+        else if (ph.k === 'done') { r.ended = NOW(); chime('done'); notify('Session complete', 'You focused for ' + fmtMin(studiedMs(r, ph.el)) + '. Log how it went on the Focus page.'); }
       }
       if (credit(r) || changed) { var cur = run(); if (cur && cur.id === r.id) { cur.credited = r.credited; cur.lastSeg = r.lastSeg; cur.ended = r.ended; putJ(K_RUN, cur); if (changed) emit(); } }
     }
@@ -170,6 +175,7 @@
     '.ttf .tk input[type=checkbox]{margin:2px 0 0;width:16px;height:16px;accent-color:#0b5fa5;flex:none}.ttf .tk .dn{text-decoration:line-through;opacity:.55}.ttf .tk .due{font-size:11px;color:#a23b2a;margin-left:auto;white-space:nowrap}' +
     '.ttf .tk form{display:flex;gap:6px;margin-top:6px}.ttf .tk input[type=text]{flex:1;min-width:0;font:inherit;font-size:13px;padding:7px 9px;border-radius:9px;border:1px solid rgba(11,42,69,.18);background:rgba(255,255,255,.65);color:#0b2a45;outline:none;user-select:text}' +
     '.ttf .tk .none{font-size:12.5px;color:#33617f;padding:4px}.ttf a{color:#0b5fa5;font-weight:600;text-decoration:none}' +
+    '.ttf .tip{margin-top:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.55);font-size:12px;line-height:1.35;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}.ttf .tip>span:first-child{flex:1 1 150px}.ttf .tip .tb{display:flex;gap:5px}.ttf .tip .tb button[data-a=install]{padding:5px 10px;font-weight:700;background:#0b2a45;color:#e8f5ff}.ttf .tip small{flex-basis:100%;color:#33617f}' +
     '.ttf .done{font-size:13px;color:#164a74;margin:2px 0 10px}' +
     /* the shrunk pill */
     '.ttf.mini{width:auto}.ttf.mini .g{padding:7px 8px 7px 12px;border-radius:999px;display:flex;align-items:center;gap:8px}.ttf.mini .g::before{display:none}' +
@@ -195,7 +201,7 @@
   function ensureCss(doc) { if (doc.getElementById('ttf-css')) return; var s = doc.createElement('style'); s.id = 'ttf-css'; s.textContent = CSS; (doc.head || doc.documentElement).appendChild(s); }
 
   function html(r) {
-    var now = Date.now(), ph = phase(r, now), pz = !!r.pausedAt, done = ph.k === 'done';
+    var now = NOW(), ph = phase(r, now), pz = !!r.pausedAt, done = ph.k === 'done';
     var studied = studiedMs(r, ph.el), segPct = done ? 100 : Math.min(100, 100 * (1 - ph.segLeft / ph.d));
     var lbl = done ? 'Done' : pz ? 'Paused' : (ph.k === 'b' ? 'Break' : 'Focus') + (r.pomo ? ' ' + ph.n + '/' + ph.of : '');
     var big = done ? clock(studied) : clock(ph.segLeft);
@@ -216,6 +222,7 @@
     else h += '<div class="sub"><span data-d="s1">' + sub1(ph, studied) + '</span><span data-d="s2">' + clock(ph.total) + ' left</span></div>' +
       '<div class="bar"><i data-d="bar" style="width:' + segPct.toFixed(2) + '%"></i></div>' +
       '<div class="ctl"><button type="button" class="pr" data-a="toggle">' + (pz ? I.play + 'Resume' : I.pause + 'Pause') + '</button><button type="button" data-a="ext5" aria-label="Add 5 minutes">' + I.plus + '5</button><button type="button" data-a="stop" aria-label="Stop the session">' + I.stop + 'Stop</button></div>';
+    if (pip && showTip()) h += '<div class="tip"><span>Install TrainTanmay as an app, so this timer isn\u2019t tied to a browser tab.</span><span class="tb">' + (installEv ? '<button type="button" data-a="install">Install</button>' : '') + '<button type="button" class="ic" data-a="tipx" aria-label="Hide this tip">' + I.x + '</button></span>' + (installEv ? '' : '<small>' + HOWTO + '</small>') + '</div>';
     if (showTasks) {
       var list = topTodos(6);
       h += '<div class="tk">' + (list.length ? list.map(function (t) {
@@ -228,7 +235,7 @@
   }
   function sub1(ph, studied) { return ph.k === 'b' ? 'back to it in ' + clock(ph.segLeft) : fmtMin(studied) + ' focused'; }
   /* what decides the timer's layout; while it stays the same only the numbers change, so buttons are never swapped mid-click */
-  function shape(r) { var ph = phase(r); return [mini && !pip, !!pip, !!r.pausedAt, ph.k, ph.n, r.label, r.goal, showTasks, showTasks ? get(K_TODO) : '', ONPAGE].join('|'); }
+  function shape(r) { var ph = phase(r); return [mini && !pip, !!pip, !!r.pausedAt, ph.k, ph.n, r.label, r.goal, showTasks, showTasks ? get(K_TODO) : '', ONPAGE, pip && showTip(), !!installEv].join('|'); }
   function numbers(root, r) {
     var ph = phase(r), studied = studiedMs(r, ph.el), q = function (k) { return root.querySelector('[data-d="' + k + '"]'); };
     var t = q('tm'); if (t) t.textContent = ph.k === 'done' ? clock(studied) : clock(ph.segLeft);
@@ -250,6 +257,8 @@
       else if (a === 'hide') { hidden = true; savePos(); paint(); }
       else if (a === 'tasks') { showTasks = !showTasks; savePos(); paint(true); }
       else if (a === 'pip') openPip();
+      else if (a === 'tipx') hideTip();
+      else if (a === 'install') install().then(function (shown) { if (!shown) { var t = root.querySelector('.tip small'); if (!t) { t = doc.createElement('small'); root.querySelector('.tip').appendChild(t); } t.textContent = HOWTO; } });
     };
     root.onchange = function (e) { var c = e.target; if (c.matches && c.matches('input[data-t]')) setTodo(c.getAttribute('data-t'), { done: c.checked }); };
     root.onsubmit = function (e) { e.preventDefault(); var i = e.target.querySelector('input[name=t]'); if (i && addTodo(i.value)) { i.value = ''; paint(true); var j = (pip ? pip.document : doc).querySelector('.ttf input[name=t]'); if (j) j.focus(); } };
@@ -317,11 +326,28 @@
     n.addEventListener('pointerup', up); n.addEventListener('pointercancel', up);
   }
 
+  /* ---- installing the site as an app: then the pop-out timer isn't tied to a browser tab ---- */
+  var installEv = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; });
+  window.addEventListener('appinstalled', function () { installEv = null; paint(true); });
+  function installed() { try { return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches || navigator.standalone === true; } catch (e) { return false; } }
+  function tipOff() { return !!getJ(K_POS, {}).tipOff; }
+  function hideTip() { var p = getJ(K_POS, {}); p.tipOff = true; putJ(K_POS, p); paint(true); emit(); }
+  function showTip() { return !installed() && !tipOff(); }
+  /* returns a promise: true if the browser's install prompt was shown */
+  function install() {
+    if (!installEv) return Promise.resolve(false);
+    var ev = installEv;
+    try { return Promise.resolve(ev.prompt()).then(function () { return ev.userChoice; }).then(function (c) { if (c && c.outcome === 'accepted') { installEv = null; hideTip(); } return true; }, function () { return false; }); }
+    catch (e) { return Promise.resolve(false); }
+  }
+  var HOWTO = 'To install: click the install icon at the right of the address bar, or open the browser menu and choose Install TrainTanmay.';
+
   /* ---- pop out: an always-on-top window (Document Picture-in-Picture, Chrome and Edge on computers) ---- */
   function openPip() {
     if (!window.documentPictureInPicture || pip) return;
     var wasMini = mini; mini = false;
-    documentPictureInPicture.requestWindow({ width: 300, height: showTasks ? 420 : 210 }).then(function (w) {
+    documentPictureInPicture.requestWindow({ width: 300, height: (showTasks ? 420 : 210) + (showTip() ? 84 : 0) }).then(function (w) {
       pip = w; var d = w.document;
       d.title = 'Focus timer';
       ensureCss(d);
@@ -352,6 +378,7 @@
     isHidden: function () { return hidden; },
     setInline: function (v) { inlineVisible = !!v; paint(); },
     popOut: openPip, canPopOut: function () { return !!window.documentPictureInPicture; },
+    installed: installed, canInstall: function () { return !!installEv; }, install: install, showInstallTip: showTip, hideInstallTip: hideTip, installHowTo: HOWTO,
     todos: todos, saveTodos: saveTodos, addTodo: addTodo, setTodo: setTodo, topTodos: topTodos,
     chime: chime, unlockAudio: unlockAudio, uid: uid, today: todayISO, base: BASE
   };
