@@ -13,7 +13,7 @@
     { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] }
   ];
   var INCLUDE = /^(tt-|esat\.|sketchguessr-)/;
-  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|esat\..*\.probe$)/;
+  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|tt-exam-active$|esat\..*\.probe$)/; // tt-exam-active: a running exam's clock belongs to its own device
   var LAST = 'tt-lastbackup', UNDO = 'tt-restore-undo';
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/save\.js[^/]*$/, '');
 
@@ -215,8 +215,9 @@
 
   /* ---- sync with Google (optional) ----
      Sign in once and every app's progress is kept in one record in the cloud (Firebase), tied to your
-     Google account. Syncing works like loading a save: it only ever adds. This device's progress goes up,
-     progress from your other devices comes down, and nothing is removed. Signed out, nothing is sent. */
+     Google account. Each sync compares both sides with what they were at the last sync, so additions AND
+     deletions (unticking, unflagging, clearing marks) carry across; the very first sync only adds. This device's progress goes up,
+     progress from your other devices comes down. Signed out, nothing is sent. */
   var FB = {
     apiKey: 'AIzaSyBNfifatWZKZgy1zlhV46LoOw1V5_Jz4eA',
     authDomain: 'traintanmay26.firebaseapp.com',
@@ -258,13 +259,75 @@
     return sdkP;
   }
 
-  /* add another device's progress into this one; returns true if anything here changed */
-  function mergeIn(data) {
-    var s = ls(), changed = false; if (!s) return false;
-    Object.keys(data).forEach(function (k) {
-      if (!INCLUDE.test(k) || EXCLUDE.test(k) || typeof data[k] !== 'string') return;
-      var cur = s.getItem(k), nv = mergeStr(cur, data[k]);
-      if (nv !== cur) { try { s.setItem(k, nv); changed = true; } catch (e) {} }
+  /* ---- what both sides looked like at the last sync (the "base") ----
+     Kept in IndexedDB per Google account. With it, a sync can tell "added on the other device" from
+     "deleted on this one", so unticking, unflagging or clearing something syncs too, instead of it
+     coming back from the cloud every time (the old merge could only ever add). */
+  var BASE_DB = 'tt-sync-base';
+  function baseDb() {
+    return new Promise(function (ok, no) {
+      try { var r = indexedDB.open(BASE_DB, 1); } catch (e) { return no(e); }
+      r.onupgradeneeded = function () { r.result.createObjectStore('b'); };
+      r.onsuccess = function () { ok(r.result); }; r.onerror = function () { no(r.error); };
+    });
+  }
+  function baseGet(uid) { return baseDb().then(function (db) { return new Promise(function (ok) { var q = db.transaction('b').objectStore('b').get(uid); q.onsuccess = function () { ok(q.result || null); }; q.onerror = function () { ok(null); }; }); }).catch(function () { return null; }); }
+  function basePut(uid, data) { return baseDb().then(function (db) { return new Promise(function (ok) { var t = db.transaction('b', 'readwrite'); t.objectStore('b').put(data, uid); t.oncomplete = ok; t.onerror = ok; }); }).catch(function () {}); }
+
+  function canon(v) { return JSON.stringify(v, function (k, x) { if (!isObj(x)) return x; var o = {}; Object.keys(x).sort().forEach(function (y) { o[y] = x[y]; }); return o; }); }
+  function eq(x, y) { return x === y || canon(x) === canon(y); }
+  var NONE = {}; // "there was no last sync": fall back to add-only
+  /* merge one value: base = at the last sync, a = here, b = the other devices (the cloud) */
+  function merge3(base, a, b, key) {
+    if (eq(a, b)) return a;
+    if (base === NONE) return a === undefined ? b : b === undefined ? a : mergeVal(a, b, key);
+    if (eq(a, base)) return b;          // only the other side changed it (that includes deleting it)
+    if (eq(b, base)) return a;          // only this side changed it
+    if (a === undefined) return b;      // deleted here but changed there: keep the work
+    if (b === undefined) return a;
+    if (key === 'settings') return a;   // your settings on this device win
+    if (Array.isArray(a) && Array.isArray(b)) {
+      var J = function (x) { return canon(x); }, inA = {}, inB = {}, inBase = {};
+      a.forEach(function (x) { inA[J(x)] = 1; }); b.forEach(function (x) { inB[J(x)] = 1; }); (Array.isArray(base) ? base : []).forEach(function (x) { inBase[J(x)] = 1; });
+      var out = a.filter(function (x) { var j = J(x); return !(inBase[j] && !inB[j]); }); // drop what the other side removed
+      b.forEach(function (x) { var j = J(x); if (!inBase[j] && !inA[j]) { out.push(x); inA[j] = 1; } }); // add what it added
+      if (out.length && out.every(function (x) { return tsOf(x) !== null; })) out.sort(function (p, q) { return tsOf(p) - tsOf(q); });
+      return out;
+    }
+    if (isObj(a) && isObj(b)) {
+      var bo = isObj(base) ? base : {}, o = {}, ks = {};
+      Object.keys(a).concat(Object.keys(b)).forEach(function (k) { ks[k] = 1; });
+      Object.keys(ks).forEach(function (k) { var r = merge3(k in bo ? bo[k] : undefined, a[k], b[k], k); if (r !== undefined) o[k] = r; });
+      return o;
+    }
+    if (typeof a === 'number' && typeof b === 'number') return Math.max(a, b);
+    if (typeof a === 'boolean' && typeof b === 'boolean') return a || b;
+    return a;
+  }
+  // localStorage holds text: JSON where it can, plain text otherwise
+  function dec(t) { if (t === null || t === undefined) return undefined; try { return { j: JSON.parse(t) }; } catch (e) { return { r: t }; } }
+  function val(d) { return d === undefined ? undefined : 'j' in d ? d.j : d.r; }
+  function mergeText(baseT, aT, bT, noBase) {
+    if (aT === bT) return aT;
+    var A = dec(aT), Bv = dec(bT), raw = (A && 'r' in A) || (Bv && 'r' in Bv);
+    var r = merge3(noBase ? NONE : val(dec(baseT)), val(A), val(Bv));
+    if (r === undefined) return null;
+    return raw && typeof r === 'string' ? r : JSON.stringify(r);
+  }
+
+  /* add another device's changes into this one, against the last synced copy (base, or null for none).
+     Returns the keys that changed here, as {key: text before}. */
+  function mergeIn(data, base) {
+    var s = ls(), changed = {}; if (!s) return changed;
+    var mine = collect(), ks = {};
+    Object.keys(data).concat(Object.keys(mine), base ? Object.keys(base) : []).forEach(function (k) { ks[k] = 1; });
+    Object.keys(ks).forEach(function (k) {
+      if (!INCLUDE.test(k) || EXCLUDE.test(k)) return;
+      var cur = k in mine ? mine[k] : null, inc = typeof data[k] === 'string' ? data[k] : null;
+      if (!base && inc === null) return; // no last sync: only ever add, as before
+      var nv = mergeText(base && typeof base[k] === 'string' ? base[k] : null, cur, inc, !base);
+      if (nv === cur) return;
+      try { if (nv === null) s.removeItem(k); else rawSet.call(s, k, nv); changed[k] = cur; } catch (e) {}
     });
     return changed;
   }
@@ -285,12 +348,13 @@
     if (!cloud.user || !window.ttCloudSDK || cloud.choice) { cloud.ok = false; return Promise.resolve(); }
     if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
     cloud.busy = true; cloud.err = ''; drawCloud();
-    var clearing = !!flag(CLOUD_CLEAR), pulled = false, uid = cloud.user.uid;
-    return ttCloudSDK.update(uid, function (remote) {
+    var clearing = !!flag(CLOUD_CLEAR), pulled = null, uid = cloud.user.uid, base = null;
+    return baseGet(uid).then(function (b) { base = b && b.data || null; return ttCloudSDK.update(uid, function (remote) {
       var get = remote && remote.code && !clearing ? fromCode(remote.code).then(normalise) : Promise.resolve(null);
       return get.then(function (r) {
         var theirs = (r && r.data) || {};
-        if (mergeIn(theirs)) pulled = true;
+        var ch = mergeIn(theirs, remote && remote.code ? base : null);
+        if (Object.keys(ch).length) pulled = Object.assign({}, ch, pulled || {}); // keep the oldest "before" if the save retries
         var mine = collect();
         if (!clearing && remote && same(mine, theirs)) return null; // the cloud already has all of it
         return toCode(pack()).then(function (code) {
@@ -298,11 +362,12 @@
           return { code: code, v: VERSION, bytes: code.length };
         });
       });
-    }).then(function () {
+    }); }).then(function () {
       if (clearing) flag(CLOUD_CLEAR, null);
-      cloud.last = Date.now(); cloud.seen = JSON.stringify(collect()); cloud.ok = true; stamp();
+      cloud.last = Date.now(); var now = collect(); cloud.seen = JSON.stringify(now); cloud.ok = true; stamp();
       flag(CLOUD_UID, uid); flag(CLOUD_HASH, hash(cloud.seen));
-      if (pulled) arrived();
+      basePut(uid, { at: Date.now(), data: now }); // what the cloud now holds: the base for next time
+      if (pulled) arrived(pulled);
     }).catch(function (e) {
       var c = (e && (e.code || e.message)) || '';
       cloud.ok = false;
@@ -324,22 +389,61 @@
   });
   window.addEventListener('pagehide', syncIfChanged);
 
-  /* progress came in from another device: the open app needs a reload to show it */
-  function arrived() {
-    var ss = null; try { ss = window.sessionStorage; } catch (e) {}
-    var lastRl = ss ? +(ss.getItem('tt-cloud-rl') || 0) : 0;
-    if (cloud.fresh) { cloud.fresh = false; if (back) msg('Signed in. Adding progress from your other devices… reloading.', 'ok'); setTimeout(function () { location.reload(); }, 900); return; }
-    if (!touched && !back && Date.now() - loadedAt < 10000 && Date.now() - lastRl > 30000) {
-      try { ss && ss.setItem('tt-cloud-rl', String(Date.now())); } catch (e) {}
-      location.reload(); return;
+  /* ---- progress came in from another device ----
+     The open app still has the old progress in memory and would save it straight back over what just
+     arrived. So until the page reloads, anything it saves to one of those keys is merged with what
+     arrived (its own new changes are kept). The page then reloads by itself at a quiet moment: when you
+     move to another page in the app, come back to the tab, or leave it alone for a bit. Never while a
+     paper, exam, dialog or the save panel is open, or while you're typing. No message to click. */
+  var pend = null, RL = 'tt-cloud-rl', NOTE = 'tt-cloud-note';
+  var rawSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    if (pend && this === window.localStorage && Object.prototype.hasOwnProperty.call(pend, k)) {
+      var p = pend[k]; // p.app = what the app last saw, p.now = what's stored with the other devices' changes
+      var nv = mergeText(p.app, String(v), p.now, false);
+      p.app = String(v); p.now = nv;
+      return nv === null ? this.removeItem(k) : rawSet.call(this, k, nv);
     }
-    if (document.querySelector('.tts-toast')) return;
-    var t = document.createElement('div'); t.className = 'tts-toast'; t.setAttribute('role', 'status');
-    t.innerHTML = '<span>Progress from your other devices was added.</span><button type="button" data-r>Reload to see it</button><button type="button" data-c aria-label="Dismiss">&times;</button>';
-    t.querySelector('[data-r]').onclick = function () { location.reload(); };
-    t.querySelector('[data-c]').onclick = function () { t.remove(); };
-    document.body.appendChild(t);
+    return rawSet.call(this, k, v);
+  };
+  function ss() { try { return window.sessionStorage; } catch (e) { return null; } }
+  function busyNow() {
+    if (back || [].some.call(document.querySelectorAll('.tte,.tta-dlg,.tts-sure-back,.ttc-pop,.tte-res,[role=dialog]:not([hidden])'), function (e) { return e.offsetParent || getComputedStyle(e).position === 'fixed'; })) return true;
+    if (window.ttBack && ttBack.isOpen && ttBack.isOpen()) return true;
+    var a = document.activeElement; if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT' && /^(text|search|number|email|url|tel|password)$/.test(a.type) || a.isContentEditable) && a.value !== '') return true; // typing
+    return document.visibilityState !== 'visible';
   }
+  function quietReload(force) {
+    if (!pend || (!force && busyNow())) return;
+    var s2 = ss(), last = s2 ? +(s2.getItem(RL) || 0) : 0;
+    if (Date.now() - last < 20000) return; // never reload in a loop
+    try { s2 && s2.setItem(RL, String(Date.now())); s2 && s2.setItem(NOTE, '1'); } catch (e) {}
+    setTimeout(function () { location.reload(); }, 250); // let the app's own save finish first
+  }
+  var idleT = null;
+  function idleWatch() { clearTimeout(idleT); if (pend) idleT = setTimeout(function () { quietReload(); idleWatch(); }, 15000); }
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (t) { document.addEventListener(t, function () { if (pend) idleWatch(); }, { capture: true, passive: true }); });
+  window.addEventListener('hashchange', function () { quietReload(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') quietReload(); });
+
+  function arrived(changed) {
+    if (cloud.fresh) { cloud.fresh = false; if (back) msg('Signed in. Adding progress from your other devices… reloading.', 'ok'); setTimeout(function () { location.reload(); }, 900); return; }
+    var s2 = ls(); pend = pend || {};
+    Object.keys(changed || {}).forEach(function (k) { if (!pend[k]) pend[k] = { app: changed[k], now: s2 && s2.getItem(k) }; else pend[k].now = s2 && s2.getItem(k); });
+    // just opened and not touched yet: reload straight away, nothing is lost
+    if (!touched && !back && Date.now() - loadedAt < 10000) return quietReload(true);
+    idleWatch();
+  }
+  // after a quiet reload: a small note, gone by itself
+  (function () {
+    var s2 = ss(); if (!s2 || !s2.getItem(NOTE)) return; s2.removeItem(NOTE);
+    var show = function () {
+      var t = document.createElement('div'); t.className = 'tts-toast'; t.setAttribute('role', 'status');
+      t.innerHTML = '<span>Updated with progress from your other devices</span>';
+      document.body.appendChild(t); setTimeout(function () { t.remove(); }, 4000);
+    };
+    if (document.body) setTimeout(show, 600); else document.addEventListener('DOMContentLoaded', function () { setTimeout(show, 600); });
+  })();
   /* clearing progress on purpose: the cloud copy is replaced by what is left, instead of being merged back in */
   function cloudClearing() { if (flag(CLOUD_ON)) { flag(CLOUD_CLEAR, '1'); setTimeout(sync, 1500); } }
 

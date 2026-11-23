@@ -13,7 +13,7 @@
   ];
   try { if (here !== 'help') localStorage.setItem('tt-last', here); } catch (e) {}
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
-  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261122b'; document.head.appendChild(sj); }
+  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261123g'; document.head.appendChild(sj); }
   /* study leagues: counts active revision minutes on this page and shows the weekly leaderboard */
   if (!window.ttLeague) { var lj = document.createElement('script'); lj.src = base + 'league.js?v=20261122b'; document.head.appendChild(lj); }
   /* shared by every app: loading a backup only adds (never removes), and clearing progress asks three times */
