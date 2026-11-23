@@ -11,7 +11,10 @@
      card  options for ttLive.card, used as the fallback and for the "open paper" links */
 (function () {
   if (window.ttCrop) return;
-  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  /* PDF.js is kept on this site (vendor/pdfjs), so crops still work where a school or office network
+     blocks cdnjs.cloudflare.com; cdnjs is only the backup if our own copy won't load */
+  var CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  var PDFJS = (function () { try { return new URL('vendor/pdfjs/', (document.currentScript && document.currentScript.src) || location.href).href; } catch (e) { return CDN; } })();
   var CORS_OK = /(^|\.)(physicsandmathstutor\.com|supabase\.co|designandtechbase\.com)$/;
   // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through our own
   // Cloudflare Worker, which fetches the file live from the source and passes it straight on (it stores nothing).
@@ -22,11 +25,13 @@
 
   function lib() {
     if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; return Promise.resolve(window.pdfjsLib); }
-    return libP || (libP = new Promise(function (ok, no) {
-      var s = document.createElement('script'); s.src = PDFJS + 'pdf.min.js';
-      s.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; ok(window.pdfjsLib); };
-      s.onerror = no; document.head.appendChild(s);
-    }));
+    var load = function (base) { return new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = base + 'pdf.min.js';
+      s.onload = function () { if (!window.pdfjsLib) return no(new Error('reader')); window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; PDFJS = base; ok(window.pdfjsLib); };
+      s.onerror = function () { s.remove(); no(new Error('reader')); }; document.head.appendChild(s);
+    }); };
+    return libP || (libP = load(PDFJS).catch(function () { return PDFJS === CDN ? Promise.reject(new Error('reader')) : load(CDN); })
+      .catch(function (e) { libP = null; e.why = 'reader'; throw e; }));
   }
   function open(url) {
     return docs[url] || (docs[url] = lib().then(function (L) { return L.getDocument({ url: src(url), disableAutoFetch: true }).promise; })
@@ -507,12 +512,14 @@
   function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
   function mount(el, o) {
     var card = Object.assign({}, o.card || {}, { url: o.url, page: o.page, q: o.card && o.card.q || o.q });
-    var fallback = function () { el.innerHTML = window.ttLive.card(card); };
+    /* why it couldn't be cut out, said on the card, so a report or screenshot shows what went wrong */
+    var WHY = { reader: 'The PDF reader couldn\'t load on this network.', fetch: 'The paper couldn\'t be fetched from ' + (card.source || host(o.url)) + ' (a school or office network may be blocking it).', find: 'Question ' + (o.q || '') + ' couldn\'t be found in the paper.', cut: 'Question ' + (o.q || '') + ' couldn\'t be cut out.' };
+    var fallback = function (e) { el.innerHTML = window.ttLive.card(Object.assign({}, card, { why: e && WHY[e.why] ? WHY[e.why] : '' })); };
     if (!o.url || !(CORS_OK.test(host(o.url)) || PROXIED.test(host(o.url)))) return fallback();
     el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
     if (o.typeset) typeset[o.url] = 1;
     var token = el.ttcToken = {};
-    open(o.url).then(function (doc) {
+    open(o.url).catch(function (e) { e.why = e.why || 'fetch'; throw e; }).then(function (doc) {
       return isScanned(doc, o.url).then(function (sc) {
         if (!sc) return doc;
         if (el.ttcToken === token) inline(doc, el, o, card);
@@ -526,17 +533,17 @@
         return pageText(doc, o.url, p).then(function (P) { return P.items.some(function (i) { return /^(Mark\s*Scheme|Question\s+Number|Qu(estion)?\s+Scheme\s+Marks)/i.test(i.s) || /^Scheme$/i.test(i.s); }) ? p : find(p + 1); });
       })(2);
       return from.then(function (f) { return locate(doc, o.url, o.q, o.page, o.kind, f); }).then(function (loc) {
-        if (!loc) throw new Error('not found');
+        if (!loc) { var nf = new Error('not found'); nf.why = 'find'; throw nf; }
         return render(doc, o.url, loc, el).then(function (canvases) {
           if (el.ttcToken !== token) return;
-          if (!canvases.length) throw new Error('empty');
+          if (!canvases.length) { var em = new Error('empty'); em.why = 'cut'; throw em; }
           var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; canvases.forEach(function (c) { strip.appendChild(c); });
           var link = window.ttLive.at(o.url, loc.start.page);
           strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>' + (o.kind === 'ms' ? 'Mark scheme' : 'Question ' + window.ttLive.esc(o.q)) + ' · page ' + loc.start.page + ' · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(link) + '" target="_blank" rel="noopener" data-ttview="' + window.ttLive.esc(card.title || 'Paper') + '" data-src="' + window.ttLive.esc(card.source || '') + '">Whole paper</a>' +
             (card.alt ? ' · <a href="' + window.ttLive.esc(window.ttLive.at(card.alt.url, loc.start.page)) + '" target="_blank" rel="noopener">' + window.ttLive.esc(card.alt.label) + ' ↗</a>' : '') + '</span></div>');
         });
       });
-    }).catch(function () { if (el.ttcToken === token) fallback(); });
+    }).catch(function (e) { if (el.ttcToken === token) fallback(e && e.why ? e : { why: 'cut' }); });
   }
   /* Apps just write ttCrop.html({...}); anything like that added to the page is filled in automatically. */
   function html(o) { return '<div class="ttcrop" data-ttcrop="' + window.ttLive.esc(JSON.stringify(o)) + '"></div>'; }
