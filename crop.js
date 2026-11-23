@@ -11,25 +11,57 @@
      card  options for ttLive.card, used as the fallback and for the "open paper" links */
 (function () {
   if (window.ttCrop) return;
-  var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  /* PDF.js is kept on this site (vendor/pdfjs), so crops still work where a school or office network
+     blocks cdnjs.cloudflare.com; cdnjs is only the backup if our own copy won't load */
+  var CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  var PDFJS = (function () { try { return new URL('vendor/pdfjs/', (document.currentScript && document.currentScript.src) || location.href).href; } catch (e) { return CDN; } })();
   var CORS_OK = /(^|\.)(physicsandmathstutor\.com|supabase\.co|designandtechbase\.com)$/;
-  // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through our own
-  // Cloudflare Worker, which fetches the file live from the source and passes it straight on (it stores nothing).
+  // Madas Maths and UAT-UK block other sites from loading their PDFs, so those go through a proxy of ours that
+  // fetches the file live from the source and passes it straight on (neither stores anything):
+  //   1. the Cloudflare Worker (fast, sends the file in pieces as PDF.js asks for them)
+  //   2. a Google Apps Script (cloud/pdf-proxy.gs), for school and office networks that block workers.dev:
+  //      script.google.com is almost never blocked. Paste its web app address into GAS to turn it on.
   var PROXY = 'https://traintanmay.halkblackgamer.workers.dev/?url=';
+  var GAS = '';
   var PROXIED = /(^|\.)(madasmaths\.com|uat-wp\.s3\.eu-west-2\.amazonaws\.com)$/;
+  var WORKER_WAIT = 8000; // a filter that silently drops the Worker shouldn't keep you waiting longer than this
+  var PK = 'tt-pdf-proxy'; // which proxy worked last time on this network ('gas' = skip straight to Google)
   function src(u) { try { return PROXIED.test(new URL(u).hostname) ? PROXY + encodeURIComponent(u) : u; } catch (e) { return u; } }
+  function proxied(u) { try { return PROXIED.test(new URL(u).hostname); } catch (e) { return false; } }
+  function viaGas(L, url) {
+    return fetch(GAS + '?url=' + encodeURIComponent(url)).then(function (r) { if (!r.ok) throw new Error('gas ' + r.status); return r.json(); }).then(function (j) {
+      if (!j || !j.pdf) throw new Error(j && j.error || 'gas');
+      var b = atob(j.pdf), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+      return L.getDocument({ data: a }).promise;
+    });
+  }
+  function viaWorker(L, url) {
+    var task = L.getDocument({ url: src(url), disableAutoFetch: true });
+    if (!GAS) return task.promise;
+    var t; var late = new Promise(function (ok, no) { t = setTimeout(function () { no(new Error('worker timeout')); try { task.destroy(); } catch (e) {} }, WORKER_WAIT); });
+    return Promise.race([task.promise, late]).then(function (d) { clearTimeout(t); return d; }, function (e) { clearTimeout(t); throw e; });
+  }
+  function fetchDoc(L, url) {
+    if (!proxied(url)) return L.getDocument({ url: url, disableAutoFetch: true }).promise;
+    var mem = function (v) { try { sessionStorage.setItem(PK, v); } catch (e) {} };
+    var gasFirst = false; try { gasFirst = GAS && sessionStorage.getItem(PK) === 'gas'; } catch (e) {}
+    if (gasFirst) return viaGas(L, url).catch(function () { mem(''); return viaWorker(L, url); });
+    return viaWorker(L, url).catch(function (e) { if (!GAS) throw e; return viaGas(L, url).then(function (d) { mem('gas'); return d; }); });
+  }
   var libP = null, docs = {};
 
   function lib() {
     if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; return Promise.resolve(window.pdfjsLib); }
-    return libP || (libP = new Promise(function (ok, no) {
-      var s = document.createElement('script'); s.src = PDFJS + 'pdf.min.js';
-      s.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; ok(window.pdfjsLib); };
-      s.onerror = no; document.head.appendChild(s);
-    }));
+    var load = function (base) { return new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = base + 'pdf.min.js';
+      s.onload = function () { if (!window.pdfjsLib) return no(new Error('reader')); window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; PDFJS = base; ok(window.pdfjsLib); };
+      s.onerror = function () { s.remove(); no(new Error('reader')); }; document.head.appendChild(s);
+    }); };
+    return libP || (libP = load(PDFJS).catch(function () { return PDFJS === CDN ? Promise.reject(new Error('reader')) : load(CDN); })
+      .catch(function (e) { libP = null; e.why = 'reader'; throw e; }));
   }
   function open(url) {
-    return docs[url] || (docs[url] = lib().then(function (L) { return L.getDocument({ url: src(url), disableAutoFetch: true }).promise; })
+    return docs[url] || (docs[url] = lib().then(function (L) { return fetchDoc(L, url); })
       .catch(function (e) { delete docs[url]; throw e; }));
   }
   var textCache = {};
@@ -53,7 +85,7 @@
         var LBL = /^[\d()a-z.]{1,4}$/i, merged = [];
         items.forEach(function (it) {
           var p = merged[merged.length - 1], gap = p ? it.x - (p.x + (p.w || 0)) : 0;
-          if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1) {
+          if (p && Math.abs(p.y - it.y) < 2 && LBL.test(it.s) && /^[\d()a-z.]{1,6}$/i.test(p.s) && gap < 3.5 && gap > -1 && !(/^\d{1,2}\.$/.test(p.s) && /^[a-z]{2}|^[a-z]\(/i.test(it.s))) { // but not "5." + "f("
             p.s += it.s; p.w = it.x + (it.w || 0) - p.x;
           } else merged.push(Object.assign({}, it)); // overlapping numbers (a renumbered pack) stay separate
         });
@@ -81,7 +113,7 @@
   // Numbered answer lines ("1 ........") sit in the same column, so a number only counts if words follow it.
   function numAt(it, P, kind) {
     if (it.x > P.w * (kind === 'ms' ? 0.3 : 0.2)) return null;
-    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\s+[A-Z(]/.exec(it.s);
+    var m = /^(?:Q(?:uestion)?|M)?\.?\s*(\d{1,2})(?:[.)]|\.?\s*\(\s*[a-z]{1,2}\s*\)\.?(?:\s*\(\s*[ivx]{1,4}\s*\))?|[a-h])?$/i.exec(it.s) || /^(?:Question|Q)\s*(\d{1,2})\b/i.exec(it.s) || /^(\d{1,2})\.?\s+(?:[A-Z(]|[a-h][.)]\s)/.exec(it.s);
     if (!m) return null;
     if (P.mh && it.h < P.mh * 0.75) return null; // a superscript or index, not a label
     // in a mark scheme table the numbers sit in the first column: a number further in is part of the working
@@ -432,7 +464,8 @@
     var back = document.createElement('div'); back.className = 'ttc-pop';
     back.innerHTML = '<div class="ttc-pbox" role="dialog" aria-modal="true" aria-label="Worked solutions"><div class="ttc-phead"><b>' + E(card.title || 'Worked solutions') + '</b><span>Question ' + E(o.q) + ' · live from ' + E(card.source || host(o.url)) + '</span><button type="button" class="ttc-px" aria-label="Close">×</button></div><div class="ttc-pbody"></div></div>';
     document.body.appendChild(back); document.documentElement.style.overflow = 'hidden';
-    var close = function () { back.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', key); };
+    var bh = window.ttBack ? window.ttBack.open(function () { bh = null; close(); }) : null; // Back closes it, like ×
+    var close = function () { if (!back.isConnected) return; back.remove(); document.documentElement.style.overflow = ''; document.removeEventListener('keydown', key); if (bh) { window.ttBack.done(bh); bh = null; } };
     var key = function (e) { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', key);
     back.onclick = function (e) { if (e.target === back) close(); };
@@ -506,12 +539,14 @@
   function host(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
   function mount(el, o) {
     var card = Object.assign({}, o.card || {}, { url: o.url, page: o.page, q: o.card && o.card.q || o.q });
-    var fallback = function () { el.innerHTML = window.ttLive.card(card); };
+    /* why it couldn't be cut out, said on the card, so a report or screenshot shows what went wrong */
+    var WHY = { reader: 'The PDF reader couldn\'t load on this network.', fetch: 'The paper couldn\'t be fetched from ' + (card.source || host(o.url)) + ' (a school or office network may be blocking it).', find: 'Question ' + (o.q || '') + ' couldn\'t be found in the paper.', cut: 'Question ' + (o.q || '') + ' couldn\'t be cut out.' };
+    var fallback = function (e) { el.innerHTML = window.ttLive.card(Object.assign({}, card, { why: e && WHY[e.why] ? WHY[e.why] : '' })); };
     if (!o.url || !(CORS_OK.test(host(o.url)) || PROXIED.test(host(o.url)))) return fallback();
     el.innerHTML = '<div class="ttc"><div class="ttc-strip"><div class="ttc-wait">Fetching ' + (o.kind === 'ms' ? 'the mark scheme' : 'question ' + window.ttLive.esc(o.q)) + ' live from ' + window.ttLive.esc(card.source || host(o.url)) + '…</div></div></div>';
     if (o.typeset) typeset[o.url] = 1;
     var token = el.ttcToken = {};
-    open(o.url).then(function (doc) {
+    open(o.url).catch(function (e) { e.why = e.why || 'fetch'; throw e; }).then(function (doc) {
       return isScanned(doc, o.url).then(function (sc) {
         if (!sc) return doc;
         if (el.ttcToken === token) inline(doc, el, o, card);
@@ -525,17 +560,17 @@
         return pageText(doc, o.url, p).then(function (P) { return P.items.some(function (i) { return /^(Mark\s*Scheme|Question\s+Number|Qu(estion)?\s+Scheme\s+Marks)/i.test(i.s) || /^Scheme$/i.test(i.s); }) ? p : find(p + 1); });
       })(2);
       return from.then(function (f) { return locate(doc, o.url, o.q, o.page, o.kind, f); }).then(function (loc) {
-        if (!loc) throw new Error('not found');
+        if (!loc) { var nf = new Error('not found'); nf.why = 'find'; throw nf; }
         return render(doc, o.url, loc, el).then(function (canvases) {
           if (el.ttcToken !== token) return;
-          if (!canvases.length) throw new Error('empty');
+          if (!canvases.length) { var em = new Error('empty'); em.why = 'cut'; throw em; }
           var strip = el.querySelector('.ttc-strip'); strip.innerHTML = ''; canvases.forEach(function (c) { strip.appendChild(c); });
           var link = window.ttLive.at(o.url, loc.start.page);
           strip.insertAdjacentHTML('afterend', '<div class="ttc-f"><span>' + (o.kind === 'ms' ? 'Mark scheme' : 'Question ' + window.ttLive.esc(o.q)) + ' · page ' + loc.start.page + ' · live from ' + window.ttLive.esc(card.source || host(o.url)) + '</span><span class="ttc-l"><a href="' + window.ttLive.esc(link) + '" target="_blank" rel="noopener" data-ttview="' + window.ttLive.esc(card.title || 'Paper') + '" data-src="' + window.ttLive.esc(card.source || '') + '">Whole paper</a>' +
             (card.alt ? ' · <a href="' + window.ttLive.esc(window.ttLive.at(card.alt.url, loc.start.page)) + '" target="_blank" rel="noopener">' + window.ttLive.esc(card.alt.label) + ' ↗</a>' : '') + '</span></div>');
         });
       });
-    }).catch(function () { if (el.ttcToken === token) fallback(); });
+    }).catch(function (e) { if (el.ttcToken === token) fallback(e && e.why ? e : { why: 'cut' }); });
   }
   /* Apps just write ttCrop.html({...}); anything like that added to the page is filled in automatically. */
   function html(o) { return '<div class="ttcrop" data-ttcrop="' + window.ttLive.esc(JSON.stringify(o)) + '"></div>'; }

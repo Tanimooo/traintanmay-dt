@@ -68,7 +68,7 @@ const IC = {
 };
 const ic = (k, w = 1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || ''}</svg>`;
 /* third entry is the short label used in the top bar; the drawer always spells it out */
-const NAV = [['home', 'Home'], ['courses', 'Courses'], ['papers', 'Papers'], ['practice', 'Practice'], ['drills', 'Skill drills', 'Drills'], ['vis', 'Visualisers', 'Visuals'], ['videos', 'Videos'], ['game', 'Sketch game', 'Game', 'game.html'], ['progress', 'Progress']];
+const NAV = [['home', 'Home'], ['practice', 'Practice'], ['papers', 'Papers'], ['courses', 'Courses'], ['drills', 'Skill drills', 'Drills'], ['vis', 'Visualisers', 'Visuals'], ['videos', 'Videos'], ['game', 'Sketch game', 'Game', 'game.html'], ['progress', 'Progress']];
 function renderNav(active){
   $('#nav').innerHTML = NAV.map(([k, l, short, page]) => `<a href="${page || '#' + k}" ${!page && k === active ? 'aria-current="page"' : ''} title="${esc(l)}">${ic(k)}<span>${esc(short || l)}</span></a>`).join('');
   $('#drawerpanel').innerHTML =
@@ -82,16 +82,22 @@ function renderNav(active){
     `<a href="#mycourses" class="mclink" ${active === 'mycourses' ? 'aria-current="page"' : ''}>${ic('sliders')}My courses${HIDE.length ? ` <span class="muted">(${COURSES.length}/${ALLC.length})</span>` : ''}</a>` +
     COURSES.map(c => `<a href="#c-${c.id}">${esc(c.name)}</a>`).join('') +
     `<button class="dw-switch" id="dswitch">Switch app <small>Design &amp; Technology \u00b7 Physics \u00b7 ESAT</small></button>`;
-  $('#dclose').onclick = closeDrawer;
+  $('#dclose').onclick = () => closeDrawer();
   const dt = $('#dtheme'); dt.value = S.settings.theme;
   dt.onchange = e => { S.settings.theme = e.target.value; save(); applyTheme(); };
   $('#ddys').onclick = () => { setDys(!S.settings.dys); };
   $('#dswitch').onclick = () => { closeDrawer(); const b = document.querySelector('.brand'); if (b) setTimeout(() => b.click(), 0); };
-  const ds = $('#dsearch'); if (ds) ds.addEventListener('keydown', e => { if (e.key === 'Enter') { Q.q = ds.value; closeDrawer(); location.hash = 'search'; if (location.hash === '#search') route(); } });
+  const ds = $('#dsearch'); if (ds) ds.addEventListener('keydown', e => { if (e.key === 'Enter') { Q.q = ds.value; closeDrawer(() => { location.hash = 'search'; if (location.hash === '#search') route(); }); } });
 }
-const closeDrawer = () => { $('#drawer').hidden = true; };
-$('#menubtn').onclick = () => { $('#drawer').hidden = false; };
-$('#drawer').addEventListener('click', e => { if (e.target.id === 'drawer' || e.target.closest('a')) closeDrawer(); });
+/* the menu adds a Back step while open, so the phone's Back button closes it instead of changing page */
+let DBH = null;
+const closeDrawer = then => { $('#drawer').hidden = true; const h = DBH; DBH = null; if (h && window.ttBack) ttBack.done(h, then); else if (then) then(); };
+$('#menubtn').onclick = () => { $('#drawer').hidden = false; if (window.ttBack && !DBH) DBH = ttBack.open(() => { DBH = null; $('#drawer').hidden = true; }); };
+$('#drawer').addEventListener('click', e => {
+  const a = e.target.closest('a');
+  if (a && a.getAttribute('href')?.startsWith('#') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); closeDrawer(() => { location.hash = a.getAttribute('href'); }); }
+  else if (e.target.id === 'drawer' || a) closeDrawer();
+});
 
 /* ---------------- item rendering ---------------- */
 const DOCN = {QP:'Questions', QPMS:'Questions + MS', MS:'Mark scheme', MA:'Model answers', SOL:'Solutions', AB:'Answer book', WS:'Worksheet', ANS:'Answers', PDF:'Open PDF'};
@@ -166,11 +172,13 @@ function startExam(id, resumeUsed){
 /* ---------------- pages ---------------- */
 const counts = c => { const L = byC[c] || []; return {exam: L.filter(i => i.s === 'exam').length, prac: L.filter(i => i.s === 'prac').length, test: L.filter(i => i.s === 'test').length}; };
 const confTally = c => { const t = TOP[c] || []; let g = 0, a = 0, r = 0; t.forEach(([id]) => { const v = S.conf[c + '/' + id]; if (v === 'g') g++; else if (v === 'a') a++; else if (v === 'r') r++; }); return {g, a, r, n: t.length}; };
+/* each course card goes straight to the thing you want: practice questions, papers, topics or the PDF packs */
 function courseCard(c){
-  const n = counts(c.id), cf = confTally(c.id);
-  return `<a class="ccard" href="#c-${c.id}"><span class="code">${esc(c.code)}</span><h3>${esc(c.name)}</h3>
+  const n = counts(c.id), cf = confTally(c.id), pq = pcount(c.id);
+  return `<div class="ccard"><a class="cmain" href="#c-${c.id}"><span class="code">${esc(c.code)}</span><h3>${esc(c.name)}</h3>
     <div class="bar" title="Topics rated green"><i style="width:${cf.n ? Math.round(100 * cf.g / cf.n) : 0}%"></i></div>
-    <div class="meta"><span>${cf.n} topics</span>·<span>${n.test} papers</span>·<span>${n.exam + n.prac} packs</span></div></a>`;
+    <div class="meta"><span>${cf.n} topics</span>·<span>${n.test} papers</span>${pq ? `·<span>${pq} questions</span>` : ''}</div></a>
+    <div class="ql">${pq ? `<a class="pr" href="#px-${c.id}">Practice Qs</a>` : ''}<a href="#cp-${c.id}">Papers</a><a href="#c-${c.id}">Topics</a>${n.exam + n.prac ? `<a href="#cd-${c.id}">PDFs</a>` : ''}</div></div>`;
 }
 const HEROART = `<svg class="heroart" id="heroart" viewBox="0 0 240 200" role="img" aria-label="A unit square being transformed by a matrix – click to open the matrix visualiser">
  <defs><pattern id="hg" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs>
@@ -179,43 +187,49 @@ const HEROART = `<svg class="heroart" id="heroart" viewBox="0 0 240 200" role="i
  <rect x="60" y="100" width="40" height="40" fill="var(--brand-soft)" stroke="var(--brand)" stroke-width="2"/>
  <polygon id="hpoly" points="60,140 140,120 160,40 80,60" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="var(--accent)" stroke-width="2.5"><animate attributeName="points" dur="5s" repeatCount="indefinite" values="60,140 100,140 100,100 60,100;60,140 140,120 160,40 80,60;60,140 140,120 160,40 80,60;60,140 100,140 100,100 60,100" keyTimes="0;.4;.7;1"/></polygon>
  <text x="150" y="182" font-family="IBM Plex Mono,monospace" font-size="12" fill="var(--ink-2)">det = 4.4</text></svg>`;
+function lastPractised(){ let best = null; Object.entries(S.prac || {}).forEach(([id, r]) => { if (r && r.t && (!best || r.t > best[1])) best = [id, r.t]; }); return best && best[0]; }
 function pageHome(){
-  const total = ITEMS.reduce((a, it) => a + it.d.length, 0);
   const doneN = Object.keys(S.done).length;
   const att = Object.values(S.scores).reduce((a, h) => a + h.length, 0);
-  const rec = S.recent.map(id => IBY[id]).filter(Boolean).slice(0, 6);
+  const rec = S.recent.map(id => IBY[id]).filter(Boolean).slice(0, 4);
   const maths = COURSES.filter(c => c.q === 'maths'), fm = COURSES.filter(c => c.q === 'further');
+  const nq = (PR ? PQ.length : (window.PCOUNT || {}).t || 0).toLocaleString(), lastQ = lastPractised();
+  const setOn = PSET && PSET.i < PSET.ids.length;
   app.innerHTML = `
-  <div class="hero">
+  <div class="hero hero-s">
     <div>
       <p class="eyebrow">Edexcel A level · 9MA0 & 9FM0</p>
-      <h1>Every maths question, in one place.</h1>
-      <p>${total.toLocaleString()} past papers, mark schemes, topic packs and worksheets from PMT, Madas Maths and Mr Further Maths, sorted by course and topic. There are timed papers, auto-checked skill drills and 3D visualisers too.</p>
-      <form class="bigsearch" id="bigsearch" role="search"><input type="search" id="bsq" placeholder="Try “invariant lines”, “June 2023 FM1”, “partial fractions”" aria-label="Search everything"><button class="btn primary">${ic('search')}Search</button></form>
+      <h1>What are you revising today?</h1>
+      <form class="bigsearch" id="bigsearch" role="search"><input type="search" id="bsq" placeholder="Search a topic or paper: “invariant lines”, “June 2023 FM1”" aria-label="Search everything"><button class="btn primary">${ic('search')}Search</button></form>
     </div>
     ${HEROART}
   </div>
-  <div class="stats">
-    <div class="stat"><b>${doneN}</b><span>packs & papers done</span></div>
-    <div class="stat"><b>${att}</b><span>timed attempts</span></div>
-    <div class="stat"><b>${Object.values(D.res).filter(v => v === 'g').length}</b><span>drill questions correct</span></div>
-    <div class="stat"><b>${streak()}</b><span>day streak</span></div>
-  </div>
-  ${rec.length ? `<section><div class="sec-head"><h2>Pick up where you left off</h2></div><div class="group"><div class="items" style="border:0">${rec.map(it => itemRow(it, {sub: esc((CBY[it.c]?.name || 'Extension') + ' · ' + it.g)})).join('')}</div></div></section>` : ''}
-  <section><div class="quick">
-    <a class="qtile" href="#papers"><span class="ic">${ic('papers')}</span><span><b>Past papers</b><span>Timed, with score log</span></span></a>
-    <a class="qtile" href="#practice"><span class="ic">${ic('practice')}</span><span><b>Practice questions</b><span>${(PR ? PQ.length : (window.PCOUNT || {}).t || 0).toLocaleString()} exam Qs, self-marked</span></span></a>
+  <section class="go3">
+    <a class="gtile main" href="${setOn ? '#q-' + PSET.ids[PSET.i] : '#practice'}"><span class="ic">${ic('practice')}</span><span><b>${setOn ? 'Carry on your set' : 'Practice questions'}</b><span>${setOn ? `Question ${PSET.i + 1} of ${PSET.ids.length}` : `${nq} exam questions, one at a time, with the mark scheme`}</span></span><span class="go">→</span></a>
+    <a class="gtile" href="#papers"><span class="ic">${ic('papers')}</span><span><b>Past papers</b><span>Full papers, timed, with mark schemes</span></span><span class="go">→</span></a>
+    <a class="gtile" href="#courses"><span class="ic">${ic('courses')}</span><span><b>Topics & notes</b><span>Notes, videos and PDF packs by topic</span></span><span class="go">→</span></a>
+  </section>
+  ${lastQ || rec.length ? `<section><div class="sec-head"><h2>Pick up where you left off</h2></div>
+    ${lastQ && !setOn ? `<a class="pbanner" href="#q-${lastQ}" style="margin-bottom:12px"><span class="ic">${ic('practice')}</span><span><b>Your last practice question</b><span>Go back to it, or press Next for the one after</span></span><span class="go">Open →</span></a>` : ''}
+    ${rec.length ? `<div class="group"><div class="items" style="border:0">${rec.map(it => itemRow(it, {sub: esc((CBY[it.c]?.name || 'Extension') + ' · ' + it.g)})).join('')}</div></div>` : ''}</section>` : ''}
+  ${maths.length ? `<section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>` : ''}
+  ${fm.length ? `<section><div class="sec-head"><h2>Further Maths</h2><span class="muted">${HIDE.length ? '9FM0 · your modules' : '9FM0 · all modules'}</span></div>
+    <p class="muted" style="margin:0 0 12px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>
+    <div class="grid g4">${fm.map(courseCard).join('')}</div></section>`
+  : `<p class="muted" style="margin-top:14px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>`}
+  <section><div class="sec-head"><h2>More ways to revise</h2></div><div class="quick">
     <a class="qtile" href="#drills"><span class="ic">${ic('drills')}</span><span><b>Skill drills</b><span>700 worked questions</span></span></a>
     <a class="qtile" href="#vis"><span class="ic">${ic('vis')}</span><span><b>Visualisers</b><span>Matrices, 3D vectors, polar…</span></span></a>
     <a class="qtile" href="#videos"><span class="ic">${ic('videos')}</span><span><b>Videos</b><span>Topic videos & revision</span></span></a>
     <a class="qtile" href="game.html"><span class="ic">${ic('game')}</span><span><b>Sketch game</b><span>Draw the curve, get scored</span></span></a>
     <a class="qtile" href="#progress"><span class="ic">${ic('progress')}</span><span><b>Progress</b><span>Scores & weak topics</span></span></a>
   </div></section>
-  ${maths.length ? `<section><div class="sec-head"><h2>A level Maths</h2><span class="muted">9MA0</span></div><div class="grid g3">${maths.map(courseCard).join('')}</div></section>` : ''}
-  ${fm.length ? `<section><div class="sec-head"><h2>Further Maths</h2><span class="muted">${HIDE.length ? '9FM0 · your modules' : '9FM0 · all modules'}</span></div>
-    <p class="muted" style="margin:0 0 12px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>
-    <div class="grid g4">${fm.map(courseCard).join('')}</div></section>`
-  : `<p class="muted" style="margin-top:14px">${HIDE.length ? `Showing ${COURSES.length} of ${ALLC.length} courses.` : 'Not doing every module?'} <a href="#mycourses">Choose your courses</a> to hide the rest everywhere.</p>`}`;
+  <div class="stats">
+    <div class="stat"><b>${Object.values(S.prac || {}).filter(r => r && r.m != null).length}</b><span>practice questions marked</span></div>
+    <div class="stat"><b>${doneN}</b><span>packs & papers done</span></div>
+    <div class="stat"><b>${att}</b><span>timed attempts</span></div>
+    <div class="stat"><b>${streak()}</b><span>day streak</span></div>
+  </div>`;
   $('#bigsearch').onsubmit = e => { e.preventDefault(); Q.q = $('#bsq').value; location.hash = 'search'; };
   $('#heroart').onclick = () => location.hash = 'vis-matrix2d';
   bindItems(app);
@@ -269,17 +283,18 @@ function pageCourse(cid, tab){
   const c = CBY[cid]; if (!c) return pageHome();
   tab = tab || 'topics';
   const L = byC[cid] || [], n = counts(cid);
-  const tabs = [['topics', 'Topics', (TOP[cid] || []).length], ['papers', 'Papers & tests', n.test], ['practice', 'Practice', n.prac + (cid === 'pure' ? DR.length : 0)], ['resources', 'Formulae & videos', '']];
+  /* Practice questions = the cut-out questions you mark yourself; Topic PDFs = the whole packs and worksheets */
+  const tabs = [['topics', 'Topics', (TOP[cid] || []).length, 'c'], ['practice', 'Practice questions', pcount(cid), 'cx'], ['papers', 'Past papers', n.test, 'cp'], ['pdfs', 'Topic PDFs', n.exam + n.prac, 'cd'], ['resources', 'Formulae & videos', '', 'cr']];
   let body = '';
   if (tab === 'topics') {
     const vis = visFor(cid);
     body = `<p class="ragkey">The dot on each card is how confident you said you were: <span class="rag r"></span> not yet \u00b7 <span class="rag a"></span> getting there \u00b7 <span class="rag g"></span> confident \u00b7 <span class="rag"></span> not set. Set it on the topic page.</p>
     <div class="grid g3">${(TOP[cid] || []).map(([tid, tn], i) => {
       const list = byT[cid + '/' + tid] || [], v = S.conf[cid + '/' + tid] || '';
-      const ex = list.filter(x => x.s === 'exam').length, pr = list.filter(x => x.s === 'prac').length, dn = list.filter(x => S.done[x.i]).length;
+      const pdfs = list.length, pq = pcount(cid, tid), dn = list.filter(x => S.done[x.i]).length;
       const hasVis = visFor(cid, tid).length;
       return `<a class="tcard" href="#t-${cid}-${tid}"><div class="top">${/^Y\d/.test(tn) ? '' : `<span class="num">${i + 1}</span>`}<h4>${esc(tn)}</h4><span class="rag ${v}" title="Confidence"></span></div>
-        <div class="row" style="gap:6px">${ex ? `<span class="chip brand">${ex} exam packs</span>` : ''}${pr ? `<span class="chip">${pr} practice</span>` : ''}${hasVis ? `<span class="chip acc">Visualiser</span>` : ''}${!ex && !pr ? `<span class="muted" style="font-size:.78rem">No topic packs \u2014 see <b>Papers</b></span>` : ''}</div>
+        <div class="row" style="gap:6px">${pq ? `<span class="chip brand">${pq} questions</span>` : ''}${pdfs ? `<span class="chip">${pdfs} PDFs</span>` : ''}${hasVis ? `<span class="chip acc">Visualiser</span>` : ''}${!pq && !pdfs ? `<span class="muted" style="font-size:.78rem">Nothing topic-sized \u2014 see <b>Past papers</b></span>` : ''}</div>
         ${list.length ? `<div class="bar"><i style="width:${Math.round(100 * dn / list.length)}%"></i></div>` : ''}</a>`;
     }).join('')}</div>
     ${vis.length ? `<section><h2>Visualisers for this course</h2><div class="grid g2">${vis.map(visCard).join('')}</div></section>` : ''}
@@ -294,11 +309,19 @@ function pageCourse(cid, tab){
       ${spec === 'ial' ? '<p class="note" style="margin-bottom:14px">International A level units are a great source of extra Edexcel-style questions on the same content.</p>' : ''}
       ${groupBlocks(list, {openN: 2})}`;
   } else if (tab === 'practice') {
-    const prac = L.filter(x => x.s === 'prac' && !x.t), topical = L.filter(x => x.s === 'prac' && x.t);
-    body = (pcount(cid) ? `<section style="margin-top:0"><h2>Practice questions</h2><div class="grid g4">${(TOP[cid] || []).filter(([t]) => pcount(cid, t)).map(([t, n]) => `<a class="tcard" href="#px-${cid}-${t}"><div class="top"><h4>${esc(n)}</h4></div><span class="muted" style="font-size:.8rem">${pcount(cid, t)} questions</span></a>`).join('')}</div></section>` : '') + (cid === 'pure' ? `<section style="margin-top:0"><h2>Skill drills</h2><div class="grid g4">${DR.map(d => drillCard(d)).join('')}</div></section>` : '') +
-      (prac.length ? `<section><h2>Mixed practice</h2>${groupBlocks(prac)}</section>` : '') +
-      (topical.length ? `<section><h2>Practice by topic</h2>${groupBlocks(topical, {groupBy: it => tname(cid, it.t), openN: 0, sub: it => esc(it.src + ' · ' + it.g)})}</section>` : '') +
-      (!prac.length && !topical.length && cid !== 'pure' ? '<div class="empty">No separate practice sheets for this module – use the exam packs in each topic and the papers tab.</div>' : '');
+    const tops = (TOP[cid] || []).filter(([t]) => pcount(cid, t));
+    const done = t => PR ? PQ.filter(q => q.c === cid && (!t || q.t === t) && S.prac[q.id]?.m != null).length : 0;
+    body = (pcount(cid) ? `<a class="pbanner" href="#px-${cid}"><span class="ic">${ic('practice')}</span><span><b>Practise all of ${esc(c.name)}</b><span>${pcount(cid)} exam questions${PR ? ` · ${done()} done` : ''} – or pick a topic below</span></span><span class="go">Start →</span></a>
+      <section><h2>By topic</h2><div class="grid g4">${tops.map(([t, nm]) => { const a = pcount(cid, t), d = done(t); return `<a class="tcard" href="#px-${cid}-${t}"><div class="top"><h4>${esc(nm)}</h4></div>${PR ? `<div class="bar"><i style="width:${Math.round(100 * d / a)}%"></i></div>` : ''}<span class="muted" style="font-size:.8rem">${PR ? `${d}/` : ''}${a} questions</span></a>`; }).join('')}</div></section>`
+      : `<div class="empty">No cut-out practice questions for this module yet. Try the <a href="#cp-${cid}">past papers</a> or the <a href="#cd-${cid}">topic PDFs</a>.</div>`) +
+      (cid === 'pure' && DR.length ? `<section><h2>Skill drills</h2><div class="grid g4">${DR.map(d => drillCard(d)).join('')}</div></section>` : '');
+  } else if (tab === 'pdfs') {
+    const packs = L.filter(x => (x.s === 'exam' || x.s === 'prac') && x.t), mixed = L.filter(x => x.s === 'prac' && !x.t);
+    const tord = t => (TOP[cid] || []).findIndex(x => x[0] === t);
+    body = `<p class="lead" style="margin-top:0">Whole topic packs and worksheets as PDFs, to print or scroll through. For one question at a time with its mark scheme, use <a href="#cx-${cid}">Practice questions</a>.</p>` +
+      (packs.length ? `<section style="margin-top:8px">${groupBlocks(packs.slice().sort((a, b) => tord(a.t) - tord(b.t)), {groupBy: it => tname(cid, it.t), openN: 0, sub: it => esc([it.src, it.g].filter(Boolean).join(' · '))})}</section>` : '') +
+      (mixed.length ? `<section><h2>Mixed practice</h2>${groupBlocks(mixed)}</section>` : '') +
+      (!packs.length && !mixed.length ? `<div class="empty">No PDF packs for this module – use the <a href="#cp-${cid}">past papers</a>.</div>` : '');
   } else {
     const ref = CAT.ref.filter(r => r.c === cid);
     body = `<section style="margin-top:0"><h2>Formula sheets</h2>${ref.length ? `<div class="docs">${ref.map(r => `<a class="doc qp" href="${esc(url(r.u))}" target="_blank" rel="noopener">${ic('ext')}${esc(r.n)}</a>`).join('')}</div>` : `<p class="muted">The A level Maths formula booklet is the same for Papers 1–3; the PMT topic pages link the official Pearson booklet.</p>`}</section>
@@ -307,7 +330,7 @@ function pageCourse(cid, tab){
   }
   app.innerHTML = `<div class="crumbs"><a href="#courses">Courses</a>›<span>${esc(c.name)}</span></div>
     <p class="eyebrow">${esc(c.code)}</p><h1>${esc(c.name)}</h1>
-    <nav class="tabs" aria-label="Course sections">${tabs.map(([k, l, nn]) => `<a href="#${k === 'topics' ? 'c' : k === 'papers' ? 'cp' : k === 'practice' ? 'cx' : 'cr'}-${cid}" ${k === tab ? 'aria-current="page"' : ''}>${l}${nn !== '' ? `<span class="n">${nn}</span>` : ''}</a>`).join('')}</nav>
+    <nav class="tabs" aria-label="Course sections">${tabs.map(([k, l, nn, h]) => `<a href="#${h}-${cid}" ${k === tab ? 'aria-current="page"' : ''}>${l}${nn !== '' ? `<span class="n">${nn}</span>` : ''}</a>`).join('')}</nav>
     ${body}`;
   $$('[data-spec]').forEach(b => b.onclick = () => { S.settings.paperSpec = b.dataset.spec; save(); pageCourse(cid, 'papers'); });
   bindItems(app);
@@ -371,15 +394,15 @@ function pageTopic(cid, tid){
   app.innerHTML = `<div class="crumbs"><a href="#courses">Courses</a>›<a href="#c-${cid}">${esc(c.name)}</a>›<span>${esc(tname(cid, tid))}</span></div>
    <div class="tp-head"><div><p class="eyebrow">${esc(c.code)} · Topic ${idx + 1}</p><h1>${esc(tname(cid, tid))}</h1>${(() => { const e = (TOP[cid] || []).find(x => x[0] === tid); return e && e[2] ? `<div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">${e[2].map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : ''; })()}</div>
      <div><div class="eyebrow" style="margin-bottom:6px">How confident are you?</div><div class="conf" role="group" aria-label="Confidence">${[['r', 'Not yet'], ['a', 'Getting there'], ['g', 'Confident']].map(([k, l]) => `<button class="${k}" data-conf="${k}" aria-pressed="${v === k}">${l}</button>`).join('')}</div></div></div>
-   <div class="jump">${noteFor(cid, tid) ?'<a class="btn sm" href="#" data-jump="snotes">Notes</a>' : ''}${examS.length ? '<a class="btn sm" href="#" data-jump="sx">Exam questions</a>' : ''}${prac.length || drills.length ? '<a class="btn sm" href="#" data-jump="sp">Practice</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
-   ${pcount(cid, tid) ? `<section><a class="pbanner" href="#px-${cid}-${tid}"><span class="ic">${ic('practice')}</span><span><b>${pcount(cid, tid)} practice questions</b><span>Whole exam questions with their mark schemes – mark yourself</span></span><span class="go">Start →</span></a></section>` : ''}
+   <div class="jump">${pcount(cid, tid) ? `<a class="btn sm primary" href="#px-${cid}-${tid}">Practice questions</a>` : ''}${noteFor(cid, tid) ? '<a class="btn sm" href="#" data-jump="snotes">Notes</a>' : ''}${drills.length ? '<a class="btn sm" href="#" data-jump="sp">Skill drills</a>' : ''}${vis.length ? '<a class="btn sm" href="#" data-jump="sv">Visualise</a>' : ''}${examS.length || prac.length ? '<a class="btn sm" href="#" data-jump="sx">Topic PDFs</a>' : ''}<a class="btn sm" href="#" data-jump="sw">Videos</a></div>
+   ${pcount(cid, tid) ? `<section id="spq"><a class="pbanner" href="#px-${cid}-${tid}"><span class="ic">${ic('practice')}</span><span><b>${pcount(cid, tid)} practice questions</b><span>One exam question at a time, cut out of the paper, then its mark scheme – mark yourself</span></span><span class="go">Start →</span></a></section>` : ''}
+   ${drills.length ? `<section id="sp"><h2>Skill drills</h2><div class="grid g4">${drills.map(drillCard).join('')}</div></section>` : ''}
    ${vis.length ? `<section id="sv"><h2>Visualise it</h2><div class="grid g2">${vis.map(visCard).join('')}</div></section>` : ''}
-   ${examS.length ? `<section id="sx"><div class="sec-head"><h2>Exam questions</h2><span class="muted">Real past-paper questions grouped by topic</span></div>${groupBlocks(examS, {openN: 2, sub: it => it.x?.yr ? esc(it.x.yr) : (it.x?.cat ? esc(it.x.cat) : '')})}</section>` : ''}
-   ${drills.length || prac.length ? `<section id="sp"><h2>Practice</h2>${drills.length ? `<div class="grid g4" style="margin-bottom:14px">${drills.map(drillCard).join('')}</div>` : ''}${prac.length ? groupBlocks(prac, {openN: 1}) : ''}</section>` : ''}
-   ${!examS.length && !prac.length ? `<div class="empty" style="margin-top:20px">No topic packs for this one – head to <a href="#cp-${cid}">${esc(c.name)} papers</a> for full papers.</div>` : ''}
+   ${examS.length || prac.length ? `<section id="sx"><div class="sec-head"><h2>Topic PDFs</h2><span class="muted">Whole packs and worksheets, to print or scroll</span></div>${groupBlocks(examS.concat(prac), {openN: 0, groupBy: it => it.s === 'prac' ? 'Worksheets & extra practice' : it.g, sub: it => it.x?.yr ? esc(it.x.yr) : (it.x?.cat ? esc(it.x.cat) : '')})}</section>` : ''}
+   ${!examS.length && !prac.length && !pcount(cid, tid) ? `<div class="empty" style="margin-top:20px">Nothing topic-sized for this one – head to <a href="#cp-${cid}">${esc(c.name)} past papers</a>.</div>` : ''}
    <section id="sw"><h2>Videos</h2>${topicVids(cid, tid).length ? `<div class="vids tv" style="margin-bottom:16px">${topicVids(cid, tid).map(vidCard).join('')}</div>` : ''}${furtherVids(cid, tid).length ? `<div style="margin-bottom:16px">${furtherBlock(furtherVids(cid, tid), topicVids(cid, tid).length ? 4 : 0)}</div>` : ''}${topicVids(cid, tid).length || furtherVids(cid, tid).length ? '<h3 style="margin:4px 0 8px;font-size:1rem">Full channels</h3>' : ''}${vidList(cid)}</section>
    <div class="row" style="justify-content:space-between;margin-top:28px">${prev ? `<a class="btn" href="#t-${cid}-${prev[0]}">← ${esc(prev[1])}</a>` : '<span></span>'}${next ? `<a class="btn" href="#t-${cid}-${next[0]}">${esc(next[1])} →</a>` : ''}</div>`;
-  { const th = $('.tp-head', app); if (th) { th.insertAdjacentHTML('afterend', notesHTML(cid, tid)); math(app); } }
+  { const th = $('#spq', app) || $('.jump', app); if (th) { th.insertAdjacentHTML('afterend', notesHTML(cid, tid)); math(app); } }
   $$('[data-conf]').forEach(b => b.onclick = () => { const k = cid + '/' + tid; S.conf[k] = S.conf[k] === b.dataset.conf ? '' : b.dataset.conf; save(); $$('[data-conf]').forEach(x => x.setAttribute('aria-pressed', S.conf[k] === x.dataset.conf)); });
   $$('[data-jump]').forEach(a => a.onclick = e => { e.preventDefault(); document.getElementById(a.dataset.jump)?.scrollIntoView({behavior: 'smooth'}); });
   bindItems(app);
@@ -583,7 +606,9 @@ function packDocs(name, course){
   if (name in PACKDOCS) return PACKDOCS[name];
   const [gh, nm0 = ''] = name.split(' · '), nm = nm0.replace(/^PMT Mock$/, 'Mock'), isAS = /^as /i.test(gh);
   const words = pnorm(gh).split(' ').filter(w => w !== 'as').map(w => { const m = /^([a-z]+)(\d)$/.exec(w); return m && PACK_AB[m[1]] ? PACK_AB[m[1]] + ' ' + m[2] : PACK_AB[w] || w; });
-  const same = (CAT.items || []).filter(i => pnorm(i.n) === pnorm(nm)), cur = same.filter(i => !/^Old spec|International|IAL/.test(i.g));
+  // the name as written first ("PMT Mock" is the AS mock's own name); "Mock" alone only if nothing has it
+  const exact = (CAT.items || []).filter(i => pnorm(i.n) === pnorm(nm0) && !/^Old spec|International|IAL/.test(i.g));
+  const same = exact.length ? exact : (CAT.items || []).filter(i => pnorm(i.n) === pnorm(nm)), cur = same.filter(i => !/^Old spec|International|IAL/.test(i.g));
   const score = i => { const g = pnorm(i.g); return words.filter(w => g.includes(w)).length + (i.c === course ? 1 : 0) - (isAS !== /^as /.test(g) ? 2 : 0); };
   const pool = cur.map(i => [score(i), i]).sort((a, b) => b[0] - a[0]);
   const qpOf = i => (i.d.find(x => /QP/.test(x[0])) || i.d[0])[1], top = pool.filter(p => pool.length && p[0] === pool[0][0]);
@@ -653,7 +678,8 @@ function pagePractice(pc, pt){
   const setN = f.n === 'all' ? L.length : Math.min(+f.n, L.length);
   const done = (c, t) => PQ.filter(q => q.c === c && (!t || q.t === t) && S.prac[q.id]?.m != null).length;
   const allDone = PQ.filter(q => S.prac[q.id]?.m != null).length, pc_ = Math.round(100 * allDone / (PQ.length || 1));
-  app.innerHTML = `<p class="eyebrow">Question bank</p><h1>Practice questions</h1>
+  const scope = f.cs.length === 1 ? (f.ts.length === 1 ? tname(f.cs[0], f.ts[0].split('/')[1]) : CBY[f.cs[0]]?.name) : '';
+  app.innerHTML = `${scope ? `<div class="crumbs"><a href="#practice">Practice</a>›<a href="#cx-${f.cs[0]}">${esc(CBY[f.cs[0]]?.name || '')}</a>${f.ts.length === 1 ? `›<span>${esc(scope)}</span>` : ''}</div>` : ''}<p class="eyebrow">Question bank</p><h1>Practice questions${scope ? `<span class="h1sub">${esc(scope)}</span>` : ''}</h1>
     <div class="pstat card"><div><b>${allDone.toLocaleString()}</b><span> / ${PQ.length.toLocaleString()} questions done</span></div><div class="pbar"><i style="width:${pc_}%"></i></div><p class="muted">Whole exam questions with mark schemes. Pick what to practise, answer on paper, then mark yourself.</p></div>
     ${PSET && PSET.i < PSET.ids.length ? `<a class="pbanner" style="margin-top:16px" href="#q-${PSET.ids[PSET.i]}"><span class="ic">${ic('practice')}</span><span><b>Continue your set</b><span>Question ${PSET.i + 1} of ${PSET.ids.length}</span></span><span class="go">Resume →</span></a>` : ''}
     <div class="builder card">
@@ -666,8 +692,8 @@ function pagePractice(pc, pt){
         <div><h3>Set size</h3><div class="seg">${[5, 10, 20, 'all'].map(k => `<button data-n="${k}" aria-pressed="${String(f.n) === String(k)}">${k === 'all' ? 'All' : k}</button>`).join('')}</div></div>
         <div><h3>Order</h3><div class="seg">${[['rand', 'Shuffled'], ['seq', 'In order']].map(([k, l]) => `<button data-o="${k}" aria-pressed="${f.ord === k}">${l}</button>`).join('')}</div></div>
       </div>
-      <div class="row bfoot"><p class="muted" style="margin:0"><b style="color:var(--ink)">${L.length}</b> questions match · ${tried.length} attempted${of ? ` · <b style="color:var(--ink)">${Math.round(100 * got / of)}%</b> of marks` : ''}</p>
-        <button class="btn primary" id="pstart" ${setN ? '' : 'disabled'}>Start a set of ${setN} →</button></div>
+      <div class="row bfoot"><button class="btn primary" id="pstart" ${setN ? '' : 'disabled'}>Start ${setN} question${setN === 1 ? '' : 's'} →</button>
+        <p class="muted" style="margin:0"><b style="color:var(--ink)">${L.length}</b> match · ${tried.length} attempted${of ? ` · <b style="color:var(--ink)">${Math.round(100 * got / of)}%</b> of marks` : ''}</p></div>
     </div>
     ${L.length ? '' : '<div class="empty" style="margin-top:16px">Nothing matches these filters.</div>'}`;
   const tog = (arr, v) => { const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i, 1); };
@@ -707,14 +733,14 @@ function pageQ(id){
     <div class="qhead"><div><p class="eyebrow">${inSet ? `Set · question ${i + 1} of ${L.length}` : `${esc(q.src)} · ${i + 1} of ${L.length}`}</p>${inSet ? `<div class="bar" style="margin:6px 0 10px;max-width:320px"><i style="width:${Math.round(100 * (i + 1) / L.length)}%"></i></div>` : ''}<h1>${esc(q.pn)} – Q${q.n}</h1></div>
       <div class="row"><span class="chip brand">${max ? max + ' marks' : 'marks not listed'}</span>${pstatus(q)}</div></div>
     ${srcnote(q.src)}
-    ${ttCrop.html({url: pdf ? url(pdf[1]) : '', q: String(q.n), kind: 'qp', card: {title: q.pn, source: srcName(q.src), home: /Madas/.test(q.src) ? 'https://madasmaths.com/' : /^PMT|Edexcel/.test(q.src) ? 'https://www.physicsandmathstutor.com/a-level-maths-papers/' : '', ms: mspdf && mspdf !== pdf ? url(mspdf[1]) : '', msLabel: 'Mark scheme'}})}
+    ${ttCrop.html({url: pdf ? url(pdf[1]) : '', q: String(q.n), kind: 'qp', card: {frame: false, title: q.pn, source: srcName(q.src), home: /Madas/.test(q.src) ? 'https://madasmaths.com/' : /^PMT|Edexcel/.test(q.src) ? 'https://www.physicsandmathstutor.com/a-level-maths-papers/' : '', ms: mspdf && mspdf !== pdf ? url(mspdf[1]) : '', msLabel: 'Mark scheme'}})}
     <div class="qbar">
       <button class="btn primary" id="showms" aria-expanded="false">I've answered it – mark it <kbd>M</kbd></button>
       <button class="btn" id="flag" aria-pressed="${!!r?.f}">${r?.f ? '★ Flagged' : '☆ Flag for later'}</button>
     </div>
     <div id="msbox" hidden>
-      <h2 style="margin:22px 0 10px">${mspdf && mspdf[0] === 'SOL' ? 'Worked solutions' : mspdf && mspdf[0] === 'MA' ? 'Model answers' : 'Mark scheme'}</h2>${mspdf && mspdf !== pdf ? ttCrop.html({url: url(mspdf[1]), q: String(q.n), kind: 'ms', card: {title: q.pn + (mspdf[0] === 'SOL' ? ' · worked solutions' : mspdf[0] === 'MA' ? ' · model answers' : ' · mark scheme'), source: srcName(q.src)}})
-        : pdf ? ttCrop.html({url: url(pdf[1]), q: String(q.n), kind: 'ms', combined: true, card: {title: q.pn + ' (mark scheme at the back)', source: srcName(q.src)}}) : ''}
+      <h2 style="margin:22px 0 10px">${mspdf && mspdf[0] === 'SOL' ? 'Worked solutions' : mspdf && mspdf[0] === 'MA' ? 'Model answers' : 'Mark scheme'}</h2>${mspdf && mspdf !== pdf ? ttCrop.html({url: url(mspdf[1]), q: String(q.n), kind: 'ms', card: {frame: false, title: q.pn + (mspdf[0] === 'SOL' ? ' · worked solutions' : mspdf[0] === 'MA' ? ' · model answers' : ' · mark scheme'), source: srcName(q.src)}})
+        : pdf ? ttCrop.html({url: url(pdf[1]), q: String(q.n), kind: 'ms', combined: true, card: {frame: false, title: q.pn + ' (mark scheme at the back)', source: srcName(q.src)}}) : ''}
       <div class="markbox card"><h3 style="margin:0 0 10px">How many marks did you get?</h3>
         ${max && max <= 25 ? `<div class="marks" role="group" aria-label="Marks">${[...Array(max + 1)].map((_, k) => `<button data-m="${k}" aria-pressed="${r && r.m === k}">${k}</button>`).join('')}</div>`
           : `<div class="row"><input id="mgot" type="number" min="0" value="${r ? r.m : ''}" style="width:80px"> out of <input id="mof" type="number" min="1" value="${max || (r && r.of) || ''}" style="width:80px"><button class="btn primary sm" id="msave">Save</button></div>`}
@@ -772,7 +798,8 @@ function loadData(name){
 }
 function needsOf(h){
   const n = [];
-  if (/^(practice|pset-done)$/.test(h) || /^(px|q)-/.test(h) || h === 'progress') n.push('practice');
+  if (/^(practice|pset-done)$/.test(h) || /^(px|q|cx)-/.test(h) || h === 'progress') n.push('practice');
+  if (/^cx-pure$/.test(h)) n.push('drills');
   if (/^q-/.test(h)) n.push('plinks');   // PDF fallbacks for packs that aren't in the papers catalogue
   if (/^drills?$/.test(h) || /^drill-/.test(h)) n.push('drills');
   const t = h.match(/^t-(\w+?)-/);
@@ -801,8 +828,8 @@ function draw(h){
   let m, nav = 'home';
   if (h === 'home') pageHome();
   else if (h === 'courses') { nav = 'courses'; pageCourses(); }
-  else if ((m = h.match(/^(?:c|cp|cx|cr|t|px)-(\w+?)(?:-|$)/)) && hid(m[1])) pageMyCourses();
-  else if ((m = h.match(/^(c|cp|cx|cr)-(\w+)$/))) { nav = m[1] === 'cp' ? 'papers' : 'courses'; pageCourse(m[2], {c: 'topics', cp: 'papers', cx: 'practice', cr: 'resources'}[m[1]]); }
+  else if ((m = h.match(/^(?:c|cp|cx|cd|cr|t|px)-(\w+?)(?:-|$)/)) && hid(m[1])) pageMyCourses();
+  else if ((m = h.match(/^(c|cp|cx|cd|cr)-(\w+)$/))) { nav = m[1] === 'cp' ? 'papers' : m[1] === 'cx' ? 'practice' : 'courses'; pageCourse(m[2], {c: 'topics', cp: 'papers', cx: 'practice', cd: 'pdfs', cr: 'resources'}[m[1]]); }
   else if ((m = h.match(/^t-(\w+?)-(\w+)$/))) { nav = 'courses'; pageTopic(m[1], m[2]); }
   else if (h === 'papers') { nav = 'papers'; pagePapers(); }
   else if ((m = h.match(/^run-(\w+)$/))) { nav = 'papers'; pageRun(m[1]); }
@@ -826,13 +853,13 @@ function draw(h){
 /* live data sheet (../datasheet.js): the button sits bottom-right on every page with questions */
 const dsCourse = h => {
   let m;
-  if ((m = h.match(/^(?:c|cp|cx|cr|px)-(\w+?)(?:-|$)/)) || (m = h.match(/^t-(\w+?)-/))) return m[1];
+  if ((m = h.match(/^(?:c|cp|cx|cd|cr|px)-(\w+?)(?:-|$)/)) || (m = h.match(/^t-(\w+?)-/))) return m[1];
   if ((m = h.match(/^q-(\w+-\d+)$/)) && PQBY[m[1]]) return (IBY[PQBY[m[1]].pk] || {}).c || '';
   if ((m = h.match(/^run-(\w+)$/)) && IBY[m[1]]) return IBY[m[1]].c;
   return h.startsWith('drill') ? 'pure' : '';
 };
 window.TT_DS_CFG = {
-  match: h => /^(t-|px-|q-|run-|drill|cp-|papers$|practice$|pset)/.test(h),
+  match: h => /^(t-|px-|cx-|q-|run-|drill|cp-|papers$|practice$|pset)/.test(h),
   sheets: h => {
     const cid = dsCourse(h), mod = CAT.ref.find(r => r.c === cid && /A-level/.test(r.n));
     const maths = {label: 'A level Maths formulae', render: el => window.TT_MATHS_FORMULAE ? TT_MATHS_FORMULAE(el) : (el.innerHTML = '<p>The formula sheet could not load.</p>')};
