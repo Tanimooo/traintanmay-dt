@@ -99,7 +99,10 @@ const X = {
     items.push(() => { const a = win(NOW, tv(t0), tv(t1), .3, .25); d.style.opacity = a; if (!a) return; const p = E.back((NOW - tv(t0)) / .45);
       const m = o.from || 'zoom'; d.style.transform = m === 'zoom' ? `scale(${.2 + .8 * p})` : m === 'drop' ? `translateY(${(1 - p) * -300}px)` : `translateX(${(1 - p) * (m === 'left' ? -900 : 900)}px)`; }); return d; },
   eq(tex, t0, t1, o = {}) { const d = el('eq', '', { top: (o.y || 1000) + 'px', fontSize: (o.size || 64) + 'px', color: o.color || '#fff' }); katex.render(tex, d, { throwOnError: false, displayMode: true });
-    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .3, .25); d.style.opacity = a; if (a) d.style.transform = `translateY(${(1 - E.out((NOW - tv(t0)) / .4)) * 60}px) scale(${o.scale ? o.scale() : 1})`; }); return d; },
+    let fit = 0;   // shrink to fit the screen width if the equation is too wide
+    items.push(() => { const a = win(NOW, tv(t0), tv(t1), .3, .25); d.style.opacity = a; if (!a) return;
+      if (!fit) { const kx = d.querySelector('.katex-html') || d; fit = Math.min(1, 940 / Math.max(1, kx.scrollWidth)); }
+      d.style.transform = `translateY(${(1 - E.out((NOW - tv(t0)) / .4)) * 60}px) scale(${fit * (o.scale ? o.scale() : 1)})`; }); return d; },
   // pill pinned to a 3D point (fn returns a Vector3 each frame)
   label(text, at, t0, t1, o = {}) { const d = el('lbl', typeof text === 'function' ? '' : rich(text), { background: o.bg || TH.brand, color: o.fg || (S.theme === 'esat' ? TH.ink : '#fff'), fontSize: (o.size || 36) + 'px' });
     items.push(() => { const a = win(NOW, tv(t0), tv(t1), .2, .2); d.style.opacity = a; if (!a) return; if (typeof text === 'function') d.innerHTML = text(NOW); const [x, y, z] = proj(typeof at === 'function' ? at() : at);
