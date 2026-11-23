@@ -29,7 +29,8 @@ const SRC={A:'cur',AS:'as',L:'old',T:'tb'};
 const SRCL={cur:'AQA A-level papers (7405, 2017–25)',as:'AQA AS papers (7404, 2016–25)',old:'Legacy AQA unit papers (2010–16)',tb:'Legacy AQA topic booklets',tt:'TrainTanmay exam-style questions'};
 const srcOf=q=>q.wr?'tt':(SRC[B.packs[q.p].set]||'old');
 const pk=q=>q.wr?{title:'Exam-style question'}:B.packs[q.p];
-const qLabel=q=>q.wr?`Exam-style ${q.wr.id} · ${q.wr.style}`:`${pk(q).title} · Q${q.n}`;
+const qLab=q=>q.l||String(q.n);
+const qLabel=q=>q.wr?`Exam-style ${q.wr.id} · ${q.wr.style}`:`${pk(q).title} · Q${qLab(q)}`;
 const pmtQ=q=>pk(q).qp_url+(q.qp?'#page='+q.qp:'');
 const pmtM=q=>pk(q).ms_url+(q.mp?'#page='+q.mp:'');
 const minsFor=m=>Math.max(1,Math.round(m*1.2));
@@ -38,8 +39,8 @@ const minsFor=m=>Math.max(1,Math.round(m*1.2));
    No question is stored on this site: each one is shown straight from PMT's own PDF, opened at its page. */
 const L_=i=>String.fromCharCode(97+i);
 const live=(q,kind)=>{ const p=pk(q); return kind==='m'
-  ? ttCrop.html({url:p.ms_url,q:String(q.n),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url||!q.mx?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
-  : ttCrop.html({url:p.qp_url,q:String(q.n),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
+  ? ttCrop.html({url:p.ms_url,q:qLab(q),page:q.mp,kind:'ms',from:p.ms_url===p.qp_url||!q.mx?q.mp:undefined,card:{title:p.title+' · mark scheme',source:'Physics & Maths Tutor'}})
+  : ttCrop.html({url:p.qp_url,q:qLab(q),page:q.qp,kind:'qp',card:{ms:p.ms_url,msPage:q.mp,title:p.title,source:'Physics & Maths Tutor'}}); };
 const img=(q,kind)=>{ if(q.wr){ const w=q.wr; return kind==='m'?`<div class="ms" style="border:0"><table>${w.parts.map((p,i)=>`<tr><td class="qn">(${L_(i)})</td><td><ul>${p.ms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${p.ans?`<div class="ans">Answer: ${esc(p.ans)}</div>`:''}</td><td class="mk">${p.m}</td></tr>`).join('')}</table></div>`:`<div class="paper wq"><p class="stemtxt">${esc(w.stem)}</p>${w.parts.map((p,i)=>`<p class="qtxt"><span>(${L_(i)}) ${esc(p.q)}</span><span class="mk">[${p.m}]</span></p>`).join('')}</div>`; }
   return live(q,kind); };
 const fill=()=>{};
@@ -50,7 +51,7 @@ const textOf=()=>Promise.resolve('');
 const topicChips=q=>q.t.filter(t=>byId[t]).map((t,i)=>`<a class="chip ${i?'':'brand'}" href="#t-${t}">${t} ${esc(byId[t].title)}</a>`).join('');
 const done=q=>{ const r=S.bank[q.id]; return !!(r&&(r.got!=null||r.ch||r.rev))||!!((S.answers||{})['b:'+q.id]); };
 /* a short, readable preview: drop part labels, figure/table refs, marks, dotted lines and number soup; keep the first real sentence */
-const snip=q=>{ if(!q.wr) return `Question ${q.n} from “${pk(q).title}” (opens live from PMT)`; let s=(q.wr.stem+' '+q.wr.parts[0].q)||''; s=s.replace(/\[\s*\d+\s*(marks?)?\s*\]/gi,' ').replace(/\b(Fig(ure)?|Table)\.?\s*\d+(\.\d+)?/gi,' ').replace(/\((?:[a-h]|i{1,3}|iv|vi{0,3}|ix|x)\)/g,' ').replace(/[.…_]{3,}/g,' ').replace(/^\s*(Q|M)?\d{1,2}\s*/,'').replace(/\s+/g,' ').trim();
+const snip=q=>{ if(!q.wr) return `Question ${qLab(q)} from “${pk(q).title}” (opens live from PMT)`; let s=(q.wr.stem+' '+q.wr.parts[0].q)||''; s=s.replace(/\[\s*\d+\s*(marks?)?\s*\]/gi,' ').replace(/\b(Fig(ure)?|Table)\.?\s*\d+(\.\d+)?/gi,' ').replace(/\((?:[a-h]|i{1,3}|iv|vi{0,3}|ix|x)\)/g,' ').replace(/[.…_]{3,}/g,' ').replace(/^\s*(Q|M)?\d{1,2}\s*/,'').replace(/\s+/g,' ').trim();
   const sents=s.split(/(?<=[.?!])\s+/); const good=sents.find(x=>{ const w=x.split(' '); const words=w.filter(t=>/^[A-Za-z][a-z’'-]{2,}[,.?!:]?$/.test(t)).length; return w.length>=6&&words/w.length>0.6; })||s;
   return good.length>150?good.slice(0,147).replace(/\s+\S*$/,'')+'…':good; };
 const status=q=>{ const r=S.bank[q.id]; if(q.mcq&&r&&r.ch) return `<span class="chip ${r.ch===q.mcq?'good':'bad'}">${r.ch===q.mcq?'✓ correct':'✗ '+r.ch}</span>`; if(!r||r.got==null) return done(q)?'<span class="chip">started</span>':''; const f=r.got/(q.m||1); return `<span class="chip ${f>=0.7?'good':f>=0.4?'warn':'bad'}">${r.got}/${q.m}</span>`; };

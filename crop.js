@@ -101,7 +101,12 @@
   }
 
   /* --- where do questions start? --- */
-  function parseLabel(q) { var m = /^\s*(\d+)\s*(?:\(?\s*([a-z]{1,2})\s*\)?)?/i.exec(String(q)); return m ? { n: +m[1], part: m[2] ? m[2].toLowerCase() : '' } : null; }
+  function parseLabel(q) {
+    var a = /^\s*(\d+)\.(\d{1,2})\s*$/.exec(String(q)); // AQA numbered part: "1.2" is printed 01.2
+    if (a) return { n: +a[1], part: String(+a[2]), num: true };
+    var m = /^\s*(\d+)\s*(?:\(?\s*([a-z]{1,2})\s*\)?)?/i.exec(String(q)); return m ? { n: +m[1], part: m[2] ? m[2].toLowerCase() : '' } : null; }
+  // an AQA part label ("01.2") for question n, as the part number "2"
+  function numPart(it, P, n) { if (it.x > P.w * 0.3) return null; var m = /^(\d{2})\.(\d{1,2})$/.exec(it.s); return m && +m[1] === n ? String(+m[2]) : null; }
   var romans = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/;
   // the item just after this one on the same line, if any
   function nextOnLine(it, P) {
@@ -207,7 +212,7 @@
   }
   function locate2(doc, url, label, hint, kind, from) {
     var L = parseLabel(label); if (!L) return Promise.resolve(null);
-    var total = doc.numPages, wantPart = L.part && L.part !== 'a';
+    var total = doc.numPages, wantPart = L.part && L.part !== (L.num ? '1' : 'a');
     var s = Math.max(from || 1, hint ? hint - (wantPart ? 0 : 1) : 1);
     var start = null, end = null, seenNum = false, gaveUp = false;
     function page(pn) {
@@ -217,12 +222,12 @@
       return pageText(doc, url, pn).then(function (P) {
         for (var k = 0; k < P.items.length && !end; k++) {
           var it = P.items[k]; if (isChrome(it, P)) continue;
-          var n = numAt(it, P, kind), pt = partAt(it, P), top = it.y - it.h - 4;
+          var n = numAt(it, P, kind), pt = L.num ? numPart(it, P, L.n) : partAt(it, P), top = it.y - it.h - 4;
           if (!start) {
             if (n === L.n) seenNum = true;
             if (!wantPart && n === L.n) start = { page: pn, y: top };
             else if (wantPart && pt === L.part && (hint || seenNum)) start = { page: pn, y: top };
-          } else if ((n !== null && n > L.n && n <= L.n + 3) || (L.part && pt && pt > L.part && pt.length === 1) ||
+          } else if ((n !== null && n > L.n && n <= L.n + 3) || (L.part && pt && (L.num ? +pt > +L.part : pt > L.part && pt.length === 1)) ||
                      /^\(?Total for Question/i.test(it.s) || /^(TOTAL FOR|END OF QUESTION PAPER)/i.test(it.s)) {
             if (pn === start.page && top <= start.y + 2) continue;
             end = { page: pn, y: top };
@@ -234,9 +239,11 @@
     return page(s).then(function () {
       if (!start) return null;
       end = end || { page: Math.min(total, start.page), y: -1 };
+      // AQA mark schemes centre the "01.3" label in its table row: start and end half a row higher so whole rows are shown
+      if (kind === 'ms' && L.num) { start = { page: start.page, y: Math.max(36, start.y - 26) }; if (end.y >= 0) end = { page: end.page, y: Math.max(end.page === start.page ? start.y + 20 : 36, end.y - 26) }; }
       if (end.page <= start.page || kind === 'ms') return { start: start, end: end };
       // a part (4(c)) stays on its own page unless it starts low down and has to carry on
-      if (L.part && L.part !== 'a') return pageText(doc, url, start.page).then(function (P0) {
+      if (L.part && L.part !== (L.num ? '1' : 'a')) return pageText(doc, url, start.page).then(function (P0) {
         if (start.y < P0.h - 160) end = { page: start.page, y: -1 };
         return { start: start, end: end };
       });
