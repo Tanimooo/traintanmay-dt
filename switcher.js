@@ -19,7 +19,7 @@
   /* study leagues: counts active revision minutes on this page and shows the weekly leaderboard */
   if (!window.ttLeague) { var lj = document.createElement('script'); lj.src = base + 'league.js?v=20261124a'; lj.async = false; document.head.appendChild(lj); }
   /* Focus: the session clock and floating timer that follow you between apps (focus/ is the full page) */
-  if (!window.ttFocus) { var fb = document.createElement('script'); fb.src = base + 'focusbar.js?v=20261124a'; fb.async = false; document.head.appendChild(fb); }
+  if (!window.ttFocus) { var fb = document.createElement('script'); fb.src = base + 'focusbar.js?v=20261124b'; fb.async = false; document.head.appendChild(fb); }
   /* shared by every app: loading a backup only adds (never removes), and clearing progress asks three times */
   window.ttAddIn = function (cur, inc) { return window.ttSave && ttSave.merge ? ttSave.merge(cur, inc) : Object.assign({}, inc, cur); };
   window.ttSure3 = function (what, fn) {

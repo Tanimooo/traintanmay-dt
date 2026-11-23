@@ -363,7 +363,7 @@ table.sess td.n{text-align:right;font-variant-numeric:tabular-nums}
 .hml{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px}
 
 /* ---------- dialog and toasts ---------- */
-.modal-back{position:fixed;inset:0;z-index:1000;background:rgba(6,20,38,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:grid;place-items:center;padding:14px;animation:fade .2s ease both}
+.modal-back{position:fixed;inset:0;z-index:10050;background:rgba(6,20,38,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:grid;place-items:center;padding:14px;animation:fade .2s ease both}
 @keyframes fade{from{opacity:0}}
 .modal{width:min(520px,100%);max-height:calc(100vh - 28px);overflow:auto;background:var(--card-solid);border:1px solid var(--line);border-radius:24px;box-shadow:0 40px 90px -30px rgba(0,0,0,.55);padding:22px;animation:mIn .35s var(--spring) both;position:relative}
 .modal.wide{width:min(760px,100%)}
@@ -388,3 +388,72 @@ table.sess td.n{text-align:right;font-variant-numeric:tabular-nums}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
 @media print{.top,.sky,.toasts{display:none}}
+
+/* ---------- phones ---------- */
+.tgrid>*,.cgrid>*,.ggrid>*,.pgrid>*,.fgrid>*{min-width:0}
+.agenda{margin-top:14px;padding:14px}
+.agday+.agday{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.agh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.agh b{font:700 16px var(--f-display)}.agh .btn{margin-left:auto}
+.agi{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;cursor:pointer;min-height:48px}
+.agi:hover,.agi:active{background:var(--card2)}
+.agi .bar{width:4px;align-self:stretch;border-radius:4px;background:var(--c,var(--acc));flex:none}
+.agi .when{font:500 12.5px var(--f-mono);color:var(--muted);min-width:78px}
+.agi .tt{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.agi.dl .when{color:var(--bad);font-weight:700}
+.agi.dnx .tt{text-decoration:line-through;color:var(--faint)}
+.mcell.sel{box-shadow:inset 0 0 0 2px var(--acc);background:var(--acc-soft)}
+@media (pointer:coarse){.kbdhint{display:none}}
+@media (max-width:700px){
+  /* the sections live in a bar along the bottom, with names, like an app */
+  body{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  /* a blurred header would trap the fixed tab bar inside it, so phones get a plain one */
+  .top{flex-wrap:nowrap;-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
+  .li{flex-wrap:wrap}.li .meta{width:100%;padding-left:30px}
+  .tabs{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:60;width:auto;margin:0;padding:5px;border-radius:20px;
+    background:color-mix(in srgb,var(--card-solid) 88%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 12px 34px -12px rgba(16,60,110,.45);overflow:visible}
+  .tabs a{flex:1;flex-direction:column;gap:2px;padding:7px 2px 6px;border-radius:14px}
+  .tabs a span{display:block!important;font-size:10.5px;font-weight:600;letter-spacing:.01em}
+  .tabs a svg{width:22px!important;height:22px!important}
+  .tabs a[aria-current=page]{background:var(--acc-soft);box-shadow:none;color:var(--acc)}
+  main{padding:14px 12px}
+  h1{font-size:26px}
+  .vhead{margin-bottom:12px}.vhead p{font-size:14px}
+  .card{padding:14px;border-radius:18px}
+  /* no zoom-in when a box is tapped (iPhone zooms text under 16px) */
+  input[type=text],input[type=number],input[type=date],input[type=time],input[type=search],select,textarea{font-size:16px}
+  /* Focus: length and Start first, the optional details after */
+  .hero{padding:16px 14px 18px}
+  .setup{gap:14px}
+  .setup>*{order:5}.setup>.row:first-child{order:1}.setup>#modeBox{order:2}.setup>.ctl{order:3}.setup>.kbdhint{order:4}
+  .setup>.ctl .btn{width:100%}
+  .ring.setup-ring{width:min(210px,56vw);margin:0 auto 12px}
+  .ring.setup-ring .t{font-size:46px}
+  .ctl .btn.big{padding:12px 16px;min-width:0;flex:1}
+  .ring{width:min(280px,72vw)}
+  /* tasks */
+  .addtask .more>*{flex:1 1 calc(50% - 8px)}
+  .titem{padding:12px 6px}
+  .titem .acts .btn{padding:8px}
+  /* calendar */
+  .cbar{gap:8px}.cbar h1{min-width:0;width:100%;font-size:24px}
+  .cbar .seg{margin-left:0!important}
+  .cbar [data-newev]{margin-left:auto}
+  .mhead div{padding:8px 0;text-align:center;font-size:10.5px}
+  .mcell{min-height:58px;padding:4px 2px;align-items:center}
+  .mcell .dn{margin-bottom:1px}
+  .mcell .pill{pointer-events:none;width:calc(100% - 6px)}
+  .mcell .more{display:none}
+  .mcell .heat{display:none}
+  .legend{display:none}
+  /* goals */
+  .target .big-ring{width:150px;height:150px}.target .big-ring b{font-size:26px}
+  /* pop-ups slide up from the bottom */
+  .modal-back{place-items:end center;padding:0}
+  .modal{width:100%!important;max-height:92vh;border-radius:24px 24px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));animation:sheetUp .32s var(--ease) both}
+  .modal .foot{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom));margin:16px -16px calc(-16px - env(safe-area-inset-bottom));padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--card-solid);border-top:1px solid var(--line)}
+  .modal .foot .btn{flex:1}
+  .modal .foot .left{flex:0 0 auto}
+  .modal textarea.bigtext{min-height:40vh}
+  .toasts{top:auto;bottom:calc(96px + env(safe-area-inset-bottom))}
+}
+@keyframes sheetUp{from{transform:translateY(100%)}}

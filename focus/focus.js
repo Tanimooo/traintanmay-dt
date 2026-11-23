@@ -171,7 +171,7 @@
     var r = F.run(), p = prefs();
     var h = '<div class="fgrid"><div class="card hero" id="hero">';
     h += '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc8ff"/><stop offset="1" stop-color="#2186d8"/></linearGradient></defs></svg>';
-    h += '<div class="ring" id="ring"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="trk" cx="100" cy="100" r="88"/><circle class="arc" id="arc" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/></svg><span class="orb" id="orb"></span>' +
+    h += '<div class="ring' + (r ? '' : ' setup-ring') + '" id="ring"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="trk" cx="100" cy="100" r="88"/><circle class="arc" id="arc" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/></svg><span class="orb" id="orb"></span>' +
       '<div class="in"><span class="ph" id="ph">Ready</span><span class="t" id="tt" role="timer">' + (p.mode === 'pomo' ? p.pomo.w : p.min) + ':00</span><span class="s" id="ts"></span></div></div>';
     if (!r) {
       h += '<div class="setup">' +
@@ -183,7 +183,7 @@
         '<div class="setup-extra"><label class="lbl" for="fTodo">Link a task <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(optional)</span></label><select id="fTodo"><option value="">No task</option>' +
         F.topTodos(40).filter(function (t) { return !t.done; }).map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.text) + (t.due ? ' · ' + rel(t.due) : '') + '</option>'; }).join('') + '</select></div>' +
         '<div class="ctl"><button type="button" class="btn pr big" id="btnStart">' + IC.play + 'Start focusing</button></div>' +
-        '<p class="muted small" style="text-align:center;margin:0">A floating timer follows you round every TrainTanmay app. Space starts and pauses.</p>' +
+        '<p class="muted small kbdhint" style="text-align:center;margin:0">A floating timer follows you round every TrainTanmay app. Space starts and pauses.</p>' +
         '</div>';
     } else {
       h += '<div class="dots" id="dots"></div>' +
@@ -546,23 +546,51 @@
     var h = '<div class="cbar"><h1>' + esc(title) + '</h1><div class="row"><button type="button" class="iconbtn" data-nav="-1" aria-label="Previous">' + IC.left + '</button><button type="button" class="btn" data-nav="0">Today</button><button type="button" class="iconbtn" data-nav="1" aria-label="Next">' + IC.right + '</button></div>' +
       '<div class="seg" role="group" aria-label="Calendar view" style="margin-left:auto"><button type="button" data-cv="month" aria-pressed="' + (view === 'month') + '">Month</button><button type="button" data-cv="week" aria-pressed="' + (view === 'week') + '">Week</button></div>' +
       '<button type="button" class="btn pr" data-newev>' + IC.plus + 'New</button></div><div class="cgrid"><div>';
-    h += view === 'month' ? monthHTML() : weekHTML();
+    var nar = narrow();
+    if (view === 'month') { h += monthHTML(); if (nar) h += '<div class="card agenda">' + agendaDay(selDay) + '</div>'; }
+    else h += nar ? '<div class="card agenda">' + [0, 1, 2, 3, 4, 5, 6].map(function (i) { return agendaDay(addDays(monday(cAnchor), i)); }).join('') + '</div>' : weekHTML();
     h += '<div class="legend"><span><span class="pill" style="display:inline-flex;cursor:default">Event</span></span><span><span class="pill task" style="display:inline-flex;cursor:default">Task due</span></span><span><span class="pill dl" style="display:inline-flex;cursor:default">' + IC.flag.replace(/width="18" height="18"/, '') + 'Deadline</span></span>' + (view === 'week' ? '<span><span class="blk log" style="position:static;display:inline-block;width:40px;height:16px"></span>Focus you did</span>' : '<span>Drag to move · click a day to add</span>') + '</div></div>';
     h += '<aside class="card upc"><div class="ch"><h3>Upcoming deadlines</h3></div>' + upcomingHTML() + '</aside></div>';
     v.innerHTML = h;
-    $$('[data-nav]', v).forEach(function (b) { b.onclick = function () { var n = +b.getAttribute('data-nav'); if (!n) cAnchor = today(); else if (view === 'month') { var d = parseISO(cAnchor); d.setDate(1); d.setMonth(d.getMonth() + n); cAnchor = iso(d); } else cAnchor = addDays(cAnchor, 7 * n); render(); }; });
+    $$('[data-nav]', v).forEach(function (b) { b.onclick = function () { var n = +b.getAttribute('data-nav'); if (!n) { cAnchor = today(); selDay = today(); } else if (view === 'month') { var d = parseISO(cAnchor); d.setDate(1); d.setMonth(d.getMonth() + n); cAnchor = iso(d); } else cAnchor = addDays(cAnchor, 7 * n); render(); }; });
     $$('[data-cv]', v).forEach(function (b) { b.onclick = function () { setPref('calView', b.getAttribute('data-cv')); render(); }; });
     $('[data-newev]', v).onclick = function () { evDlg(null, { date: view === 'month' && cAnchor.slice(0, 7) !== today().slice(0, 7) ? cAnchor : today() }); };
     $$('.upc [data-open]', v).forEach(function (x) { x.onclick = function () { evDlg(x.getAttribute('data-open')); }; });
-    if (view === 'month') wireMonth(v); else wireWeek(v);
+    if (nar) wireAgenda(v);
+    if (view === 'month') wireMonth(v); else if (!nar) wireWeek(v);
   };
+  /* phones: a readable list of what's on a day, instead of tiny boxes */
+  var selDay = today();
+  function narrow() { return matchMedia('(max-width: 700px)').matches; }
+  function agendaDay(d) {
+    var its = itemsOn(d), t = today();
+    return '<div class="agday"><div class="agh"><b>' + esc(d === t ? 'Today' : d === addDays(t, 1) ? 'Tomorrow' : niceDate(d, true)) + '</b>' + (d === t || d === addDays(t, 1) ? '<span class="small muted">' + esc(niceDate(d)) + '</span>' : '') +
+      '<button type="button" class="btn sm" data-addday="' + d + '">' + IC.plus + 'Add</button></div>' +
+      (its.length ? its.map(function (it) {
+        var e = it.e, todo = it.src === 'todo';
+        var when = e.start ? e.start + (e.end ? '–' + e.end : '') : e.kind === 'deadline' ? 'Deadline' : todo ? 'Task due' : 'All day';
+        return '<div class="agi' + (e.kind === 'deadline' ? ' dl' : '') + (e.done ? ' dnx' : '') + '" data-src="' + it.src + '" data-id="' + esc(e.id) + '" role="button" tabindex="0" style="--c:' + evCol(e) + '">' +
+          (todo ? '<input type="checkbox" class="check pop" data-agdone aria-label="Done"' + (e.done ? ' checked' : '') + '>' : '<span class="bar"></span>') +
+          '<span class="when">' + esc(when) + '</span><span class="tt">' + esc(e.title) + '</span></div>';
+      }).join('') : '<p class="small muted" style="margin:4px 2px 2px">Nothing planned.</p>') + '</div>';
+  }
+  function wireAgenda(v) {
+    $$('[data-addday]', v).forEach(function (b) { b.onclick = function () { evDlg(null, { date: b.getAttribute('data-addday') }); }; });
+    $$('.agi', v).forEach(function (r) {
+      r.onclick = function (e) { if (e.target.closest('[data-agdone]')) return; openItem(r.getAttribute('data-src'), r.getAttribute('data-id')); };
+      r.onkeydown = function (e) { if (e.key === 'Enter') openItem(r.getAttribute('data-src'), r.getAttribute('data-id')); };
+      var c = r.querySelector('[data-agdone]'); if (c) c.onchange = function () { F.setTodo(r.getAttribute('data-id'), { done: c.checked }); setTimeout(render, 300); };
+    });
+  }
+  var wasNarrow = narrow();
+  window.addEventListener('resize', function () { var n = narrow(); if (n !== wasNarrow) { wasNarrow = n; if (cur === 'calendar') render(); } });
   function monthHTML() {
     var a = parseISO(cAnchor), first = iso(new Date(a.getFullYear(), a.getMonth(), 1)), start = monday(first), t = today(), pd = perDay();
     var h = '<div class="card month"><div class="mhead">' + DOW.map(function (d) { return '<div>' + d + '</div>'; }).join('') + '</div><div class="mbody">';
     for (var i = 0; i < 42; i++) {
       var d = addDays(start, i), dd = parseISO(d), out = dd.getMonth() !== a.getMonth(), its = itemsOn(d), focus = pd[d] || 0;
       if (i === 35 && out) break;
-      h += '<div class="mcell' + (out ? ' out' : '') + (d === t ? ' today' : '') + '" data-date="' + d + '" role="button" tabindex="0" aria-label="' + esc(niceDate(d, true)) + (its.length ? ', ' + its.length + ' item' + (its.length > 1 ? 's' : '') : '') + '">' +
+      h += '<div class="mcell' + (out ? ' out' : '') + (d === t ? ' today' : '') + (narrow() && d === selDay ? ' sel' : '') + '" data-date="' + d + '" role="button" tabindex="0" aria-label="' + esc(niceDate(d, true)) + (its.length ? ', ' + its.length + ' item' + (its.length > 1 ? 's' : '') : '') + '">' +
         '<span class="dn">' + dd.getDate() + '</span>' + (focus >= 60 ? '<span class="heat" style="width:' + Math.min(40, 6 + focus / 360).toFixed(0) + 'px" title="' + mins(focus) + ' focused"></span>' : '') +
         its.slice(0, 3).map(pill).join('') + (its.length > 3 ? '<span class="more">+' + (its.length - 3) + ' more</span>' : '') + '</div>';
     }
@@ -602,6 +630,10 @@
   }
   function openItem(src, id) { if (src === 'todo') taskDlg(id); else evDlg(id); }
   function wireMonth(v) {
+    if (narrow()) { // phones: tap a day to see it below
+      $$('.mcell', v).forEach(function (c) { c.onclick = function () { selDay = c.getAttribute('data-date'); render(); var a = $('.agenda'); if (a) a.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }; });
+      return;
+    }
     pillDrag(v, moveItem, openItem);
     $$('.mcell', v).forEach(function (c) {
       var open = function (e) { if (e && e.target.closest('.pill')) return; var d = c.getAttribute('data-date'), its = itemsOn(d); if (its.length > 3 && e && e.target.closest('.more')) dayDlg(d); else evDlg(null, { date: d }); };
