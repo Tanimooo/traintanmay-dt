@@ -1,0 +1,25 @@
+{
+  "id": "chem-ocr2023-p1-q7",
+  "tag": "OCR A · June 2023 · P1 Q7",
+  "series": "A-level Chemistry",
+  "q": "$\\text{X(aq)} \\rightarrow \\text{products}$ is first order in X. Starting at $[\\text{X}] = 1.0\\ \\text{mol dm}^{-3}$, the half-life is $16$ minutes. What is the half-life if you start at $2.0\\ \\text{mol dm}^{-3}$?",
+  "qShort": "First order · $t_{1/2} = 16$ min at $1.0$ · half-life at $2.0$?",
+  "compact": 2,
+  "options": ["2 min", "4 min", "8 min", "16 min"],
+  "answer": "D",
+  "site": {"kind": "paper", "page": "chemistry/index.html#papers", "title": "H432/01 · June 2023 question paper",
+           "url": "https://pmt.physicsandmathstutor.com/download/Chemistry/A-level/Past-Papers/OCR-A/Paper-1/QP/June%202023%20QP.pdf", "pdfPage": 4, "drift": 110},
+  "lines": [
+    {"say": "A first-order reaction has a half-life of sixteen minutes when it starts at one mole per decimetre cubed. {dbl}Double the starting concentration. What's the half-life now?", "gap": 0.35},
+    {"say": "This is a real OCR A-level question. Pause and have a go!", "gap": 3.2, "ev": [{"at": "end", "do": "timer", "dur": 3.0}]},
+    {"say": "Okay! {c1}Here's the reaction starting at one. {h1}It halves every sixteen minutes."},
+    {"say": "Now start at two. {c2}After sixteen minutes, it's down to one. {shift}And from there, it's exactly the same curve as before!"},
+    {"say": "{h}So it still halves every sixteen minutes. For a first-order reaction, the half-life doesn't depend on concentration. {ans}It's D, sixteen minutes.",
+     "ev": [{"at": "h", "do": "work", "tex": "t_{1/2} = \\frac{\\ln 2}{k}\\quad\\text{(no [X] in it!)}"}, {"at": "ans", "do": "work", "tex": "t_{1/2} = 16\\ \\text{min}", "box": true},
+            {"at": "ans", "do": "chip", "opt": "D", "state": "right"}]},
+    {"say": "If you said eight, {rate}you spotted that the rate doubles. {amt}But twice as much has to react, so the time stays the same.",
+     "ev": [{"at": "rate", "do": "chip", "opt": "C", "state": "wrong"}, {"at": "rate", "do": "work", "tex": "\\text{rate} = k[\\text{X}]\\ \\Rightarrow\\ \\text{rate} \\times 2", "trap": true},
+            {"at": "amt", "do": "work", "tex": "\\text{but amount to lose} \\times 2\\ \\Rightarrow\\ \\text{same time}", "trap": true}]},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.6, "ev": [{"at": "o", "do": "outro"}]}
+  ]
+}

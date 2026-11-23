@@ -1,0 +1,27 @@
+{
+  "id": "dt-edexcel2019-q5e",
+  "tag": "Edexcel 9DT0 · 2019 · Q5(e)",
+  "series": "A-level D&T",
+  "q": "Board costs $£36.88$ per pack of $50$ A2 sheets ($420 \\times 594\\ \\text{mm}$). You need $310\\ \\text{m}^2$ of board, and can only buy whole packs. What is the total cost?",
+  "qShort": "$£36.88$ per pack of $50$ A2 · need $310\\ \\text{m}^2$ · total cost?",
+  "compact": 2,
+  "site": {"kind": "paper", "page": "dt.html#papers", "title": "2019 Paper 1 question paper",
+           "url": "https://designandtechbase.com/documents/pastpapers/Edexcel_A_Level/Edexcel_2019Q.pdf", "pdfPage": 17, "drift": 0},
+  "lines": [
+    {"say": "Packaging board comes in packs of fifty A2 sheets, at thirty-six pounds eighty-eight a pack. {need}You need three hundred and ten square metres. What does the order cost?", "gap": 0.35},
+    {"say": "This is a real Edexcel A-level D and T question. Pause and have a go!", "gap": 3.2, "ev": [{"at": "end", "do": "timer", "dur": 3.0}]},
+    {"say": "Okay! One A2 sheet is {sheet}four twenty by five nine four millimetres. {m}In metres, that's nought point four two by nought point five nine four, {a}which is just under a quarter of a square metre.",
+     "ev": [{"at": "a", "do": "work", "tex": "0.42 \\times 0.594 = 0.24948\\ \\text{m}^2"}]},
+    {"say": "{pack}Fifty sheets per pack, so one pack covers twelve point four seven four square metres.",
+     "ev": [{"at": "pack", "do": "work", "tex": "50 \\times 0.24948 = 12.474\\ \\text{m}^2 \\text{ per pack}"}]},
+    {"say": "{n}Three hundred and ten, divided by that, is twenty-four point eight five packs.",
+     "ev": [{"at": "n", "do": "work", "tex": "310 \\div 12.474 = 24.85\\ \\text{packs}"}]},
+    {"say": "But you can only buy whole packs! {up}So round up to twenty-five.",
+     "ev": [{"at": "up", "do": "work", "tex": "\\Rightarrow 25\\ \\text{packs (round up)}"}]},
+    {"say": "Twenty-five times thirty-six eighty-eight {ans}is nine hundred and twenty-two pounds!",
+     "ev": [{"at": "ans", "do": "work", "tex": "25 \\times £36.88 = £922.00", "box": true}]},
+    {"say": "If you got nine sixteen fifty-three, {trap}you paid for nought point eight five of a pack. Shops don't sell that!",
+     "ev": [{"at": "trap", "do": "work", "tex": "\\text{Trap: } 24.85 \\times £36.88 = £916.53", "trap": true}]},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.6, "ev": [{"at": "o", "do": "outro"}]}
+  ]
+}

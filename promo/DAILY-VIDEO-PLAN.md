@@ -1,98 +1,55 @@
 # TrainTanmay: 5 videos a day, real exam questions solved step by step
 
-**Decision (22 Nov 2026):** no edits. No beat-cut montages, motion-graphic ads, loops or trend
-edits. Every video is **one real past-paper question, solved step by step**, and it ends on the
-same question inside TrainTanmay.
+**Format (updated 23 Nov 2026):** one real past-paper question per video, solved step by step with
+**our own animated drawings** (circuits that draw themselves, balls that fall, graphs that plot, packs that stack),
+friendly narration, and the website at the end. No montage-style "edits".
 
----
+## Rules for every video
+- **Length:** aim for under 60 s. Up to ~90 s is fine when the question needs it; never more than 3 min.
+- **Hook in the first second:** the question on screen and something already drawing itself.
+- **Narrator:** warm and friendly ("Okay!", "Pause and have a go!", "Classic trap!"). Says *TrainTanmay* **once only**,
+  in the last line: *"Try this question and more at TrainTanmay. Link in bio!"* while the website shows that question.
+- **Structure:** question + options → 3 s "Pause & try it" → step-by-step solve on the drawing, working
+  typed line by line → answer in green → the trap answer crossed out in red, with *why* people pick it → website outro.
+- **Before anything is final, check:** the answer matches the official answer key or mark scheme; every number is
+  re-computed by script; the drawing is physically/mathematically right (e.g. the light-gate ball really does block the
+  beam from 0.10 to 0.14 s, current dots move in a 3 : 2 : 1 ratio); the explanation is correct, not just the answer;
+  then frame-by-frame review of the render.
 
-## 1. The format (one template for all 5 daily videos)
-
-| Time | What's on screen | Voice |
-|---|---|---|
-| 0:00 | The **real question**, cropped from the official paper, with the source on a tag: *"ENGAA 2019 · Q16"* | "This is one of the hardest questions on the 2019 ENGAA. Pause and try it." |
-| 0:03 | The same question plus a thin 3 s timer bar | (silence) |
-| 0:06 | **Working appears line by line**, whiteboard style, in the site's fonts and maths typesetting. The current line is highlighted; nothing else moves | Explains each line: *why* you'd do this step, not only *what* it is |
-| ~mid | **The trap:** the wrong option most people pick is crossed out | "Most people pick B because they forget the sign flip…" |
-| (optional, 5–10 s) | The site's matching **lab or visualiser** confirming the result (circuit sandbox reading, graph plot, molecule shape), used only when it actually adds something | "And you can see it here: …" |
-| end | **Answer** boxed in green, then 3 s of TrainTanmay: the same ESAT question with its worked solution open, or for A-level the paper + mark scheme links on that topic | ESAT: "Every ESAT question since 2016, with worked solutions, free on TrainTanmay." A-level: "Every past paper and mark scheme, sorted by topic, free on TrainTanmay." |
-
-- **Length:** 45–90 s. A long multi-part A-level question is split into Part 1 / Part 2 (series hook).
-- **Audio:** voice only (Kokoro TTS, calm pace, ~150 wpm). No music, sound effects or transitions.
-- **Captions:** big word-by-word captions in the safe zone. Working sits in the middle third.
-- **Accuracy:** every answer is checked against the official answer key or mark scheme, and the arithmetic
-  is checked numerically by script before rendering. Wrong maths in a "solved" video would kill trust.
-- **Sourcing:** show only the one question, always with the paper and question number cited. Never the
-  whole paper. (Same approach the site uses: it shows ESAT questions live from the official
-  paper rather than re-hosting them.)
-
-## 2. The 5 daily slots
-
-| Slot (UK) | Series | Source |
-|---|---|---|
-| 07:30 | **ESAT Maths in 60 s** | TMUA / ENGAA / NSAA maths: 424 real questions in the site's bank, all with worked solutions + traps |
-| 12:30 | **A-level Physics: hardest question** | OCR A H556 past papers (the site's Physics app) |
-| 16:30 | **A-level Maths / Further Maths** | Edexcel past papers (the site's Maths app) |
-| 18:30 | **A-level Chemistry** | OCR A H432 past papers (the site's Chemistry app) |
-| 20:30 | **ESAT Physics in 60 s** | ENGAA / NSAA physics: 149 real questions in the bank |
-
-Mock season is now (Nov–Jan), so A-level gets 3 of the 5 daily slots. Questions are picked
-for: high difficulty, a clear trap, a solution that fits in 90 s, and a topic that has a lab on the site.
-
-**Platforms:** TikTok + YouTube Shorts get all 5. Instagram gets the best 1–2 a day.
-YouTube title pattern: *"ENGAA 2019 Q16: the circuits question everyone gets wrong"*.
-
-## 3. Week 1: ESAT picks (real questions, all difficulty 4–5 in the bank)
-
-| Day | 07:30 ESAT Maths | 20:30 ESAT Physics |
-|---|---|---|
-| 1 | TMUA 2020 Q20: quadratic roots & discriminant | ENGAA 2019 Q16: series-parallel resistors (+ *Circuit sandbox*) |
-| 2 | ENGAA 2020 Q29: perpendicular lines & triangle area | ENGAA 2022 Q16: EM induction voltage (+ *EM induction* lab) |
-| 3 | TMUA 2019 Q11: simultaneous log equations | ENGAA 2018 Q22: terminal velocity & drag (+ *Terminal velocity* lab) |
-| 4 | TMUA 2016 Q15: minimising the gradient of a curve | ENGAA 2020 Q18: spring energy & conservation (+ *Springs* lab) |
-| 5 | ENGAA 2022 Q39: exponential equation by substitution | NSAA 2021 Q39: hydrostatic pressure in layers |
-| 6 | TMUA 2019 Q18: shortest distance, curve to line (+ graph plot) | ENGAA 2022 Q20: ideal gas pressure & density (+ *Ideal gas* lab) |
-| 7 | TMUA 2023 Q05: rectangle in a square, area optimisation | NSAA 2023 Q37: motor effect on a current loop (hardest in the bank) |
-
-## 4. Week 1: A-level topics (the exact question per slot is picked from the linked papers when scripting)
-
-| Day | 12:30 Physics (OCR A) | 16:30 Maths / FM (Edexcel) | 18:30 Chemistry (OCR A) |
+## The 5 daily slots, one per subject (UK times)
+| Slot | Subject | Source papers (linked in the site) | Outro shows |
 |---|---|---|---|
-| 1 | Capacitor discharge: time constant / half-life | Integration by parts (the loop trick) | Kp from equilibrium moles |
-| 2 | Circular motion: vertical circle / banked track | Parametric curves: area or tangent | Buffer pH calculation |
-| 3 | Gravitational fields: orbit / escape speed | Vectors: shortest distance | Born–Haber cycle |
-| 4 | SHM: energy & max speed | Mechanics: ladder against a wall (moments + friction) | Rate equation from initial-rates data |
-| 5 | Photoelectric effect: work function from a graph | Hypothesis test (binomial), wording for full marks | NMR / IR structure deduction |
-| 6 | Stationary waves: harmonics in a pipe | Proof by contradiction / induction | Electrode potentials & cell EMF |
-| 7 | Internal resistance from a graph | Projectiles with a vector or calculus twist | Organic synthesis route (multi-step) |
+| 07:30 | **ESAT** (maths & physics alternate) | ENGAA / NSAA / TMUA, official UAT-UK papers | the question in the ESAT app → tap the answer → worked solution |
+| 12:30 | **A-level Physics** | OCR A H556 | Physics › Past papers → paper opens in TrainTanmay at the question |
+| 16:30 | **A-level Maths** | Edexcel 9MA0 (+ Further Maths) | Maths › Pure › Papers & tests → paper opens at the question |
+| 18:30 | **A-level Chemistry** | OCR A H432 | Chemistry › Past papers → paper opens at the question |
+| 20:30 | **A-level D&T** | Edexcel 9DT0 Product Design | D&T › Past papers → paper opens at the question |
 
-## 5. Production pipeline (per video)
+TikTok + YouTube Shorts get all 5; Instagram gets the best 1–2 a day.
 
-1. **Pick** the question; pull the answer key/mark scheme and the site's worked solution (ESAT bank
-   `esat/data/exp_*.json` already has a step-by-step solution and the trap for every question).
-2. **Script** (`promo/daily/<date>/<slot>.json`): hook, one line of narration per working step, the trap,
-   an optional lab moment, and the outro. Check the numbers with a quick script.
-3. **Render:** an HTML template draws the cropped question + KaTeX working line by line and is
-   stepped frame by frame → ffmpeg (1080×1920, 30 fps; no fancy motion, so 30 is plenty).
-4. **Lab moment / outro:** Playwright recording of the live site (phone size), with the question open in the app.
-5. **Voice + captions:** Kokoro TTS, word timings → captions; mix to −14 LUFS.
-6. **Deliver:** MP4 + cover frame + `post.md` (YT title, caption, 3–5 hashtags, pinned comment
-   "What did you get? 👇") → committed and dropped into a dated Google Drive folder for Buffer.
+**Picking questions:** a clear trap answer, something that *moves* well (a graph, a mechanism, a circuit, a process),
+and a solve that fits in about a minute. Mock season (Nov–Jan): favour the topics that come up most.
 
-**Build order:** one template, then a **pilot of 2** (one ESAT, one A-level) for review before the daily
-5 start. That way style problems are fixed once, not 35 times.
+## Day 1 (made)
+| Subject | Question | Answer | Animation |
+|---|---|---|---|
+| ESAT | ENGAA 2019 Q16: five identical resistors | E, 8.0 V | circuit draws itself, current dots split 2 : 1, voltages pop on |
+| Physics | OCR A June 2024 P1 Q4: g from a light gate | C, 10.4 m s⁻² | ball falls through the beam (real kinematics), gate trace, then v–t graph showing why the mid-time matters |
+| Chemistry | OCR A June 2023 P1 Q7: first-order half-life | D, 16 min | decay curves from 1.0 and 2.0; the old curve slides 16 min and lands exactly on the new one |
+| Maths | Edexcel June 2023 P1 Q9: geometric series | k = 20, S∞ = 256/7 | k = ⅔ bars blow up, k = 20 bars alternate, partial sums zig-zag onto 256/7 |
+| D&T | Edexcel 9DT0 2019 Q5(e): packaging cost | £922.00 | A2 sheet, 50 sheets stack into a pack, 24.85 packs → buy 25 |
 
-## 6. Access needed
+## Next days (candidates already checked for a good trap)
+- **ESAT:** TMUA 2020 Q20 (discriminant), ENGAA 2022 Q16 (EM induction), TMUA 2019 Q18 (shortest distance), NSAA 2021 Q39 (pressure layers)
+- **Physics (OCR A 2024 P1):** Q6 beam on two supports (moments), Q7 braking v–t graph, Q11 car over a bridge (apparent weightlessness)
+- **Chemistry (OCR A 2023 P1):** Q4 mixing HCl + NaOH (excess), Q10 % dissociation of a weak acid, Q9 entropy change sign
+- **Maths (Edexcel 2023 P1):** Q8 the stage (sector + triangles), Q10 circle + line (range of k), Q5 trapezium rule
+- **D&T (Edexcel 2019):** Q2(b) roof-truss rafter length (Pythagoras), Q4(c) varnish for 2400 seat pieces
 
-TrainTanmay already links every past paper + mark scheme (A-level → Physics & Maths Tutor) and has a
-worked solution for every ESAT question, so all source material comes *through the site*. The video
-shows viewers exactly where to find it.
+## How a video is made
+`promo/source/solve/`: `videos/<id>.json` (question, options, narration with `{markers}`, working lines, outro)
++ `scenes/<id>.js` (the animated drawing) → `python3 make.py videos/<id>.json <workdir>` → `promo/daily/<id>.mp4`.
+See `promo/source/solve/README.md`.
 
-
-- **ESAT/TMUA papers** (esat-tmua.ac.uk downloads): ✅ reachable from the session.
-- **A-level papers + mark schemes:** ✅ reachable via the site's own Physics & Maths Tutor links
-  (cloud environment `traintanmay-dt` allows pmt./www.physicsandmathstutor.com).
-
-## 7. Review after 14 days
-3-second hold, average % watched, comments ("I got C 😭"), saves, link clicks per series.
-Give more slots to the series that wins; re-test hooks on the weakest.
+## Review after 14 days
+3-second hold, average % watched, comments, saves, link clicks, per subject. Re-hook the weakest subject's videos.

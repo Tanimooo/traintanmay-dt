@@ -1,0 +1,30 @@
+{
+  "id": "esat-engaa2019-q16",
+  "tag": "ENGAA 2019 · Q16",
+  "series": "ESAT Physics",
+  "q": "All five resistors are identical. The voltmeter reads $1.0\\ \\text{V}$. What is the voltage across the battery?",
+  "qShort": "Voltmeter reads $1.0\\ \\text{V}$ · battery voltage?",
+  "compact": 2,
+  "options": ["4.0 V", "5.0 V", "6.0 V", "7.0 V", "8.0 V", "9.0 V", "10 V"],
+  "answer": "E",
+  "cover": 40,
+  "site": {"kind": "esat", "qid": "ENGAA_2019_S1_Q16", "title": "ENGAA 2019 Q16"},
+  "lines": [
+    {"say": "Five identical resistors, and the voltmeter reads one volt. What's the voltage across the battery?", "gap": 0.35},
+    {"say": "This is a real engineering admissions test question. Pause and have a go!", "gap": 3.2, "ev": [{"at": "end", "do": "timer", "dur": 3.0}]},
+    {"say": "Okay! {vm}The voltmeter is across just this one resistor, so it has one volt."},
+    {"say": "Its twin is identical, {bl}so that's one volt too, {br}and two volts across the whole bottom branch.",
+     "ev": [{"at": "br", "do": "work", "tex": "V_{\\text{bottom}} = 1.0 + 1.0 = 2.0\\ \\text{V}"}]},
+    {"say": "The top resistor is in parallel, {top}so it gets two volts as well.",
+     "ev": [{"at": "top", "do": "work", "tex": "V_{\\text{top}} = 2.0\\ \\text{V}\\quad\\text{(parallel)}"}]},
+    {"say": "Now the current. {cur}On top, two volts across R gives two over R. {cur2}Along the bottom, it's one over R. {cur3}So three over R flows through each outside resistor.",
+     "ev": [{"at": "cur3", "do": "work", "tex": "I = \\frac{2}{R} + \\frac{1}{R} = \\frac{3}{R}"}]},
+    {"say": "Three over R, times R, {out}is three volts each.",
+     "ev": [{"at": "out", "do": "work", "tex": "V_{\\text{outer}} = \\frac{3}{R} \\times R = 3.0\\ \\text{V}"}]},
+    {"say": "Add it all up: {sum}three, plus two, plus three. {ans}Eight volts! It's E.",
+     "ev": [{"at": "sum", "do": "work", "tex": "V = 3.0 + 2.0 + 3.0 = 8.0\\ \\text{V}", "box": true}, {"at": "ans", "do": "chip", "opt": "E", "state": "right"}]},
+    {"say": "If you said four, {trap}you used one volt for the whole parallel bit. Classic trap!",
+     "ev": [{"at": "trap", "do": "chip", "opt": "A", "state": "wrong"}, {"at": "trap", "do": "work", "tex": "\\text{Trap: } V_{\\text{parallel}} = 1.0\\ \\text{V} \\Rightarrow 4.0\\ \\text{V}", "trap": true}]},
+    {"say": "{o}Try this question and more at TrainTanmay. Link in bio!", "gap": 1.6, "ev": [{"at": "o", "do": "outro"}]}
+  ]
+}
