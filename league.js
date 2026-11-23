@@ -3,7 +3,7 @@
    Leagues have no size limit; you can be in up to 5 of them.
    Every app page counts your active revision minutes while the tab is on screen. Time with no clicks, typing,
    scrolling or taps is held back after a short while (SOFT); if it goes on (ASK), a "Still revising?" card asks,
-   with 30 seconds to answer. Answer (or touch anything) and the held time counts; otherwise it is dropped and the
+   with 30 seconds to answer. Answer (or touch anything) and the held time counts; otherwise half of it counts and the
    clock waits for you to come back. This covers embedded papers too, whose own clicks the page cannot see.
    A running Focus session (focusbar.js) counts its focus time instead, and page activity is not counted twice.
    The exact limits are not shown to users. Minutes reset every Monday at 00:00 UK time. Each device keeps its own
@@ -62,7 +62,7 @@
     if (ask) hideAsk();
   }
   function hideAsk() { if (!ask) return; clearTimeout(ask.t); clearInterval(ask.i); var el = ask.el; ask = null; el.classList.add('out'); setTimeout(function () { el.remove(); }, 220); }
-  function giveUp() { pending = 0; away = true; hideAsk(); }
+  function giveUp() { if (pending) addSeconds(Math.floor(pending / 2)); pending = 0; away = true; hideAsk(); } // no answer: half the held time counts
   function showAsk() {
     if (ask || !document.body) return;
     if (!document.getElementById('ttlg-ask-css')) {
