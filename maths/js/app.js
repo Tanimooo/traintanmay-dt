@@ -375,8 +375,7 @@ function notesHTML(cid, tid){
   const L = noteFor(cid, tid); if (!L) return '';
   const body = Array.isArray(L) ? `<ul>${L.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : mdNotes(L);
   const vids = (VID.by[cid] || []).filter(v => v.t === tid).slice(0, 4);
-  return `<section class="notes card" id="snotes"><div class="sec-head"><h2>Topic notes</h2><span class="chip">AI generated</span></div>
-  <p class="note" style="margin:6px 0 12px">These notes were written by AI and may contain mistakes. If something looks wrong, <a href="https://forms.gle/4aoQFUo7EExBa8et5" target="_blank" rel="noopener">report it</a>. If you're still unsure, check your textbook.</p>
+  return `<section class="notes card" id="snotes"><div class="sec-head"><h2>Topic notes</h2></div>
   <details open><summary>Notes (click to hide)</summary><div class="nbody">${body}</div></details>
   <p class="muted" style="font-size:.85rem;margin-top:10px">Need more help? ${vids.length ? `<a href="#" data-jump="sw">${vids.length} video${vids.length > 1 ? 's' : ''} for this topic</a> are further down the page.` : `See the <a href="#videos">videos page</a>.`}</p></section>`;
 }
