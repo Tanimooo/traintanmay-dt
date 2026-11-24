@@ -10,10 +10,11 @@
     { id: 'physics', name: 'Physics', col: '#c81e66', keys: [/^tt-phys-/, /^tt-mockcfg$/] },
     { id: 'chemistry', name: 'Chemistry', col: '#c2410c', keys: [/^tt-chem-/] },
     { id: 'maths', name: 'Maths', col: '#1a7f45', keys: [/^tt-maths-/, /^sketchguessr-/] },
-    { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] }
+    { id: 'esat', name: 'ESAT', col: '#d9a300', keys: [/^esat\./] },
+    { id: 'focus', name: 'Focus', col: '#2186d8', keys: [/^tt-focus-/] }
   ];
   var INCLUDE = /^(tt-|esat\.|sketchguessr-)/;
-  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|tt-exam-active$|esat\..*\.probe$)/; // tt-exam-active: a running exam's clock belongs to its own device
+  var EXCLUDE = /^(tt-keep:|tt-probe|tt-restore-undo|tt-cloud|tt-league|tt-lastbackup$|tt-exam-active$|tt-focus-(run|pos|beat|bgimg)$|esat\..*\.probe$)/; // tt-exam-active, tt-focus-run: a running clock belongs to its own device
   var LAST = 'tt-lastbackup', UNDO = 'tt-restore-undo';
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/save\.js[^/]*$/, '');
 
@@ -40,6 +41,12 @@
       if (e.active) bits.push('1 unfinished test');
       var mm = x.mm || {}; if (n(mm.pairs) + n(mm.sq) + n(mm.tri) + n(mm.flash) + (mm.sessions || []).length + n((x.hub || {}).learned)) bits.push('mental maths');
       return bits.length ? bits.join(' · ') : 'progress saved';
+    }
+    if (id === 'focus') {
+      var fb = [], td = j('tt-focus-todos') || {}, lg = j('tt-focus-log') || {}, cl = j('tt-focus-cal') || {}, sn = 0, tk = n(td.items);
+      Object.keys(lg).forEach(function (k) { if (lg[k] && lg[k].kind === 'session') sn++; });
+      if (tk) fb.push(tk + ' task' + (tk === 1 ? '' : 's')); if (n(cl.events)) fb.push(n(cl.events) + ' on the calendar'); if (sn) fb.push(sn + ' focus session' + (sn === 1 ? '' : 's'));
+      return fb.length ? fb.join(' · ') : 'plans saved';
     }
     return 'progress saved';
   }

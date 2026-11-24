@@ -1,15 +1,24 @@
 /* TrainTanmay study leagues: small weekly leaderboards for friends.
    Anyone signed in with Google can start a league (it gets a 6-letter code and a name) or join one with a code.
    Leagues have no size limit; you can be in up to 5 of them.
-   Every app page counts your active revision minutes: the tab is on screen and you have clicked, typed, scrolled or
-   tapped in the last 2 minutes (8 minutes while you're inside an embedded paper). Minutes reset every Monday at
-   00:00 UK time. Each device keeps its own count; the leaderboard adds your devices together.
+   Every app page counts your active revision minutes while the tab is on screen. Time with no clicks, typing,
+   scrolling or taps is held back after a short while (SOFT); if it goes on (ASK), a "Still revising?" card asks,
+   with 30 seconds to answer. Answer (or touch anything) and the held time counts; otherwise half of it counts and the
+   clock waits for you to come back. This covers embedded papers too, whose own clicks the page cannot see.
+   A running Focus session (focusbar.js) counts its focus time instead, and page activity is not counted twice.
+   The exact limits are not shown to users. Minutes reset every Monday at 00:00 UK time. Each device keeps its own
+   count; the leaderboard adds your devices together.
    Open the board with window.ttLeague.open(), or any element with data-tt-league.
    Firestore layout (rules in cloud/firestore.rules):
      leagues/{CODE}                 { name, owner, members: [uid], names: {uid: nickname}, edited: uid last renamed, created }
      leagues/{CODE}/scores/{uid}    { dev: {deviceId: {w, s, pw, ps}}, updated }   w = week (Monday date), s = seconds */
 (function () {
   if (window.ttLeague || window.top !== window) return;
+  /* real-world time (ttclock.js), falling back to the device clock until it loads */
+  var T0 = Date.now();
+  function NOW() { return window.ttClock ? window.ttClock.now() : Date.now(); }
+  function clockOK() { return window.ttClock ? window.ttClock.ready : Date.now() - T0 > 6000; }
+
   var MAX_LEAGUES = 5; // leagues per person; a league has no size limit
   var me = document.currentScript;
   var TRACK = !(me && me.hasAttribute('data-notrack')) && !/help\.html$/.test(location.pathname);
@@ -29,7 +38,7 @@
     return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour, mi: +p.minute };
   }
   function weekInfo(t) {
-    var u = uk(t || Date.now()), day = Date.UTC(u.y, u.m - 1, u.d), wd = (new Date(day).getUTCDay() + 6) % 7; // 0 = Monday
+    var u = uk(t || NOW()), day = Date.UTC(u.y, u.m - 1, u.d), wd = (new Date(day).getUTCDay() + 6) % 7; // 0 = Monday
     var mon = day - wd * 864e5, iso = function (x) { return new Date(x).toISOString().slice(0, 10); };
     var left = (7 - wd) * 1440 - (u.h * 60 + u.mi); // minutes until next Monday 00:00 UK
     return { week: iso(mon), prev: iso(mon - 7 * 864e5), left: left, mon: mon };
@@ -42,27 +51,67 @@
     if (st.w !== w.week) { // a new week: last week's count moves to pw/ps, this week starts at 0
       st = { w: w.week, s: 0, pw: st.w === w.prev ? st.w : (st.pw === w.prev ? st.pw : null), ps: st.w === w.prev ? (st.s || 0) : (st.pw === w.prev ? st.ps || 0 : 0) };
       if (!st.pw) { st.pw = null; st.ps = 0; }
-      put(K_TIME, JSON.stringify(st));
+      if (clockOK()) put(K_TIME, JSON.stringify(st)); // never start a new week on an unchecked clock
     }
     return st;
   }
   function addSeconds(n) { var st = local(); st.s = Math.min(7 * 86400, (st.s || 0) + n); put(K_TIME, JSON.stringify(st)); dirty = true; }
 
-  var lastInput = Date.now(), lastTick = Date.now(), TAB = rnd(8, 'abcdefghijklmnopqrstuvwxyz'), dirty = false;
+  var SOFT = 2 * 60000, ASK = 8 * 60000, ANSWER = 30000;
+  var lastInput = NOW(), lastTick = NOW(), TAB = rnd(8, 'abcdefghijklmnopqrstuvwxyz'), dirty = false;
+  var pending = 0, away = false, ask = null; // held seconds, gave no answer, the open "Still revising?" card
+  function focusCounting() { try { return !!(window.ttFocus && window.ttFocus.counting()); } catch (e) { return false; } }
+  function here() { // any sign of a person: held time counts, and the clock runs again
+    lastInput = NOW(); away = false;
+    if (pending) { addSeconds(pending); pending = 0; }
+    if (ask) hideAsk();
+  }
+  function hideAsk() { if (!ask) return; clearTimeout(ask.t); clearInterval(ask.i); var el = ask.el; ask = null; el.classList.add('out'); setTimeout(function () { el.remove(); }, 220); }
+  function giveUp() { if (pending) addSeconds(Math.floor(pending / 2)); pending = 0; away = true; hideAsk(); } // no answer: half the held time counts
+  function showAsk() {
+    if (ask || !document.body) return;
+    if (!document.getElementById('ttlg-ask-css')) {
+      var st = document.createElement('style'); st.id = 'ttlg-ask-css';
+      st.textContent = '.ttlg-ask{position:fixed;left:50%;bottom:28px;z-index:2147483600;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:14px 16px 14px 14px;border-radius:18px;' +
+        'background:rgba(16,18,34,.9);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);color:#fff;border:1px solid rgba(255,255,255,.14);' +
+        'box-shadow:0 24px 60px -16px rgba(0,0,0,.6);font:15px/1.35 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;animation:ttlgAskIn .32s cubic-bezier(.2,.9,.25,1.3) both;max-width:calc(100vw - 24px)}' +
+        '.ttlg-ask.out{animation:ttlgAskOut .2s ease both}@keyframes ttlgAskIn{from{opacity:0;transform:translate(-50%,24px) scale(.96)}}@keyframes ttlgAskOut{to{opacity:0;transform:translate(-50%,16px)}}' +
+        '.ttlg-ask svg{width:46px;height:46px;flex:none;transform:rotate(-90deg)}.ttlg-ask .rg{fill:none;stroke:rgba(255,255,255,.15);stroke-width:4}.ttlg-ask .ar{fill:none;stroke:#8fd0ff;stroke-width:4;stroke-linecap:round;stroke-dasharray:119.4;transition:stroke-dashoffset 1s linear}' +
+        '.ttlg-ask .n{position:absolute;left:14px;width:46px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}.ttlg-ask b{display:block;font-size:16px}.ttlg-ask small{color:#b9bdd8}' +
+        '.ttlg-ask button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:10px 16px;background:#8fd0ff;color:#06203a;cursor:pointer;white-space:nowrap}.ttlg-ask button:focus-visible{outline:3px solid #fff;outline-offset:2px}' +
+        '@media (prefers-reduced-motion:reduce){.ttlg-ask,.ttlg-ask.out{animation:none}}';
+      document.head.appendChild(st);
+    }
+    var el = document.createElement('div'); el.className = 'ttlg-ask'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-live', 'assertive'); el.setAttribute('aria-label', 'Still revising?');
+    el.innerHTML = '<svg viewBox="0 0 46 46" aria-hidden="true"><circle class="rg" cx="23" cy="23" r="19"/><circle class="ar" cx="23" cy="23" r="19"/></svg><span class="n" aria-hidden="true">30</span>' +
+      '<span><b>Still revising?</b><small>Tap to keep your study time counting.</small></span><button type="button">I’m here</button>';
+    (document.fullscreenElement || document.body).appendChild(el);
+    var end = NOW() + ANSWER, ar = el.querySelector('.ar'), n = el.querySelector('.n');
+    var paint = function () { var left = Math.max(0, end - NOW()); n.textContent = Math.ceil(left / 1000); ar.style.strokeDashoffset = String(119.4 * (1 - left / ANSWER)); };
+    ask = { el: el, t: setTimeout(giveUp, ANSWER), i: setInterval(paint, 1000) };
+    requestAnimationFrame(paint);
+    el.querySelector('button').onclick = here; // the click also counts as input, but say so plainly
+  }
   if (TRACK) {
-    ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'].forEach(function (t) { document.addEventListener(t, function () { lastInput = Date.now(); }, { capture: true, passive: true }); });
-    var mv = 0; document.addEventListener('pointermove', function () { var n = Date.now(); if (n - mv > 3000) { mv = n; lastInput = n; } }, { capture: true, passive: true });
-    window.addEventListener('scroll', function () { lastInput = Date.now(); }, { capture: true, passive: true });
+    ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'].forEach(function (t) { document.addEventListener(t, here, { capture: true, passive: true }); });
+    var mv = 0; document.addEventListener('pointermove', function () { var n = NOW(); if (n - mv > 3000) { mv = n; here(); } }, { capture: true, passive: true });
+    window.addEventListener('scroll', here, { capture: true, passive: true });
+    document.addEventListener('visibilitychange', function () {
+      lastTick = NOW(); // time while the tab was hidden never counts, even in the first tick back
+      if (document.visibilityState === 'visible' && pending && !ask && !focusCounting()) showAsk(); // held time from before you left: ask about it
+    });
     setInterval(function () {
-      var now = Date.now(), dt = Math.min(now - lastTick, 15000); lastTick = now;
-      if (document.visibilityState !== 'visible') return;
-      var inFrame = document.activeElement && document.activeElement.tagName === 'IFRAME';
-      if (now - lastInput > (inFrame ? 8 : 2) * 60000) return;
+      var now = NOW(), dt = Math.max(0, Math.min(now - lastTick, 15000)); lastTick = now;
+      if (!clockOK()) return;
+      if (focusCounting()) { if (ask) hideAsk(); pending = 0; return; } // a Focus session is counting this time
+      if (document.visibilityState !== 'visible' || away) return;
       // two tabs open at once only count once: whichever tab ticked last in the past few seconds owns the clock
       var beat = (get(K_BEAT) || '').split(':');
       if (beat[1] && beat[1] !== TAB && now - (+beat[0] || 0) < 6000) return;
       put(K_BEAT, now + ':' + TAB);
-      addSeconds(Math.round(dt / 1000));
+      var sec = Math.round(dt / 1000), idle = now - lastInput;
+      if (idle <= SOFT) addSeconds(sec);
+      else { pending = Math.min(pending + sec, (ASK - SOFT + ANSWER) / 1000); if (idle >= ASK) showAsk(); }
       if (box && !editing && view !== 'add') drawSoon();
     }, 5000);
   }
@@ -421,7 +470,7 @@
         '<button class="tab" role="tab" type="button" data-add aria-selected="' + (view === 'add') + '">+ ' + (codes.length ? 'New or join' : 'Get started') + '</button></div>';
       h += view === 'add' ? forms() : board(sel);
       if (err) h += '<div class="msg">' + esc(err) + '</div>';
-      h += '<p class="how">Counts time with a TrainTanmay app on screen while you click, type, scroll or tap (up to 2 minutes idle, 8 inside a paper). Your devices are added together.</p>';
+      h += '<p class="how">Counts the time you actively revise in any TrainTanmay app, plus your Focus sessions. Your devices are added together.</p>';
     }
     var key = (user ? 'u' : 'o') + view + sel;
     box.classList.toggle('anim', key !== animKey); animKey = key;
@@ -503,5 +552,5 @@
   });
   document.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('[data-tt-league]'); if (t) { e.preventDefault(); open(); } });
 
-  window.ttLeague = { open: open, close: close, minutes: function () { return Math.floor((local().s || 0) / 60); }, _rude: rude, _checkName: checkName, _week: weekInfo };
+  window.ttLeague = { open: open, close: close, addFocus: function (n) { if (n > 0) { addSeconds(Math.round(n)); if (box && !editing && view !== 'add') drawSoon(); } }, minutes: function () { return Math.floor((local().s || 0) / 60); }, _rude: rude, _checkName: checkName, _week: weekInfo };
 })();
