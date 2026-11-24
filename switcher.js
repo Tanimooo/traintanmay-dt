@@ -15,7 +15,7 @@
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) { try { navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(function () {}); } catch (e) {} }
   /* real-world clock for study time and Focus: loaded first, and scripts added here run in the order added */
   if (!window.ttClock) { var cj = document.createElement('script'); cj.src = base + 'ttclock.js?v=20261124a'; cj.async = false; document.head.appendChild(cj); }
-  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261123h'; document.head.appendChild(sj); }
+  if (!window.ttSave) { var sj = document.createElement('script'); sj.src = base + 'save.js?v=20261124a'; document.head.appendChild(sj); }
   /* study leagues: counts active revision minutes on this page and shows the weekly leaderboard */
   if (!window.ttLeague) { var lj = document.createElement('script'); lj.src = base + 'league.js?v=20261124a'; lj.async = false; document.head.appendChild(lj); }
   /* Focus: the session clock and floating timer that follow you between apps (focus/ is the full page) */

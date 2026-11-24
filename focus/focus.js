@@ -61,11 +61,95 @@
     upcoming: ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'), done: ic('<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>')
   };
 
-  /* subjects: the apps you picked on the start screen, plus "Other" */
-  var ALLSUBJ = [['dt', 'D&T'], ['physics', 'Physics'], ['chemistry', 'Chemistry'], ['maths', 'Maths'], ['esat', 'ESAT']];
-  var SUBJ = (function () { var p = getJ('tt-profile', null), ids = p && p.subjects && p.subjects.length ? p.subjects : null; return ALLSUBJ.filter(function (s) { return !ids || ids.indexOf(s[0]) >= 0; }).concat([['other', 'Other']]); })();
-  function subjName(id) { var s = ALLSUBJ.concat([['other', 'Other']]).filter(function (x) { return x[0] === id; })[0]; return s ? s[1] : ''; }
-  function subjCol(id) { return id ? 'var(--' + (/^(dt|physics|chemistry|maths|esat|other)$/.test(id) ? id : 'other') + ')' : 'var(--acc)'; }
+  /* subjects: the five TrainTanmay subjects and any you type in, each with your own colour (tt-focus-subjects).
+     Until you choose, the list starts from the subjects picked on the start screen, or all five. */
+  var K_SUBJ = 'tt-focus-subjects';
+  var BUILTIN = [['dt', 'D&T', '#1f5fbf'], ['physics', 'Physics', '#c81e66'], ['chemistry', 'Chemistry', '#c2410c'], ['maths', 'Maths', '#1a7f45'], ['esat', 'ESAT', '#d9a300']];
+  var SUBJ_COLS = ['#1f5fbf', '#c81e66', '#c2410c', '#1a7f45', '#d9a300', '#7a5af5', '#0f9fb0', '#e0457b', '#5b8c1a', '#b5651d', '#3f51b5', '#6b7a90'];
+  function isBuiltin(id) { return BUILTIN.some(function (b) { return b[0] === id; }); }
+  function okCol(c) { return /^#[0-9a-f]{6}$/i.test(c || '') ? c : null; }
+  function subjStore() {
+    var s0 = getJ(K_SUBJ, null) || {};
+    if (!s0.items) {
+      var p = getJ('tt-profile', null), ids = p && p.subjects && p.subjects.length ? p.subjects : null;
+      s0.items = {};
+      BUILTIN.forEach(function (b, i) { s0.items[b[0]] = { id: b[0], name: b[1], color: b[2], on: !ids || ids.indexOf(b[0]) >= 0, o: i }; });
+    }
+    return s0;
+  }
+  function subjList() { return vals(subjStore().items).filter(function (x) { return x.on && !x.del; }).sort(function (a, b) { return (a.o || 0) - (b.o || 0); }).map(function (x) { return [x.id, x.name]; }); }
+  function subjInfo(id) {
+    var it = subjStore().items[id]; if (it) return it;
+    var b = BUILTIN.filter(function (x) { return x[0] === id; })[0]; if (b) return { id: id, name: b[1], color: b[2] };
+    if (id === 'other') return { id: id, name: 'Other', color: '#6b7a90' };
+    return null;
+  }
+  function subjName(id) { var i = id && subjInfo(id); return i ? i.name : ''; }
+  function subjCol(id) { if (!id) return 'var(--acc)'; var i = subjInfo(id); return (i && okCol(i.color)) || '#6b7a90'; }
+  function rudeWord(t) {
+    try { if (window.ttLeague && window.ttLeague._rude) return window.ttLeague._rude(t); } catch (e) {}
+    return /(fuck|shit|cunt|bitch|wank|twat|slut|whore|nigg|fagg|retard)/i.test(String(t).replace(/[^a-z]/gi, ''));
+  }
+  function subjNameErr(n, items, exceptId) {
+    if (n.length < 2) return 'Subject names need at least 2 characters.';
+    if (n.length > 24) return 'Keep subject names to 24 characters or fewer.';
+    if (!/^[\p{L}\p{N} &'().,+\/-]+$/u.test(n)) return 'Use letters, numbers, spaces and & \' ( ) . , + / - only.';
+    if (rudeWord(n)) return 'Please pick a different name. Keep it friendly.';
+    if (vals(items).some(function (x) { return x.id !== exceptId && !x.del && x.name.toLowerCase() === n.toLowerCase(); })) return 'You already have that subject.';
+    return '';
+  }
+  /* choose subjects and their colours; first = the welcome question on a first visit */
+  function subjDlg(first, after) {
+    var st = subjStore(), work = JSON.parse(JSON.stringify(st.items)), saved = false;
+    var order = function (a, b) { return (a.o || 0) - (b.o || 0); };
+    var rows = function () {
+      return vals(work).filter(function (x) { return !x.del; }).sort(order).map(function (x) {
+        return '<div class="srow" data-sid="' + esc(x.id) + '"><label class="sname"><input type="checkbox" class="check" data-son' + (x.on ? ' checked' : '') + '><span>' + esc(x.name) + '</span></label>' +
+          '<input type="color" class="swatch" data-scol value="' + esc(okCol(x.color) || '#6b7a90') + '" aria-label="Colour for ' + esc(x.name) + '" title="Change colour">' +
+          (isBuiltin(x.id) ? '<span class="sdel-sp"></span>' : '<button type="button" class="btn sm ghost danger" data-sdel aria-label="Remove ' + esc(x.name) + '">' + IC.trash + '</button>') + '</div>';
+      }).join('');
+    };
+    var save = function () { saved = true; var s2 = getJ(K_SUBJ, null) || {}; s2.items = work; s2.done = true; putJ(K_SUBJ, s2); };
+    var m = modal('<h2>' + (first ? 'What do you study?' : 'Your subjects') + '</h2>' +
+      '<p class="muted small" style="margin:-6px 0 14px">' + (first ? 'Pick your subjects, and add any others you take. You can label focus sessions, tasks and calendar plans with them, and each gets its own colour. Change this any time in Settings.' : 'Tick the subjects you study and tap a colour to change it. Your calendar, tasks and charts use these colours.') + '</p>' +
+      '<div class="slist" id="slist">' + rows() + '</div>' +
+      '<form class="row sadd" id="sadd" style="margin-top:12px"><input type="text" class="grow" style="width:auto;flex:1 1 180px" maxlength="24" placeholder="Add a subject, e.g. Biology, Spanish, Music" aria-label="New subject" autocomplete="off"><button class="btn" type="submit">' + IC.plus + 'Add</button></form>' +
+      '<p class="smsg small" id="smsg" role="status"></p>' +
+      '<div class="foot">' + (first ? '<button type="button" class="btn ghost" data-later>Not now</button>' : '') + '<button type="button" class="btn pr" data-s>' + (first ? 'Save' : 'Done') + '</button></div>', '',
+      function () {
+        if (!saved && first) { var s2 = getJ(K_SUBJ, null) || {}; s2.snooze = NOW() + 3 * 864e5; putJ(K_SUBJ, s2); } // ask again in a few days
+        else if (!saved) save(); // editing later: closing keeps your changes
+        render(); if (after) after();
+      });
+    var list = $('#slist', m.box), msg = $('#smsg', m.box);
+    list.onchange = function (e) {
+      var row = e.target.closest('[data-sid]'); if (!row) return; var it = work[row.getAttribute('data-sid')]; if (!it) return;
+      if (e.target.hasAttribute('data-son')) it.on = e.target.checked;
+      if (e.target.hasAttribute('data-scol')) it.color = okCol(e.target.value) || it.color;
+    };
+    list.oninput = function (e) { if (e.target.hasAttribute('data-scol')) list.onchange(e); };
+    list.onclick = function (e) {
+      var d = e.target.closest('[data-sdel]'); if (!d) return; var id = d.closest('[data-sid]').getAttribute('data-sid');
+      work[id].del = true; work[id].on = false; list.innerHTML = rows(); msg.textContent = '';
+    };
+    $('#sadd', m.box).onsubmit = function (e) {
+      e.preventDefault(); var i = this.querySelector('input'), n = i.value.trim().replace(/\s+/g, ' ');
+      if (!n) return i.focus();
+      var back = vals(work).filter(function (x) { return x.del && x.name.toLowerCase() === n.toLowerCase(); })[0];
+      var err = back ? '' : subjNameErr(n, work); msg.textContent = err; msg.className = 'smsg small' + (err ? ' bad' : '');
+      if (err) return i.focus();
+      if (back) { back.del = false; back.on = true; }
+      else {
+        var used = vals(work).filter(function (x) { return !x.del; }).map(function (x) { return (x.color || '').toLowerCase(); });
+        var col = SUBJ_COLS.filter(function (c) { return used.indexOf(c) < 0; })[0] || SUBJ_COLS[Object.keys(work).length % SUBJ_COLS.length];
+        var id = 'c' + uid(); work[id] = { id: id, name: n, color: col, on: true, o: 100 + Object.keys(work).length };
+      }
+      i.value = ''; list.innerHTML = rows(); msg.textContent = 'Added ' + n + '.'; i.focus();
+    };
+    m.box.querySelector('[data-s]').onclick = function () { save(); m.close(); toast(first ? 'Subjects saved. Change them any time in Settings.' : 'Subjects updated.'); };
+    var later = m.box.querySelector('[data-later]'); if (later) later.onclick = m.close;
+    return m;
+  }
   var COLS = ['#2186d8', '#7a5af5', '#e0457b', '#f08a24', '#e0b100', '#17a273', '#14a3b8', '#6b7a90'];
 
   /* ---------- data ---------- */
@@ -119,12 +203,19 @@
     }
   }
   function subjChips(name, cur, allowNone) {
-    return '<div class="chips" role="group" data-chips="' + name + '">' + (allowNone ? '<button type="button" class="chip" data-v="" aria-pressed="' + !cur + '">None</button>' : '') +
-      SUBJ.map(function (s) { return '<button type="button" class="chip" data-v="' + s[0] + '" aria-pressed="' + (cur === s[0]) + '" style="--c:' + subjCol(s[0]) + '"><i></i>' + esc(s[1]) + '</button>'; }).join('') + '</div>';
+    return '<div class="chips" role="group" data-chips="' + name + '" data-subj="' + (allowNone ? 1 : 0) + '">' + (allowNone ? '<button type="button" class="chip" data-v="" aria-pressed="' + !cur + '">None</button>' : '') +
+      subjList().map(function (s) { return '<button type="button" class="chip" data-v="' + s[0] + '" aria-pressed="' + (cur === s[0]) + '" style="--c:' + subjCol(s[0]) + '"><i></i>' + esc(s[1]) + '</button>'; }).join('') +
+      '<button type="button" class="chip chip-edit" data-editsubj>' + IC.edit + 'Edit subjects</button></div>';
   }
   function wireChips(root, name, fn) {
     var g = root.querySelector('[data-chips="' + name + '"]'); if (!g) return;
-    g.onclick = function (e) { var b = e.target.closest('.chip'); if (!b) return; $$('.chip', g).forEach(function (c) { c.setAttribute('aria-pressed', String(c === b)); }); fn(b.getAttribute('data-v')); };
+    g.onclick = function (e) {
+      if (e.target.closest('[data-editsubj]')) { // edit, then redraw this group in place with the same choice
+        var curV = chipVal(root, name), none = g.getAttribute('data-subj') === '1';
+        subjDlg(false, function () { var ng = root.querySelector('[data-chips="' + name + '"]'); if (!ng) return; ng.outerHTML = subjChips(name, curV, none); wireChips(root, name, fn); });
+        return;
+      }
+      var b = e.target.closest('.chip'); if (!b) return; $$('.chip:not(.chip-edit)', g).forEach(function (c) { c.setAttribute('aria-pressed', String(c === b)); }); fn(b.getAttribute('data-v')); };
   }
   function chipVal(root, name) { var b = root.querySelector('[data-chips="' + name + '"] .chip[aria-pressed=true]'); return b ? b.getAttribute('data-v') : ''; }
 
@@ -421,7 +512,7 @@
       '<form class="addtask" id="addT"><input type="text" name="t" maxlength="200" placeholder="Add a task… e.g. Redo Q4 from the 2022 paper" aria-label="New task" autocomplete="off"><button class="btn pr" type="submit">' + IC.plus + 'Add</button>' +
       '<div class="more"><input type="date" name="due" aria-label="Due date" value="' + (tView === 'today' ? t : '') + '"><select name="pri" aria-label="Priority"><option value="0">No priority</option><option value="1">! Low</option><option value="2">!! Medium</option><option value="3">!!! High</option></select>' +
       '<select name="list" aria-label="List">' + lists.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === (lst ? lst.id : 'inbox') ? ' selected' : '') + '>' + esc(l.name) + '</option>'; }).join('') + '</select>' +
-      '<select name="subj" aria-label="Subject"><option value="">No subject</option>' + SUBJ.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select></div></form>';
+      '<select name="subj" aria-label="Subject"><option value="">No subject</option>' + subjList().map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select></div></form>';
     var shown = items.filter(function (x) {
       if (tView === 'today') return x.due && x.due <= t; if (tView === 'upcoming') return x.due && x.due > t; if (tView === 'all') return true; return (x.list || 'inbox') === tView;
     });
@@ -549,7 +640,7 @@
     var nar = narrow();
     if (view === 'month') { h += monthHTML(); if (nar) h += '<div class="card agenda">' + agendaDay(selDay) + '</div>'; }
     else h += nar ? '<div class="card agenda">' + [0, 1, 2, 3, 4, 5, 6].map(function (i) { return agendaDay(addDays(monday(cAnchor), i)); }).join('') + '</div>' : weekHTML();
-    h += '<div class="legend"><span><span class="pill" style="display:inline-flex;cursor:default">Event</span></span><span><span class="pill task" style="display:inline-flex;cursor:default">Task due</span></span><span><span class="pill dl" style="display:inline-flex;cursor:default">' + IC.flag.replace(/width="18" height="18"/, '') + 'Deadline</span></span>' + (view === 'week' ? '<span><span class="blk log" style="position:static;display:inline-block;width:40px;height:16px"></span>Focus you did</span>' : '<span>Drag to move · click a day to add</span>') + '</div></div>';
+    h += '<div class="legend"><span><span class="pill" style="display:inline-flex;cursor:default">Event</span></span><span><span class="pill task" style="display:inline-flex;cursor:default">Task due</span></span><span><span class="pill dl" style="display:inline-flex;cursor:default">' + IC.flag.replace(/width="18" height="18"/, '') + 'Deadline</span></span>' + (view === 'week' ? '<span><span class="blk log" style="position:static;display:inline-block;width:40px;height:16px"></span>Focus you did</span>' : '<span>Drag to move · click a day to add</span>') + subjList().map(function (x) { return '<span class="tag" style="--c:' + subjCol(x[0]) + '"><i></i>' + esc(x[1]) + '</span>'; }).join('') + '</div></div>';
     h += '<aside class="card upc"><div class="ch"><h3>Upcoming deadlines</h3></div>' + upcomingHTML() + '</aside></div>';
     v.innerHTML = h;
     $$('[data-nav]', v).forEach(function (b) { b.onclick = function () { var n = +b.getAttribute('data-nav'); if (!n) { cAnchor = today(); selDay = today(); } else if (view === 'month') { var d = parseISO(cAnchor); d.setDate(1); d.setMonth(d.getMonth() + n); cAnchor = iso(d); } else cAnchor = addDays(cAnchor, 7 * n); render(); }; });
@@ -824,7 +915,7 @@
       var L = vals(log()).filter(function (e) { return e.kind === 'dev' || (e.kind === 'session' && (e.note || e.dev)); }).sort(function (a, b) { return b.t - a.t; });
       h += '<div class="card" style="margin-bottom:18px"><form id="dAdd"><label class="f" for="dT">Log a development</label><textarea id="dT" maxlength="2000" placeholder="A breakthrough, a struggle, feedback from a teacher, a mark you got… e.g. Finally get moments! 14/16 on the mechanics test." style="min-height:80px"></textarea>' +
         '<div class="row" style="margin-top:10px"><div class="chips" data-chips="dk">' + [['win', '🏆 Win'], ['struggle', '🧗 Struggle'], ['note', '📝 Note']].map(function (k, i) { return '<button type="button" class="chip" data-v="' + k[0] + '" aria-pressed="' + (i === 0) + '">' + k[1] + '</button>'; }).join('') + '</div>' +
-        '<select id="dS" style="width:auto"><option value="">No subject</option>' + SUBJ.map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select><button class="btn pr" type="submit" style="margin-left:auto">' + IC.plus + 'Add</button></div></form></div>';
+        '<select id="dS" style="width:auto"><option value="">No subject</option>' + subjList().map(function (s) { return '<option value="' + s[0] + '">' + esc(s[1]) + '</option>'; }).join('') + '</select><button class="btn pr" type="submit" style="margin-left:auto">' + IC.plus + 'Add</button></div></form></div>';
       if (!L.length) h += '<div class="card empty"><div>Your journey shows up here: wins, struggles, and what you wrote after focus sessions.</div></div>';
       else {
         var day = '', html = '<div class="tl">';
@@ -918,10 +1009,92 @@
   };
 
   /* ---------- theme, full screen, keys ---------- */
+  /* background: the drifting sky, a gradient, a plain colour, one of the drawn scenes, or your own photo (kept on this device only) */
+  var K_BGIMG = 'tt-focus-bgimg';
+  var SCENES = [['mountains', 'Misty mountains'], ['ocean', 'Calm sea'], ['night', 'Starry night'], ['forest', 'Pine forest'], ['aurora', 'Aurora'], ['dunes', 'Desert dunes']];
+  var GRADS = [['morning', 'Morning', 'linear-gradient(160deg,#e3f2ff,#bcdcff 45%,#f3dcff)'], ['sunset', 'Sunset', 'linear-gradient(160deg,#ffd6a5,#ff9a8b 50%,#a18cd1)'],
+    ['mint', 'Mint', 'linear-gradient(160deg,#e6fbd3,#a6e8b3)'], ['lagoon', 'Lagoon', 'linear-gradient(160deg,#9ff3fb,#6aa8ff)'], ['lavender', 'Lavender', 'linear-gradient(160deg,#e6d0fd,#9cc9fb)'],
+    ['peach', 'Peach', 'linear-gradient(160deg,#fff0e0,#f9d3ef)'], ['midnight', 'Midnight', 'linear-gradient(160deg,#0f2027,#203a43 50%,#2c5364)'], ['graphite', 'Graphite', 'linear-gradient(160deg,#25272a,#43464b)']];
+  function bgPref() { var b = prefs().bg; return b && b.k ? b : { k: 'sky' }; }
+  function bgCss(b) {
+    if (b.k === 'grad') { var g = GRADS.filter(function (x) { return x[0] === b.v; })[0]; return g ? g[2] : ''; }
+    if (b.k === 'col') return okCol(b.v) || '';
+    if (b.k === 'img') { var ok = SCENES.some(function (x) { return x[0] === b.v; }); return ok ? 'url("bg/' + b.v + '.svg") center/cover no-repeat' : ''; }
+    if (b.k === 'own') { var d = null; try { d = localStorage.getItem(K_BGIMG); } catch (e) {} return d && /^data:image\/(jpeg|png|webp);base64,/.test(d) ? 'url("' + d + '") center/cover no-repeat' : ''; }
+    return '';
+  }
+  /* is the background light or dark? Text that sits straight on it (page titles, the calendar heading,
+     the full-screen timer) is coloured to match, whatever the theme */
+  var DARK_BG = { img: ['night', 'aurora'], grad: ['midnight', 'graphite'] };
+  function lumHex(h) { var n = parseInt(h.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b2 = n & 255; return (0.2126 * r + 0.7152 * g + 0.0722 * b2) / 255; }
+  function setTone(dark, dim) {
+    var themeDark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    // softening washes the picture towards white (light theme) or black (dark theme)
+    if (dark != null && dim > 0.45) dark = themeDark;
+    document.body.classList.toggle('bg-dark', dark === true); document.body.classList.toggle('bg-light', dark === false);
+  }
+  function applyBg() {
+    var sky = $('.sky'), b = bgPref(), css = bgCss(b);
+    sky.classList.toggle('plain', !!css); sky.style.background = css || '';
+    var dim = typeof b.dim === 'number' ? b.dim : (b.k === 'img' || b.k === 'own' ? 0.18 : 0);
+    sky.style.setProperty('--bgdim', String(Math.max(0, Math.min(0.8, dim))));
+    if (!css) return setTone(null, dim);
+    if (b.k === 'img' || b.k === 'grad') return setTone(DARK_BG[b.k].indexOf(b.v) >= 0, dim);
+    if (b.k === 'col') return setTone(lumHex(b.v) < 0.5, dim);
+    // your photo: sample it
+    var im = new Image(); im.onload = function () {
+      try { var c = document.createElement('canvas'); c.width = c.height = 12; var g = c.getContext('2d'); g.drawImage(im, 0, 0, 12, 12); var d = g.getImageData(0, 0, 12, 12).data, t = 0;
+        for (var i = 0; i < d.length; i += 4) t += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255; setTone(t / (d.length / 4) < 0.5, dim); } catch (e) { setTone(null, dim); }
+    }; im.src = (css.match(/url\("([^"]+)"\)/) || [])[1] || '';
+  }
+  function setBg(b) { var cur = bgPref(); if (typeof cur.dim === 'number' && typeof b.dim !== 'number' && (b.k === cur.k)) b.dim = cur.dim; setPref('bg', b); applyBg(); }
+  /* shrink an uploaded photo so it fits in storage: longest side 1920px, JPEG */
+  function readPhoto(file, done) {
+    if (!/^image\//.test(file.type)) { toast('That is not a picture.'); return; }
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function () {
+      var k = Math.min(1, 1920 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      var q = 0.82, d = c.toDataURL('image/jpeg', q); while (d.length > 1400000 && q > 0.4) { q -= 0.12; d = c.toDataURL('image/jpeg', q); }
+      try { localStorage.setItem(K_BGIMG, d); done(); } catch (e) { toast('That picture is too big to keep. Try a smaller one.'); }
+    };
+    im.onerror = function () { URL.revokeObjectURL(url); toast('That picture could not be opened.'); };
+    im.src = url;
+  }
+  function settingsDlg() {
+    var b = bgPref(), hasOwn = false; try { hasOwn = !!localStorage.getItem(K_BGIMG); } catch (e) {}
+    var tile = function (k, v, label, style) { var on = b.k === k && (k === 'sky' || k === 'own' || b.v === v); return '<button type="button" class="bgt" data-bk="' + k + '" data-bv="' + esc(v || '') + '" aria-pressed="' + on + '" style="' + style + '"><span>' + esc(label) + '</span></button>'; };
+    var p = prefs(), th = p.theme || '';
+    var m = modal('<h2>Settings</h2>' +
+      '<h3 class="sh">Subjects</h3><div class="chips" style="margin-bottom:10px">' + subjList().map(function (x) { return '<span class="tag" style="--c:' + subjCol(x[0]) + ';font-size:13px;padding:4px 10px"><i></i>' + esc(x[1]) + '</span>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" data-editsubj>' + IC.edit + 'Edit subjects and colours</button>' +
+      '<h3 class="sh">Background</h3>' +
+      '<div class="bgsec">Pictures</div><div class="bggrid">' + SCENES.map(function (x) { return tile('img', x[0], x[1], 'background:url(bg/' + x[0] + '.svg) center/cover'); }).join('') + '</div>' +
+      '<div class="bgsec">Colours</div><div class="bggrid">' + tile('sky', '', 'Drifting sky', 'background:linear-gradient(160deg,#e8f3fd,#cfe6fb)') + GRADS.map(function (x) { return tile('grad', x[0], x[1], 'background:' + x[2]); }).join('') +
+      '<label class="bgt bgpick' + (b.k === 'col' ? '" aria-pressed="true' : '') + '" style="background:' + (b.k === 'col' && okCol(b.v) ? b.v : 'conic-gradient(#f66,#fd6,#6f9,#6cf,#c6f,#f66)') + '"><input type="color" id="bgCol" value="' + esc(b.k === 'col' && okCol(b.v) ? b.v : '#cfe6fb') + '" aria-label="Pick your own colour"><span>Your colour</span></label></div>' +
+      '<div class="bgsec">Your own photo <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">(kept on this device only)</span></div><div class="row">' +
+      '<label class="btn"><input type="file" id="bgFile" accept="image/*" hidden>' + IC.plus + (hasOwn ? 'Choose another photo' : 'Upload a photo') + '</label>' +
+      (hasOwn ? '<button type="button" class="btn' + (b.k === 'own' ? ' pr' : '') + '" data-bk="own">Use my photo</button><button type="button" class="btn ghost danger" data-rmown>' + IC.trash + 'Remove</button>' : '') + '</div>' +
+      '<label class="f" for="bgDim" style="margin-top:16px">Soften the background</label><input type="range" class="vol" id="bgDim" min="0" max="0.7" step="0.02" value="' + (typeof b.dim === 'number' ? b.dim : (b.k === 'img' || b.k === 'own' ? 0.18 : 0)) + '">' +
+      '<h3 class="sh">Theme</h3><div class="seg" role="group" aria-label="Theme">' + [['', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(function (t) { return '<button type="button" data-th="' + t[0] + '" aria-pressed="' + (th === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="foot"><button type="button" class="btn pr" data-done>Done</button></div>', 'wide');
+    var box = m.box;
+    var mark = function () { var nb = bgPref(); $$('.bgt', box).forEach(function (t) { var k = t.getAttribute('data-bk'), v = t.getAttribute('data-bv'); t.setAttribute('aria-pressed', String(nb.k === k && (k === 'sky' || nb.v === v))); }); var pk = $('.bgpick', box); if (pk) pk.setAttribute('aria-pressed', String(nb.k === 'col')); };
+    box.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-bk]'); if (t && t.tagName === 'BUTTON') { setBg({ k: t.getAttribute('data-bk'), v: t.getAttribute('data-bv') || '' }); mark(); }
+      if (e.target.closest('[data-rmown]')) { try { localStorage.removeItem(K_BGIMG); } catch (x) {} if (bgPref().k === 'own') setBg({ k: 'sky' }); m.close(); settingsDlg(); }
+      var th2 = e.target.closest('[data-th]'); if (th2) { setPref('theme', th2.getAttribute('data-th')); applyTheme(); applyBg(); $$('[data-th]', box).forEach(function (x) { x.setAttribute('aria-pressed', String(x === th2)); }); }
+      if (e.target.closest('[data-editsubj]')) { m.close(); subjDlg(false, settingsDlg); }
+    });
+    $('#bgCol', box).oninput = function () { setBg({ k: 'col', v: this.value }); var pk = $('.bgpick', box); pk.style.background = this.value; mark(); };
+    $('#bgFile', box).onchange = function () { var f = this.files && this.files[0]; if (!f) return; readPhoto(f, function () { setBg({ k: 'own', v: '' }); m.close(); settingsDlg(); toast('Your photo is now the background.'); }); };
+    $('#bgDim', box).oninput = function () { var nb = bgPref(); nb.dim = +this.value; setPref('bg', nb); applyBg(); };
+    box.querySelector('[data-done]').onclick = m.close;
+  }
   function applyTheme() { var t = prefs().theme; if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); }
   $('#btnTheme').onclick = function () {
     var dark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-    setPref('theme', dark ? 'light' : 'dark'); applyTheme();
+    setPref('theme', dark ? 'light' : 'dark'); applyTheme(); applyBg();
   };
   function full() {
     if (document.fullscreenElement) { document.exitFullscreen(); return; }
@@ -941,6 +1114,9 @@
   });
   window.addEventListener('beforeunload', function () { sound.stop(); });
 
-  applyTheme();
+  applyTheme(); applyBg();
+  $('#btnSettings').onclick = settingsDlg;
   route();
+  /* first visit: ask which subjects you study (Not now asks again in a few days) */
+  (function () { var st = getJ(K_SUBJ, null) || {}; if (!st.done && !(st.snooze > NOW())) setTimeout(function () { if (!$('.modal-back')) subjDlg(true); }, 700); })();
 })();
