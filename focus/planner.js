@@ -12,6 +12,8 @@ window.ttPlanner = function (A) {
   var $ = A.$, $$ = A.$$, esc = A.esc, iso = A.iso, parseISO = A.parseISO, today = A.today, addDays = A.addDays, monday = A.monday,
     daysBetween = A.daysBetween, niceDate = A.niceDate, MON = A.MON, IC = A.IC, ic = A.ic, modal = A.modal, toast = A.toast, uid = A.uid;
   var KEY = 'tt-focus-plan';
+  /* the budget builder (budget.js), if it loaded */
+  var BG = typeof window.ttBudget === 'function' ? window.ttBudget(Object.assign({}, A, { projectName: function (pid) { var p = data().projects[pid]; return p ? p.name : ''; } })) : null;
   var PCOLS = ['#1f5fbf', '#c81e66', '#c2410c', '#1a7f45', '#7a5af5', '#0f9fb0', '#d9a300', '#e0457b', '#5b8c1a', '#6b7a90'];
   var I = {
     grip: ic('<circle cx="9" cy="6" r="1.2" fill="currentColor"/><circle cx="15" cy="6" r="1.2" fill="currentColor"/><circle cx="9" cy="12" r="1.2" fill="currentColor"/><circle cx="15" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="18" r="1.2" fill="currentColor"/><circle cx="15" cy="18" r="1.2" fill="currentColor"/>', 16),
@@ -22,6 +24,7 @@ window.ttPlanner = function (A) {
     overlay: ic('<rect x="3" y="6" width="12" height="5" rx="2"/><rect x="9" y="13" width="12" height="5" rx="2"/>'),
     chart: ic('<path d="M4 6h8M7 11h10M10 16h9"/><path d="M3 3v18"/>'), up: ic('<path d="M6 15l6-6 6 6"/>'), down: ic('<path d="M6 9l6 6 6-6"/>'),
     cam: ic('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+    pound: ic('<path d="M16 6.5A4 4 0 0 0 9 9v9M6 13h8M6 19h12"/>'),
     copy: ic('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
     eye: ic('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'), log: ic('<path d="M4 19h16M6 15l4-4 3 3 6-7"/>')
   };
@@ -39,7 +42,7 @@ window.ttPlanner = function (A) {
   function stepCol(d, s) { var k = s.key && d.keys[s.key]; return (k && okCol(k.color)) || (d.projects[s.proj] && okCol(d.projects[s.proj].color)) || '#2186d8'; }
   function firstLayer(d, pid) { var l = layersOf(d, pid)[0]; if (l) return l.id; var id = 'l' + uid(); d.layers[id] = { id: id, proj: pid, name: 'Steps', o: 0, t: Date.now() }; return id; }
   function maxO(list) { return list.reduce(function (m, x) { return Math.max(m, x.o || 0); }, 0); }
-  function pp() { var p = A.prefs().plan || {}; return { cur: p.cur || '', zoom: p.zoom || 'week', overlay: !!p.overlay, actual: p.actual !== false, hint: p.hint !== false, ai: p.ai !== false }; }
+  function pp() { var p = A.prefs().plan || {}; return { cur: p.cur || '', zoom: p.zoom || 'week', overlay: !!p.overlay, actual: p.actual !== false, hint: p.hint !== false, ai: p.ai !== false, view: p.view === 'budget' ? 'budget' : 'plan' }; }
   function setPP(k, v) { var p = A.prefs().plan || {}; p[k] = v; A.setPref('plan', p); }
   function curProj(d) { var c = pp().cur, ps = projects(d); if (c === 'all' && ps.length > 1) return 'all'; return d.projects[c] ? c : ps.length ? ps[0].id : ''; }
   function days(a, b) { return daysBetween(a, b); }
@@ -126,7 +129,7 @@ window.ttPlanner = function (A) {
     var pids = cur === 'all' ? ps.map(function (p) { return p.id; }) : [cur], one = cur !== 'all' ? d.projects[cur] : null;
     var R = range(d, pids), W = Math.round(R.n * R.ppd);
     var h = '<div class="pbar"><h1>Project planner</h1><div class="pchips" role="group" aria-label="Projects">' +
-      ps.map(function (p) { return '<button type="button" class="chip" data-proj="' + p.id + '" aria-pressed="' + (cur === p.id) + '" style="--c:' + p.color + '"><i></i>' + esc(p.name) + '</button>'; }).join('') +
+      ps.map(function (p) { return '<button type="button" class="chip" data-proj="' + p.id + '" aria-pressed="' + (cur === p.id) + '" style="--c:' + p.color + '"><i></i>' + esc(p.name) + (BG ? BG.dot(p.id, 'corner') : '') + '</button>'; }).join('') +
       (ps.length > 1 ? '<button type="button" class="chip" data-proj="all" aria-pressed="' + (cur === 'all') + '">' + I.layers + 'All together</button>' : '') +
       '<button type="button" class="chip chip-edit" data-newproj>' + IC.plus + 'New project</button></div></div>';
     // summary
@@ -136,7 +139,13 @@ window.ttPlanner = function (A) {
         '<button type="button" class="btn ghost sm" data-editproj>' + IC.edit + 'Edit project</button></div>' +
         '<div class="psum-s"><div class="pmeter" title="' + pc + '% done"><i style="width:' + pc + '%"></i></div><span><b>' + pc + '%</b> done</span>' +
         (left != null ? '<span class="' + (left < 0 ? 'bad' : left <= 14 ? 'warn' : '') + '">' + IC.flag.replace(/width="18" height="18"/, 'width="15" height="15"') + (left > 0 ? '<b>' + left + '</b> days to hand-in (' + esc(niceDate(one.end)) + ')' : left === 0 ? '<b>Hand-in is today</b>' : 'Hand-in was ' + esc(niceDate(one.end))) + '</span>' : '') +
-        (lateN ? '<span class="bad"><b>' + lateN + '</b> behind</span>' : '') + '</div></div>';
+        (lateN ? '<span class="bad"><b>' + lateN + '</b> behind</span>' : '') + budgetPill(one) + '</div>' + viewSeg(one, P) + '</div>';
+    }
+    if (one && BG && BG.on(one.id) && P.view === 'budget') {
+      h += BG.html(one.id, projects(d).filter(function (p) { return p.id !== one.id; }));
+      v.innerHTML = h; wireTop(v, one);
+      BG.wire(v, one.id, { name: function () { return data().projects[one.id].name; }, others: function () { return projects(data()).filter(function (p) { return p.id !== one.id; }); }, leave: function () { setPP('view', 'plan'); A.render(); } });
+      return;
     }
     // toolbar
     h += '<div class="ptools"><div class="seg" role="group" aria-label="Zoom">' + [['day', 'Days'], ['week', 'Weeks'], ['month', 'Months']].map(function (z) { return '<button type="button" data-zoom="' + z[0] + '" aria-pressed="' + (P.zoom === z[0]) + '">' + z[1] + '</button>'; }).join('') + '</div>' +
@@ -160,6 +169,25 @@ window.ttPlanner = function (A) {
     wire(v, d, pids, R, one);
   };
 
+  function budgetPill(one) {
+    if (!BG) return '';
+    var s = BG.state(one.id);
+    if (!s) return '<button type="button" class="btn ghost sm" data-budget>' + I.pound + 'Add a budget</button>';
+    return '<button type="button" class="bpill" data-budget title="Open the budget">' + BG.dot(one.id) + (s.budget ? '<b>' + money(s.spent, s.cur) + '</b> of ' + money(s.budget, s.cur) + ' spent' : '<b>' + money(s.spent, s.cur) + '</b> spent') + '</button>';
+  }
+  function money(n, cur) { return (cur || '£') + (Math.round(n * 100) / 100).toFixed(2); }
+  function viewSeg(one, P) {
+    if (!BG || !BG.on(one.id)) return '';
+    return '<div class="seg pviews" role="group" aria-label="View"><button type="button" data-view="plan" aria-pressed="' + (P.view === 'plan') + '">' + I.chart + 'Timeline</button><button type="button" data-view="budget" aria-pressed="' + (P.view === 'budget') + '">' + I.pound + 'Budget' + BG.dot(one.id) + '</button></div>';
+  }
+  /* the bits shared by the timeline and the budget: project chips, new and edit project, the view switch */
+  function wireTop(v, one) {
+    $$('.pchips [data-proj]', v).forEach(function (b) { b.onclick = function () { setPP('cur', b.getAttribute('data-proj')); scrollKeep = null; A.render(); }; });
+    $('[data-newproj]', v).onclick = function () { projDlg(null); };
+    var ep = $('[data-editproj]', v); if (ep && one) ep.onclick = function () { projDlg(one.id); };
+    $$('[data-view]', v).forEach(function (b) { b.onclick = function () { setPP('view', b.getAttribute('data-view')); A.render(); }; });
+    var bp = $('[data-budget]', v); if (bp && one) bp.onclick = function () { if (BG.on(one.id)) { setPP('view', 'budget'); A.render(); } else BG.setupDlg(one.id, one.type, function () { setPP('view', 'budget'); A.render(); }); };
+  }
   function welcomeHTML() {
     return '<div class="pwelcome"><h1>Project planner</h1><p class="muted">Plan your coursework as a Gantt chart: list the steps, draw how long each takes, and tick off your progress. Your deadlines show up in the Calendar too.</p>' +
       '<div class="pstart">' +
@@ -292,9 +320,8 @@ window.ttPlanner = function (A) {
     gw.onscroll = function () { scrollKeep = { k: pids.join() + R.z, l: gw.scrollLeft, t: gw.scrollTop }; };
     function midDate() { return addDays(R.a, Math.round((gw.scrollLeft + (gw.clientWidth - LW) / 2) / R.ppd)); }
 
-    $$('[data-proj]', v).forEach(function (b) { if (b.classList.contains('gadd')) return; b.onclick = function () { setPP('cur', b.getAttribute('data-proj')); scrollKeep = null; A.render(); }; });
-    $('[data-newproj]', v).onclick = function () { projDlg(null); };
-    var ep = $('[data-editproj]', v); if (ep) ep.onclick = function () { projDlg(one.id); };
+    wireTop(v, one);
+    $$('.gpname[data-proj]', v).forEach(function (b) { b.onclick = function () { setPP('cur', b.getAttribute('data-proj')); scrollKeep = null; A.render(); }; });
     $$('[data-zoom]', v).forEach(function (b) { b.onclick = function () { focusDate = midDate(); setPP('zoom', b.getAttribute('data-zoom')); A.render(); }; });
     $('[data-today]', v).onclick = function () { focusDate = today(); A.render(); };
     $$('[data-add]', v).forEach(function (b) { b.onclick = function () { var k = b.getAttribute('data-add'); stepDlg(null, { kind: k, proj: one ? one.id : pids[0], start: midDate() }); }; });
@@ -569,6 +596,7 @@ window.ttPlanner = function (A) {
       '<div class="grow"><label class="f" for="pE">Final hand-in date</label><input type="date" id="pE" value="' + esc(p ? p.end || '' : defaultEnd()) + '"></div></div>' +
       '<div><div class="f lbl">Colour</div><div class="pcols">' + PCOLS.map(function (c) { return '<button type="button" data-col="' + c + '" style="--c:' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + ((p ? p.color : '') === c) + '"></button>'; }).join('') + '</div></div>' +
       (p ? '' : '<label class="row" style="gap:10px;cursor:pointer" id="pFw"' + (ty === 'other' ? ' hidden' : '') + '><input type="checkbox" class="check" id="pF" checked>Fill in the usual steps for me, spread across the time I have (you can change them all)</label>') +
+      (BG ? '<label class="row" style="gap:10px;cursor:pointer"><input type="checkbox" class="check" id="pB"' + (p && BG.on(p.id) ? ' checked' : '') + '>Budget builder: keep track of what I spend</label>' : '') +
       (p ? '<p class="small muted" style="margin:0">Changing the dates here doesn\'t move your steps. To move everything, use the button below.</p><button type="button" class="btn sm" data-shift style="justify-self:start">Move every step to fit the new dates</button>' : '') +
       '</div><div class="foot">' + (p ? '<button type="button" class="btn ghost danger left" data-del>' + IC.trash + 'Delete project</button>' : '') + '<button type="button" class="btn pr" data-s>' + (p ? 'Save' : 'Make my plan') + '</button></div>');
     var B = m.box, col = p ? p.color : '';
@@ -577,10 +605,13 @@ window.ttPlanner = function (A) {
     function vals2() { var n = $('#pN', B).value.trim(), s = $('#pS', B).value, e = $('#pE', B).value; if (!n) { $('#pN', B).focus(); return null; } if (s && e && e < s) { toast('The hand-in date is before the start.'); return null; } return { name: n.slice(0, 60), start: s || today(), end: e }; }
     B.querySelector('[data-s]').onclick = function () {
       var o = vals2(); if (!o) return;
-      if (p) { var dd = data(), q = dd.projects[id]; if (!q) return m.close(); Object.assign(q, o, { type: ty, color: col || q.color }); save(dd); m.close(); A.render(); toast('Saved.'); return; }
+      if (p) { var dd = data(), q = dd.projects[id]; if (!q) return m.close(); Object.assign(q, o, { type: ty, color: col || q.color }); save(dd); m.close();
+        if (BG) { var want = $('#pB', B).checked; if (want && !BG.on(id)) { BG.setupDlg(id, ty, function () { setPP('view', 'budget'); A.render(); }); } else if (!want && BG.on(id)) { BG.disable(id); setPP('view', 'plan'); } }
+        A.render(); toast('Saved.'); return; }
       var fill = $('#pF', B) && $('#pF', B).checked && ty !== 'other';
       if (!o.end) o.end = addDays(o.start, 120);
-      makeProject({ name: o.name, type: ty, start: o.start, end: o.end, color: col, fill: fill });
+      var npid = makeProject({ name: o.name, type: ty, start: o.start, end: o.end, color: col, fill: fill });
+      if (BG && $('#pB', B).checked) setTimeout(function () { BG.setupDlg(npid, ty, function () { setPP('view', 'budget'); A.render(); }); }, 60);
       m.close(); scrollKeep = null; focusDate = null;
       if (A.tab() !== 'planner') location.hash = '#planner'; else A.render();
       toast(fill ? 'Your plan is ready. Drag the bars to fit how you work.' : 'Project made. Add your first step on the left.');
