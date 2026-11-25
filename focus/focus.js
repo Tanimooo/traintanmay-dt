@@ -117,7 +117,7 @@
       '<p class="smsg small" id="smsg" role="status"></p>' +
       '<div class="foot">' + (first ? '<button type="button" class="btn ghost" data-later>Not now</button>' : '') + '<button type="button" class="btn pr" data-s>' + (first ? 'Save' : 'Done') + '</button></div>', '',
       function () {
-        if (!saved && first) { var s2 = getJ(K_SUBJ, null) || {}; s2.snooze = NOW() + 3 * 864e5; putJ(K_SUBJ, s2); } // ask again in a few days
+        if (!saved && first) { var s2 = getJ(K_SUBJ, null) || {}; s2.asked = true; putJ(K_SUBJ, s2); toast('No problem. Pick your subjects any time in Settings.'); } // asked once: never again
         else if (!saved) save(); // editing later: closing keeps your changes
         render(); if (after) after();
       });
@@ -1117,6 +1117,6 @@
   applyTheme(); applyBg();
   $('#btnSettings').onclick = settingsDlg;
   route();
-  /* first visit: ask which subjects you study (Not now asks again in a few days) */
-  (function () { var st = getJ(K_SUBJ, null) || {}; if (!st.done && !(st.snooze > NOW())) setTimeout(function () { if (!$('.modal-back')) subjDlg(true); }, 700); })();
+  /* first visit: ask once which subjects you study (Not now or closing it means it won't ask again) */
+  (function () { var st = getJ(K_SUBJ, null) || {}; if (!st.done && !st.asked) setTimeout(function () { if (!$('.modal-back')) subjDlg(true); }, 700); })();
 })();
