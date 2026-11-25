@@ -1,52 +1,49 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<!-- TrainTanmay Focus ad, vertical. Every cut sits on a beat at 122 BPM (Counting Stars' tempo).
+<!-- TrainTanmay Focus ad, vertical. Every shot starts on a beat at 122 BPM (Counting Stars' tempo).
+     Style rules (see ../../README.md): no flashes, nothing jerky. Shots glide and cross-fade into each other,
+     zooms are slow and continuous, and everything eases in and out.
      window.render(t) draws the frame at t seconds; render.js steps through it and saves the frames. -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-family:"Inter Display","Inter",sans-serif;-webkit-font-smoothing:antialiased}
 #bg{position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 0%,#2a2470,#0d0a2c 60%,#07051a)}
-#glow{position:absolute;width:520px;height:520px;border-radius:50%;left:-80px;top:120px;background:radial-gradient(circle,var(--g,#3b9be8),transparent 65%);opacity:.45;filter:blur(10px)}
+.glow{position:absolute;width:520px;height:520px;border-radius:50%;left:-80px;top:120px;background:radial-gradient(circle,var(--g),transparent 65%);filter:blur(10px)}
 .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff}
-#card{position:absolute;left:50%;top:136px;width:360px;height:640px;margin-left:-180px;transform-origin:50% 0;border-radius:30px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,0,0,.8),0 0 0 3px rgba(255,255,255,.08)}
-#card img{position:absolute;inset:0;width:100%;height:100%;display:block}
-#cap{position:absolute;left:18px;right:18px;top:34px;height:100px;display:flex;flex-direction:column;justify-content:center;color:#fff;text-align:center}
-#cap b{display:block;font-weight:900;font-size:33px;line-height:1.02;letter-spacing:-.02em}
-#cap b em{font-style:normal;color:var(--hl,#8fd0ff)}
-#cap small{display:block;font-weight:600;font-size:14px;margin-top:6px;color:rgba(235,240,255,.75);letter-spacing:.01em}
-#big{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:0 18px}
-#big b{display:block;font-weight:900;font-size:58px;line-height:.95;letter-spacing:-.035em}
-#big b em{font-style:normal;color:var(--hl,#8fd0ff)}
-#big small{display:block;font-weight:700;font-size:17px;margin-top:14px;color:rgba(235,240,255,.8)}
-#tap{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.35);box-shadow:0 0 0 6px rgba(143,208,255,.35)}
-#flash{position:absolute;inset:0;background:#fff;pointer-events:none}
-#tag{position:absolute;left:78%;top:128px;z-index:3;transform:translateX(-50%);padding:4px 12px;border-radius:99px;background:#ffc917;color:#1d1600;font-weight:900;font-size:13px;letter-spacing:.12em}
-#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center}
-#end svg{width:190px;height:190px}
-#end h1{font-weight:900;font-size:46px;letter-spacing:-.03em;margin-top:18px}
-#end h1 span{color:#ffc917}
-#end p{font-weight:800;font-size:22px;margin-top:6px;color:#8fd0ff;letter-spacing:-.01em}
-#end small{display:block;margin-top:18px;font-weight:600;font-size:13.5px;color:rgba(235,240,255,.75)}
-#end .pill{margin-top:16px;padding:9px 16px;border-radius:99px;background:#fff;color:#07051a;font-weight:800;font-size:14px}
-#fix{position:absolute;inset:0;padding:56px 24px 0;color:#fff}
-#fix h2{font-weight:900;font-size:44px;letter-spacing:-.03em;line-height:1}
-#fix h2 em{font-style:normal;color:#3ddc84}
-#fix p{font-weight:600;font-size:14px;color:rgba(235,240,255,.7);margin:6px 0 14px}
-#fix li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:8px 12px;margin-bottom:7px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-weight:700;font-size:14.5px;line-height:1.22}
-#fix li i{flex:none;width:22px;height:22px;border-radius:50%;background:#3ddc84;color:#07051a;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:13px;margin-top:-1px}
-#fix li small{display:block;font-weight:500;font-size:12.5px;color:rgba(235,240,255,.65);margin-top:2px}
-#beatbar{position:absolute;left:0;bottom:0;height:5px;background:linear-gradient(90deg,#8fd0ff,#ffc917,#ff4f96)}
+.layer{position:absolute;inset:0;will-change:opacity,transform}
+.card{position:absolute;left:50%;top:136px;width:360px;height:640px;margin-left:-180px;transform-origin:50% 0;border-radius:30px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,0,0,.8),0 0 0 3px rgba(255,255,255,.08)}
+.card img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cap{position:absolute;left:18px;right:18px;top:34px;height:100px;display:flex;flex-direction:column;justify-content:center;color:#fff;text-align:center}
+.cap b{display:block;font-weight:900;font-size:33px;line-height:1.02;letter-spacing:-.02em}
+em{font-style:normal;color:var(--hl,#8fd0ff)}
+.big{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:0 18px}
+.big b{display:block;font-weight:900;font-size:58px;line-height:.95;letter-spacing:-.035em}
+.big small{display:block;font-weight:700;font-size:17px;margin-top:14px;color:rgba(235,240,255,.8)}
+.tap{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.35);box-shadow:0 0 0 6px rgba(143,208,255,.35)}
+.tag{position:absolute;left:78%;top:128px;z-index:3;padding:4px 12px;border-radius:99px;background:#ffc917;color:#1d1600;font-weight:900;font-size:13px;letter-spacing:.12em}
+.end{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center}
+.end svg{width:190px;height:190px}
+.end h1{font-weight:900;font-size:46px;letter-spacing:-.03em;margin-top:18px}
+.end h1 span{color:#ffc917}
+.end p{font-weight:800;font-size:22px;margin-top:6px;color:#8fd0ff;letter-spacing:-.01em}
+.end small{display:block;margin-top:18px;font-weight:600;font-size:13.5px;color:rgba(235,240,255,.75)}
+.end .pill{margin-top:16px;padding:9px 16px;border-radius:99px;background:#fff;color:#07051a;font-weight:800;font-size:14px}
+.fix{padding:56px 24px 0;color:#fff}
+.fix h2{font-weight:900;font-size:44px;letter-spacing:-.03em;line-height:1;transform-origin:0 50%}
+.fix p{font-weight:600;font-size:14px;color:rgba(235,240,255,.7);margin:6px 0 14px}
+.fix li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:8px 12px;margin-bottom:7px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-weight:700;font-size:14.5px;line-height:1.22}
+.fix li i{flex:none;width:22px;height:22px;border-radius:50%;background:#3ddc84;color:#07051a;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:13px;margin-top:-1px}
+.fix li small{display:block;font-weight:500;font-size:12.5px;color:rgba(235,240,255,.65);margin-top:2px}
+#bar{position:absolute;left:0;bottom:0;height:5px;background:linear-gradient(90deg,#8fd0ff,#ffc917,#ff4f96)}
 </style></head>
 <body>
-<div id="bg"></div><div id="glow"></div><div class="stars" id="stars"></div>
-<div id="card"><img id="shot" alt=""><img id="shot2" alt="" style="opacity:0"></div>
-<div id="tag">NEW</div>
-<div id="cap"><b></b><small></small></div>
-<div id="big"><b></b><small></small></div>
-<div id="end">
+<div id="bg"></div><div class="glow" id="g1"></div><div class="glow" id="g2"></div><div class="stars" id="stars"></div>
+<div id="layers"></div>
+<div id="bar"></div>
+<template id="endT">
   <svg viewBox="0 0 200 200" aria-hidden="true">
     <circle cx="100" cy="100" r="86" fill="none" stroke="#f6f1e7" stroke-opacity=".16" stroke-width="8"/>
-    <g id="sweep" style="transform-origin:100px 100px"><circle cx="100" cy="100" r="86" fill="none" stroke="#8fd0ff" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 541" transform="rotate(-90 100 100)"/><circle cx="100" cy="14" r="8" fill="#f6f1e7" stroke="#07051a" stroke-width="3"/></g>
+    <g class="sweep" style="transform-origin:100px 100px"><circle cx="100" cy="100" r="86" fill="none" stroke="#8fd0ff" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 541" transform="rotate(-90 100 100)"/><circle cx="100" cy="14" r="8" fill="#f6f1e7" stroke="#07051a" stroke-width="3"/></g>
     <g stroke="#07051a" stroke-width="3" stroke-linejoin="round"><circle cx="100" cy="100" r="58" fill="#8fd0ff"/><path d="M100 42a58 58 0 0 1 0 116a80 80 0 0 0 0-116Z" fill="#4fa8e8"/><circle cx="78" cy="80" r="10" fill="#d4efff"/><circle cx="118" cy="124" r="7" fill="#d4efff"/><circle cx="84" cy="128" r="4.5" fill="#3a8fd6"/><circle cx="100" cy="100" r="58" fill="none"/></g>
     <path d="M150 42l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#f6f1e7"/>
   </svg>
@@ -54,8 +51,9 @@ html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-famil
   <p>Focus mode is here.</p>
   <small>Free · works on your phone, tablet and laptop</small>
   <div class="pill">tanimooo.github.io/traintanmay-dt</div>
-</div>
-<div id="fix"><h2>Plus <em>bug fixes</em></h2><p>Thanks for every report</p><ul>
+</template>
+<template id="fixT">
+  <h2>Plus <em>bug fixes</em></h2><p>Thanks for every report</p><ul>
   <li><i>✓</i><span>Time in PDF papers now counts<small>No more lost minutes on long papers</small></span></li>
   <li><i>✓</i><span>Fairer leaderboard time<small>Uses real time, not your device clock</small></span></li>
   <li><i>✓</i><span>Progress you delete stays deleted<small>On every device you sync</small></span></li>
@@ -63,114 +61,125 @@ html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-famil
   <li><i>✓</i><span>PDFs open on school WiFi</span></li>
   <li><i>✓</i><span>Maths packs on the right topics<small>Broken links fixed</small></span></li>
   <li><i>✓</i><span>Back now closes pop-ups in Maths</span></li>
-</ul></div>
-<div id="tap"></div>
-<div id="flash"></div>
-<div id="beatbar"></div>
+  </ul>
+</template>
 <script>
-var BPM = 122, B = 60 / BPM;
-/* the shot list, in beats. kind: text (full-screen words), shot (a screen in a card), end */
+var BPM = 122, B = 60 / BPM, TR = 0.5; // TR: beats each cross-fade lasts (it starts on the beat)
 var S = [
   { a: 0,  n: 1, k: 'text', t: 'Revising<br><em>on paper?</em>', hl: '#ffc917' },
   { a: 1,  n: 1, k: 'text', t: 'In <em>another</em><br>app?', hl: '#ff4f96' },
   { a: 2,  n: 1, k: 'text', t: 'Doing your<br><em>homework?</em>', hl: '#3ddc84' },
   { a: 3,  n: 1, k: 'text', t: 'It all<br><em>counts</em> now.', hl: '#8fd0ff', s: 'Meet Focus mode' },
-  { a: 4,  n: 2, k: 'shot', img: 'home', cap: 'A whole new<br><em>world</em> on TrainTanmay', zoom: [1.0, 1.12], fy: .3, tag: 1 },
+  { a: 4,  n: 2, k: 'shot', img: 'home', cap: 'A whole new<br><em>world</em> on TrainTanmay', zoom: [1.0, 1.1], fy: .3, tag: 1 },
   { a: 6,  n: 2, k: 'shot', img: 'setup', cap: 'Pick a time.<br><em>Hit start.</em>', tap: [180, 516, .9] },
-  { a: 8,  n: 2, k: 'shot', img: 'running', cap: 'Then just<br><em>focus.</em>', zoom: [1.02, 1.15], fy: .2 },
-  { a: 10, n: 1, k: 'shot', img: 'app-physics', cap: 'Your timer<br><em>follows you</em>', hl: '#ff4f96', zoom: [1.12, 1.18], fy: .55 },
-  { a: 11, n: 1, k: 'shot', img: 'app-dt', cap: 'Your timer<br><em>follows you</em>', hl: '#4a8dff', zoom: [1.12, 1.18], fy: .55 },
-  { a: 12, n: 1, k: 'shot', img: 'app-maths', cap: 'into every<br><em>app</em>', hl: '#3ddc84', zoom: [1.12, 1.18], fy: .55 },
-  { a: 13, n: 1, k: 'shot', img: 'app-chem', cap: 'into every<br><em>app</em>', hl: '#ff8a3d', zoom: [1.12, 1.18], fy: .55 },
+  { a: 8,  n: 2, k: 'shot', img: 'running', cap: 'Then just<br><em>focus.</em>', zoom: [1.0, 1.12], fy: .2 },
+  { a: 10, n: 1, k: 'shot', img: 'app-physics', cap: 'Your timer<br><em>follows you</em>', hl: '#ff4f96', zoom: [1.1, 1.16], fy: .55 },
+  { a: 11, n: 1, k: 'shot', img: 'app-dt', cap: 'Your timer<br><em>follows you</em>', hl: '#4a8dff', zoom: [1.1, 1.16], fy: .55 },
+  { a: 12, n: 1, k: 'shot', img: 'app-maths', cap: 'into every<br><em>app</em>', hl: '#3ddc84', zoom: [1.1, 1.16], fy: .55 },
+  { a: 13, n: 1, k: 'shot', img: 'app-chem', cap: 'into every<br><em>app</em>', hl: '#ff8a3d', zoom: [1.1, 1.16], fy: .55 },
   { a: 14, n: 2, k: 'shot', img: 'zen', cap: 'Go <em>full screen.</em><br>No distractions.', zoom: [1.0, 1.08], fy: .3 },
-  { a: 16, n: 2, k: 'shot', img: 'break', cap: 'Pomodoro<br><em>breaks</em> built in', hl: '#3ddc84', zoom: [1.0, 1.1], fy: .2 },
-  { a: 18, n: 1, k: 'shot', img: 'tasks', cap: 'To-do lists.<br><em>Tick it off.</em>', tap: [44, 553, .45], zoom: [1.05, 1.1], fy: .7 },
-  { a: 19, n: 1, k: 'shot', img: 'tasks-done', cap: 'To-do lists.<br><em>Tick it off.</em>', zoom: [1.1, 1.14], fy: .7, burst: [44, 553] },
+  { a: 16, n: 2, k: 'shot', img: 'break', cap: 'Pomodoro<br><em>breaks</em> built in', hl: '#3ddc84', zoom: [1.0, 1.08], fy: .2 },
+  { a: 18, n: 1, k: 'shot', img: 'tasks', cap: 'To-do lists.<br><em>Tick it off.</em>', tap: [44, 553, .4], zoom: [1.04, 1.08], fy: .7 },
+  { a: 19, n: 1, k: 'shot', img: 'tasks-done', cap: 'To-do lists.<br><em>Tick it off.</em>', zoom: [1.08, 1.12], fy: .7 },
   { a: 20, n: 2, k: 'shot', img: 'calendar', cap: 'Plan every<br><em>deadline</em>', hl: '#ffc917', zoom: [1.0, 1.08], fy: .5 },
   { a: 22, n: 2, k: 'shot', img: 'week', cap: 'Colour-coded<br><em>by subject</em>', hl: '#ff4f96', zoom: [1.0, 1.08], fy: .4 },
-  { a: 24, n: 2, k: 'shot', img: 'subjects', cap: 'Your subjects.<br><em>Your colours.</em>', hl: '#3ddc84', zoom: [1.0, 1.1], fy: .5 },
+  { a: 24, n: 2, k: 'shot', img: 'subjects', cap: 'Your subjects.<br><em>Your colours.</em>', hl: '#3ddc84', zoom: [1.0, 1.08], fy: .5 },
   { a: 26, n: 1, k: 'shot', img: 'bg-mountains', cap: 'Make it<br><em>yours</em>', hl: '#c9b3ff' },
   { a: 27, n: 1, k: 'shot', img: 'bg-night', cap: 'Make it<br><em>yours</em>', hl: '#8fd0ff' },
   { a: 28, n: 1, k: 'shot', img: 'bg-aurora', cap: 'Make it<br><em>yours</em>', hl: '#3ddc84' },
   { a: 29, n: 1, k: 'shot', img: 'bg-dunes', cap: 'Make it<br><em>yours</em>', hl: '#ffb070' },
-  { a: 30, n: 2, k: 'shot', img: 'goals', cap: 'Hit your<br><em>weekly goal</em>', hl: '#ffc917', zoom: [1.0, 1.12], fy: .4 },
-  { a: 32, n: 2, k: 'shot', img: 'progress', cap: 'Watch your<br><em>streak</em> grow', hl: '#ff8a3d', zoom: [1.0, 1.1], fy: .3 },
+  { a: 30, n: 2, k: 'shot', img: 'goals', cap: 'Hit your<br><em>weekly goal</em>', hl: '#ffc917', zoom: [1.0, 1.1], fy: .4 },
+  { a: 32, n: 2, k: 'shot', img: 'progress', cap: 'Watch your<br><em>streak</em> grow', hl: '#ff8a3d', zoom: [1.0, 1.08], fy: .3 },
   { a: 34, n: 1, k: 'text', t: 'Every<br><em>focus minute</em>', hl: '#8fd0ff' },
   { a: 35, n: 1, k: 'text', t: 'counts on the<br><em>leaderboard</em>', hl: '#ffc917', s: 'Race your friends every week' },
   { a: 36, n: 6, k: 'fix', hl: '#3ddc84' },
-  { a: 42, n: 8, k: 'end' }
+  { a: 42, n: 8, k: 'end', hl: '#8fd0ff' }
 ];
 var TOTAL = (S[S.length - 1].a + S[S.length - 1].n) * B;
-var SHOTS = {}; S.forEach(function (s) { if (s.img) SHOTS[s.img] = 1; });
 var $ = function (id) { return document.getElementById(id); };
-// a fixed starfield
-(function () { var h = '', r = 7; function rnd() { r = (r * 16807) % 2147483647; return r / 2147483647; } for (var i = 0; i < 70; i++) h += '<i style="left:' + (rnd() * 360).toFixed(1) + 'px;top:' + (rnd() * 640).toFixed(1) + 'px;opacity:' + (0.2 + rnd() * 0.7).toFixed(2) + '"></i>'; $('stars').innerHTML = h; })();
-function ease(x) { return 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); }
-function back(x) { x = Math.max(0, Math.min(1, x)); var c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); }
-var lastImg = null;
-window.ready = function () { return Promise.all(Object.keys(SHOTS).map(function (k) { return new Promise(function (ok) { var i = new Image(); i.onload = i.onerror = function () { ok(); }; i.src = 'shots/' + k + '.png'; }); })); };
+// smooth curves only: no overshoot, no snapping
+function cl(x) { return Math.max(0, Math.min(1, x)); }
+function out3(x) { x = cl(x); return 1 - Math.pow(1 - x, 3); }
+function io(x) { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+function mix(a, b, f) { return a + (b - a) * f; }
+function hex(c) { var n = parseInt(c.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+
+// one layer per shot, built once
+S.forEach(function (s, i) {
+  var L = document.createElement('div'); L.className = 'layer'; L.style.opacity = 0; L.style.setProperty('--hl', s.hl || '#8fd0ff');
+  if (s.k === 'text') { L.classList.add('big'); L.innerHTML = '<b>' + s.t + '</b>' + (s.s ? '<small>' + s.s + '</small>' : ''); }
+  if (s.k === 'shot') L.innerHTML = '<div class="cap"><b>' + s.cap + '</b></div><div class="card"><img src="shots/' + s.img + '.png" alt=""></div>' + (s.tag ? '<div class="tag">NEW</div>' : '') + (s.tap ? '<div class="tap"></div>' : '');
+  if (s.k === 'fix') { L.classList.add('fix'); L.innerHTML = $('fixT').innerHTML; }
+  if (s.k === 'end') { L.classList.add('end'); L.innerHTML = $('endT').innerHTML; }
+  $('layers').appendChild(L); s.el = L;
+});
+// a headline repeated across shots stays still instead of fading out and back in
+S.forEach(function (s, i) { var p = S[i - 1], n = S[i + 1]; s.samePrev = !!(p && p.cap && p.cap === s.cap); s.sameNext = !!(n && n.cap && n.cap === s.cap); });
+(function () { var h = '', r = 7; function rnd() { r = (r * 16807) % 2147483647; return r / 2147483647; } for (var i = 0; i < 80; i++) h += '<i style="left:' + (rnd() * 360).toFixed(1) + 'px;top:' + (rnd() * 760).toFixed(1) + 'px;opacity:' + (0.2 + rnd() * 0.7).toFixed(2) + '"></i>'; $('stars').innerHTML = h; })();
+window.ready = function () { return Promise.all([].map.call(document.images, function (im) { return im.complete ? 1 : new Promise(function (ok) { im.onload = im.onerror = ok; }); })); };
+
 window.render = function (t) {
-  var beat = t / B, s = S[0];
-  for (var i = 0; i < S.length; i++) if (beat >= S[i].a) s = S[i];
-  var lb = beat - s.a, u = lb / s.n;          // beats into this shot, and 0..1 through it
-  var onBeat = beat - Math.floor(beat);       // 0..1 within the current beat
-  var hit = 1 - ease(onBeat / 0.35);          // a punch on every beat
-  document.body.style.setProperty('--hl', s.hl || '#8fd0ff');
-  $('glow').style.setProperty('--g', s.hl || '#3b9be8');
-  $('glow').style.transform = 'translate(' + (Math.sin(t * .7) * 60).toFixed(1) + 'px,' + (Math.cos(t * .5) * 80).toFixed(1) + 'px)';
-  $('stars').style.transform = 'translateY(' + (-t * 6).toFixed(1) + 'px)';
-  $('beatbar').style.width = (100 * t / TOTAL).toFixed(2) + '%';
-  // flash on each new shot
-  $('flash').style.opacity = String(s.a > 0 && lb < 0.12 ? 0.55 * (1 - lb / 0.12) : 0);
-  var isText = s.k === 'text', isShot = s.k === 'shot', isEnd = s.k === 'end';
-  $('card').style.display = isShot ? '' : 'none'; $('cap').style.display = isShot ? '' : 'none';
-  $('big').style.display = isText ? '' : 'none'; $('end').style.display = isEnd ? '' : 'none';
-  var isFix = s.k === 'fix'; $('fix').style.display = isFix ? '' : 'none';
-  if (isFix) { // the title lands, then a fix ticks in on every half beat
-    var fx = $('fix'), h = fx.querySelector('h2'), pp = fx.querySelector('p'), li = fx.querySelectorAll('li');
-    h.style.transform = 'scale(' + (0.7 + 0.3 * back(lb / 0.3) + hit * 0.03).toFixed(3) + ')'; h.style.transformOrigin = '0 50%'; h.style.opacity = String(ease(lb / 0.15)); pp.style.opacity = String(ease((lb - 0.3) / 0.3));
-    for (var q = 0; q < li.length; q++) { var dq = (lb - 0.75 - q * 0.5) / 0.3; li[q].style.opacity = String(ease(dq)); li[q].style.transform = 'translateX(' + ((1 - back(Math.min(1, Math.max(0, dq)))) * -40).toFixed(1) + 'px)'; var ck = li[q].querySelector('i'); ck.style.transform = 'scale(' + (dq < 0.6 ? 0 : back(Math.min(1, (dq - 0.6) / 0.8))).toFixed(3) + ')'; }
-  }
-  $('tag').style.display = isShot && s.tag ? '' : 'none';
-  $('tap').style.display = 'none';
-  if (isText) {
-    var bb = $('big').querySelector('b'), sm = $('big').querySelector('small');
-    if (bb.innerHTML !== s.t) bb.innerHTML = s.t; sm.textContent = s.s || ''; sm.style.display = s.s ? '' : 'none';
-    var sc = 0.6 + 0.4 * back(lb / 0.3);
-    $('big').style.transform = 'scale(' + (sc + hit * 0.04).toFixed(4) + ') rotate(' + ((1 - ease(lb / 0.3)) * -4).toFixed(2) + 'deg)';
-    $('big').style.opacity = String(ease(lb / 0.12));
-  }
-  if (isShot) {
-    if (lastImg !== s.img) { $('shot').src = 'shots/' + s.img + '.png'; lastImg = s.img; }
-    var z = s.zoom || [1.0, 1.06], zz = z[0] + (z[1] - z[0]) * ease(u * 0.9 + 0.1 * u);
-    var fy = s.fy == null ? 0.4 : s.fy;
-    // the card lands with a little bounce and pushes in through the shot
-    var land = back(Math.min(1, lb / 0.28)), cs = 0.765 * (0.92 + 0.08 * land) * (1 + hit * 0.012);
-    var tilt = (s.a % 2 ? 1 : -1) * (1 - ease(lb / 0.3)) * 3;
-    $('card').style.transform = 'scale(' + cs.toFixed(4) + ') rotate(' + tilt.toFixed(2) + 'deg)';
-    var img = $('shot'); img.style.transformOrigin = '50% ' + (fy * 100) + '%'; img.style.transform = 'scale(' + zz.toFixed(4) + ')';
-    var cb = $('cap').querySelector('b'); if (cb.innerHTML !== s.cap) cb.innerHTML = s.cap;
-    var cy = (1 - back(Math.min(1, lb / 0.25))) * -18;
-    $('cap').style.transform = 'translateY(' + cy.toFixed(1) + 'px) scale(' + (1 + hit * 0.03).toFixed(4) + ')';
-    $('cap').style.opacity = String(ease(lb / 0.1));
-    $('tag').style.transform = 'translateX(-50%) rotate(-6deg) scale(' + (0.7 + 0.3 * back(lb / 0.3)).toFixed(3) + ')';
-    if (s.tap) { // a finger tap on the screen, in screenshot coordinates
-      var tt = (lb - s.tap[2]) / 0.35;
-      if (tt > -0.6 && tt < 1) {
-        var r = $('card').getBoundingClientRect(), k = r.width / 360, x = r.left + s.tap[0] * k * zz, y = r.top + s.tap[1] * k * zz - (zz - 1) * fy * 640 * k;
-        $('tap').style.display = ''; $('tap').style.left = x + 'px'; $('tap').style.top = y + 'px';
-        var press = tt < 0 ? 1 : 1 - 0.25 * Math.sin(Math.min(1, tt) * Math.PI);
-        $('tap').style.transform = 'scale(' + (tt < 0 ? 0.6 + 0.4 * ease((tt + 0.6) / 0.6) : press + tt * 0.8).toFixed(3) + ')';
-        $('tap').style.opacity = String(tt < 0 ? ease((tt + 0.6) / 0.6) : 1 - ease(tt));
+  var beat = t / B, cur = 0;
+  for (var i = 0; i < S.length; i++) if (beat >= S[i].a) cur = i;
+  // the background glow drifts and eases between each shot's colour
+  var s0 = S[cur], sP = S[Math.max(0, cur - 1)], f = io((beat - s0.a) / (TR * 2));
+  var c0 = hex(sP.hl || '#8fd0ff'), c1 = hex(s0.hl || '#8fd0ff'), c = c0.map(function (v, j) { return Math.round(mix(v, c1[j], f)); });
+  $('g1').style.setProperty('--g', 'rgb(' + c.join(',') + ')'); $('g1').style.opacity = .42;
+  $('g1').style.transform = 'translate(' + (Math.sin(t * .6) * 60).toFixed(1) + 'px,' + (Math.cos(t * .45) * 80).toFixed(1) + 'px)';
+  $('g2').style.setProperty('--g', 'rgb(' + c.join(',') + ')'); $('g2').style.opacity = .22;
+  $('g2').style.transform = 'translate(' + (120 + Math.cos(t * .5) * 50).toFixed(1) + 'px,' + (-200 + Math.sin(t * .4) * 60).toFixed(1) + 'px)';
+  $('stars').style.transform = 'translateY(' + (-(t * 5) % 120).toFixed(1) + 'px)';
+  $('bar').style.width = (100 * t / TOTAL).toFixed(2) + '%';
+
+  S.forEach(function (s, idx) {
+    var lb = beat - s.a, end = s.n;
+    // visible from its first beat until its cross-fade into the next shot finishes
+    if (lb < 0 || lb > end + TR) { s.el.style.opacity = 0; s.el.style.visibility = 'hidden'; return; }
+    s.el.style.visibility = 'visible';
+    var fin = idx === 0 ? 1 : out3(lb / TR), fout = idx === S.length - 1 ? 1 : 1 - io((lb - end) / TR);
+    // words never overlap: the old words are gone before the new ones arrive (pictures still cross-fade)
+    var win = idx === 0 ? 1 : out3((lb - TR * 0.4) / (TR * 0.6)), wout = idx === S.length - 1 ? 1 : 1 - io((lb - end) / (TR * 0.4));
+    s.el.style.opacity = (s.k === 'shot' ? 1 : Math.min(win, wout)).toFixed(3);
+    s.el.style.zIndex = String(idx);
+    var dy = (1 - fin) * 22 - (1 - fout) * 16;      // in from below, out drifting up
+    var sc = 0.97 + 0.03 * fin + (1 - fout) * 0.015;
+    var u = (lb + TR) / (end + 2 * TR);              // 0..1 across the whole time it is on screen
+    if (s.k === 'text') s.el.style.transform = 'translateY(' + dy.toFixed(2) + 'px) scale(' + (sc + u * 0.04).toFixed(4) + ')';
+    if (s.k === 'shot') {
+      s.el.style.transform = 'translateY(' + ((1 - fin) * 22 - (1 - fout) * 16).toFixed(2) + 'px)';
+      var card = s.el.querySelector('.card'), img = card.firstChild, z = s.zoom || [1.0, 1.05], fy = s.fy == null ? 0.4 : s.fy;
+      card.style.transform = 'scale(' + (0.765 * sc).toFixed(4) + ')'; var nx = S[idx + 1], cout = nx && nx.k !== 'shot' ? wout : fout; card.style.opacity = Math.min(fin, cout).toFixed(3); // before a text card, the screen clears first
+      var cp = s.el.querySelector('.cap'), ci = s.samePrev ? 1 : win, co = s.sameNext ? (lb > end ? 0 : 1) : wout;
+      cp.style.opacity = Math.min(ci, co).toFixed(3); cp.style.transform = 'translateY(' + ((1 - ci) * 10 - (1 - co) * 8).toFixed(2) + 'px)';
+      var tgg = s.el.querySelector('.tag'); if (tgg) tgg.style.opacity = Math.min(fin, fout).toFixed(3);
+      var zz = mix(z[0], z[1], io(u)); img.style.transformOrigin = '50% ' + (fy * 100) + '%'; img.style.transform = 'scale(' + zz.toFixed(4) + ')';
+      var tg = s.el.querySelector('.tag'); if (tg) tg.style.transform = 'translateX(-50%) rotate(-6deg) scale(' + (0.85 + 0.15 * out3((lb - 0.2) / 0.5)).toFixed(3) + ')';
+      var tp = s.el.querySelector('.tap');
+      if (tp) {
+        var tt = (lb - s.tap[2]) / 0.5, k = 0.765 * sc;
+        var x = 180 + ((s.tap[0] - 180) * zz) * k;
+        var y = 136 + (fy * 640 + (s.tap[1] - fy * 640) * zz) * k;
+        tp.style.left = x.toFixed(1) + 'px'; tp.style.top = y.toFixed(1) + 'px';
+        tp.style.opacity = String(tt < -0.6 ? 0 : tt < 0 ? out3((tt + 0.6) / 0.6) : 1 - io(tt));
+        tp.style.transform = 'scale(' + (tt < 0 ? 1 : 1 - 0.2 * Math.sin(cl(tt) * Math.PI) + 0.5 * io(tt)).toFixed(3) + ')';
       }
     }
-  }
-  if (isEnd) {
-    var e = $('end'), kids = e.children;
-    for (var j = 0; j < kids.length; j++) { var d = lb - j * 0.5; kids[j].style.opacity = String(ease(d / 0.4)); kids[j].style.transform = 'translateY(' + ((1 - back(Math.min(1, Math.max(0, d / 0.45)))) * 26).toFixed(1) + 'px) scale(' + (1 + (j === 0 ? hit * 0.04 : 0)).toFixed(3) + ')'; }
-    $('sweep').style.transform = 'rotate(' + (t * 70).toFixed(1) + 'deg)';
-  }
+    if (s.k === 'fix') {
+      s.el.style.transform = 'translateY(' + dy.toFixed(2) + 'px)';
+      var li = s.el.querySelectorAll('li');
+      for (var q = 0; q < li.length; q++) {
+        var d = (lb - 0.6 - q * 0.5) / 0.6;
+        li[q].style.opacity = out3(d).toFixed(3); li[q].style.transform = 'translateY(' + ((1 - out3(d)) * 14).toFixed(2) + 'px)';
+        li[q].querySelector('i').style.transform = 'scale(' + out3((d - 0.3) / 0.7).toFixed(3) + ')';
+      }
+    }
+    if (s.k === 'end') {
+      var kids = s.el.children;
+      for (var j = 0; j < kids.length; j++) { var dj = (lb - j * 0.45) / 0.8; kids[j].style.opacity = out3(dj).toFixed(3); kids[j].style.transform = 'translateY(' + ((1 - out3(dj)) * 18).toFixed(2) + 'px)'; }
+      s.el.querySelector('.sweep').style.transform = 'rotate(' + (t * 40).toFixed(1) + 'deg)';
+    }
+  });
 };
-window.TOTAL = TOTAL; window.SHOTLIST = S; window.BEAT = B;
+window.TOTAL = TOTAL; window.BEAT = B;
 </script>
 </body></html>

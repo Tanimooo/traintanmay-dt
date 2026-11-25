@@ -1,5 +1,21 @@
 # TrainTanmay promo videos
 
+## Editing style (always)
+
+- **No flashes.** No white flashes, strobes or flash-cuts between shots, ever.
+- **Smooth, not jerky.** Shots glide and cross-fade into each other; zooms are slow and continuous; everything
+  eases in and out (no bounce, overshoot or per-beat "punch" zooms).
+- Words never overlap: the old caption fades out before the new one fades in. A caption repeated across shots stays still.
+- Cut on the beat of the music, but let the motion between beats stay calm.
+- Vertical (1080×1920) is the main format.
+- Copyrighted songs aren't put in the file: cut to the song's tempo and add the track in the platform's music library.
+
+## Focus ad
+
+`TrainTanmay-focus-ad.mp4`: vertical, 24.6 s, cut to 122 BPM for *Counting Stars* (see `TrainTanmay-focus-ad-MUSIC.md`).
+Source in `source/focus-ad`: `node cap.js` captures the real screens, `ad.html` is the edit, `node render.js` renders it.
+
+
 | File | What it is |
 |---|---|
 | `TrainTanmay-ad.mp4` | Wide 1080p cut (79 s) with music, sound effects and subtitles |
