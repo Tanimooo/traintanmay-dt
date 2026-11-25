@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<!-- TrainTanmay Focus ad, vertical. Every cut sits on a beat at 122 BPM (Counting Stars' tempo).
+     window.render(t) draws the frame at t seconds; render.js steps through it and saves the frames. -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-family:"Inter Display","Inter",sans-serif;-webkit-font-smoothing:antialiased}
+#bg{position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 0%,#2a2470,#0d0a2c 60%,#07051a)}
+#glow{position:absolute;width:520px;height:520px;border-radius:50%;left:-80px;top:120px;background:radial-gradient(circle,var(--g,#3b9be8),transparent 65%);opacity:.45;filter:blur(10px)}
+.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff}
+#card{position:absolute;left:50%;top:136px;width:360px;height:640px;margin-left:-180px;transform-origin:50% 0;border-radius:30px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,0,0,.8),0 0 0 3px rgba(255,255,255,.08)}
+#card img{position:absolute;inset:0;width:100%;height:100%;display:block}
+#cap{position:absolute;left:18px;right:18px;top:34px;height:100px;display:flex;flex-direction:column;justify-content:center;color:#fff;text-align:center}
+#cap b{display:block;font-weight:900;font-size:33px;line-height:1.02;letter-spacing:-.02em}
+#cap b em{font-style:normal;color:var(--hl,#8fd0ff)}
+#cap small{display:block;font-weight:600;font-size:14px;margin-top:6px;color:rgba(235,240,255,.75);letter-spacing:.01em}
+#big{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:0 18px}
+#big b{display:block;font-weight:900;font-size:58px;line-height:.95;letter-spacing:-.035em}
+#big b em{font-style:normal;color:var(--hl,#8fd0ff)}
+#big small{display:block;font-weight:700;font-size:17px;margin-top:14px;color:rgba(235,240,255,.8)}
+#tap{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.35);box-shadow:0 0 0 6px rgba(143,208,255,.35)}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none}
+#tag{position:absolute;left:78%;top:128px;z-index:3;transform:translateX(-50%);padding:4px 12px;border-radius:99px;background:#ffc917;color:#1d1600;font-weight:900;font-size:13px;letter-spacing:.12em}
+#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center}
+#end svg{width:190px;height:190px}
+#end h1{font-weight:900;font-size:46px;letter-spacing:-.03em;margin-top:18px}
+#end h1 span{color:#ffc917}
+#end p{font-weight:800;font-size:22px;margin-top:6px;color:#8fd0ff;letter-spacing:-.01em}
+#end small{display:block;margin-top:18px;font-weight:600;font-size:13.5px;color:rgba(235,240,255,.75)}
+#end .pill{margin-top:16px;padding:9px 16px;border-radius:99px;background:#fff;color:#07051a;font-weight:800;font-size:14px}
+#beatbar{position:absolute;left:0;bottom:0;height:5px;background:linear-gradient(90deg,#8fd0ff,#ffc917,#ff4f96)}
+</style></head>
+<body>
+<div id="bg"></div><div id="glow"></div><div class="stars" id="stars"></div>
+<div id="card"><img id="shot" alt=""><img id="shot2" alt="" style="opacity:0"></div>
+<div id="tag">NEW</div>
+<div id="cap"><b></b><small></small></div>
+<div id="big"><b></b><small></small></div>
+<div id="end">
+  <svg viewBox="0 0 200 200" aria-hidden="true">
+    <circle cx="100" cy="100" r="86" fill="none" stroke="#f6f1e7" stroke-opacity=".16" stroke-width="8"/>
+    <g id="sweep" style="transform-origin:100px 100px"><circle cx="100" cy="100" r="86" fill="none" stroke="#8fd0ff" stroke-width="8" stroke-linecap="round" stroke-dasharray="360 541" transform="rotate(-90 100 100)"/><circle cx="100" cy="14" r="8" fill="#f6f1e7" stroke="#07051a" stroke-width="3"/></g>
+    <g stroke="#07051a" stroke-width="3" stroke-linejoin="round"><circle cx="100" cy="100" r="58" fill="#8fd0ff"/><path d="M100 42a58 58 0 0 1 0 116a80 80 0 0 0 0-116Z" fill="#4fa8e8"/><circle cx="78" cy="80" r="10" fill="#d4efff"/><circle cx="118" cy="124" r="7" fill="#d4efff"/><circle cx="84" cy="128" r="4.5" fill="#3a8fd6"/><circle cx="100" cy="100" r="58" fill="none"/></g>
+    <path d="M150 42l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#f6f1e7"/>
+  </svg>
+  <h1>Train<span>Tanmay</span></h1>
+  <p>Focus mode is here.</p>
+  <small>Free · works on your phone, tablet and laptop</small>
+  <div class="pill">tanimooo.github.io/traintanmay-dt</div>
+</div>
+<div id="tap"></div>
+<div id="flash"></div>
+<div id="beatbar"></div>
+<script>
+var BPM = 122, B = 60 / BPM;
+/* the shot list, in beats. kind: text (full-screen words), shot (a screen in a card), end */
+var S = [
+  { a: 0,  n: 1, k: 'text', t: 'Revising<br><em>on paper?</em>', hl: '#ffc917' },
+  { a: 1,  n: 1, k: 'text', t: 'In <em>another</em><br>app?', hl: '#ff4f96' },
+  { a: 2,  n: 1, k: 'text', t: 'Doing your<br><em>homework?</em>', hl: '#3ddc84' },
+  { a: 3,  n: 1, k: 'text', t: 'It all<br><em>counts</em> now.', hl: '#8fd0ff', s: 'Meet Focus mode' },
+  { a: 4,  n: 2, k: 'shot', img: 'home', cap: 'A whole new<br><em>world</em> on TrainTanmay', zoom: [1.0, 1.12], fy: .3, tag: 1 },
+  { a: 6,  n: 2, k: 'shot', img: 'setup', cap: 'Pick a time.<br><em>Hit start.</em>', tap: [180, 516, .9] },
+  { a: 8,  n: 2, k: 'shot', img: 'running', cap: 'Then just<br><em>focus.</em>', zoom: [1.02, 1.15], fy: .2 },
+  { a: 10, n: 1, k: 'shot', img: 'app-physics', cap: 'Your timer<br><em>follows you</em>', hl: '#ff4f96', zoom: [1.12, 1.18], fy: .55 },
+  { a: 11, n: 1, k: 'shot', img: 'app-dt', cap: 'Your timer<br><em>follows you</em>', hl: '#4a8dff', zoom: [1.12, 1.18], fy: .55 },
+  { a: 12, n: 1, k: 'shot', img: 'app-maths', cap: 'into every<br><em>app</em>', hl: '#3ddc84', zoom: [1.12, 1.18], fy: .55 },
+  { a: 13, n: 1, k: 'shot', img: 'app-chem', cap: 'into every<br><em>app</em>', hl: '#ff8a3d', zoom: [1.12, 1.18], fy: .55 },
+  { a: 14, n: 2, k: 'shot', img: 'zen', cap: 'Go <em>full screen.</em><br>No distractions.', zoom: [1.0, 1.08], fy: .3 },
+  { a: 16, n: 2, k: 'shot', img: 'break', cap: 'Pomodoro<br><em>breaks</em> built in', hl: '#3ddc84', zoom: [1.0, 1.1], fy: .2 },
+  { a: 18, n: 1, k: 'shot', img: 'tasks', cap: 'To-do lists.<br><em>Tick it off.</em>', tap: [44, 553, .45], zoom: [1.05, 1.1], fy: .7 },
+  { a: 19, n: 1, k: 'shot', img: 'tasks-done', cap: 'To-do lists.<br><em>Tick it off.</em>', zoom: [1.1, 1.14], fy: .7, burst: [44, 553] },
+  { a: 20, n: 2, k: 'shot', img: 'calendar', cap: 'Plan every<br><em>deadline</em>', hl: '#ffc917', zoom: [1.0, 1.08], fy: .5 },
+  { a: 22, n: 2, k: 'shot', img: 'week', cap: 'Colour-coded<br><em>by subject</em>', hl: '#ff4f96', zoom: [1.0, 1.08], fy: .4 },
+  { a: 24, n: 2, k: 'shot', img: 'subjects', cap: 'Your subjects.<br><em>Your colours.</em>', hl: '#3ddc84', zoom: [1.0, 1.1], fy: .5 },
+  { a: 26, n: 1, k: 'shot', img: 'bg-mountains', cap: 'Make it<br><em>yours</em>', hl: '#c9b3ff' },
+  { a: 27, n: 1, k: 'shot', img: 'bg-night', cap: 'Make it<br><em>yours</em>', hl: '#8fd0ff' },
+  { a: 28, n: 1, k: 'shot', img: 'bg-aurora', cap: 'Make it<br><em>yours</em>', hl: '#3ddc84' },
+  { a: 29, n: 1, k: 'shot', img: 'bg-dunes', cap: 'Make it<br><em>yours</em>', hl: '#ffb070' },
+  { a: 30, n: 2, k: 'shot', img: 'goals', cap: 'Hit your<br><em>weekly goal</em>', hl: '#ffc917', zoom: [1.0, 1.12], fy: .4 },
+  { a: 32, n: 2, k: 'shot', img: 'progress', cap: 'Watch your<br><em>streak</em> grow', hl: '#ff8a3d', zoom: [1.0, 1.1], fy: .3 },
+  { a: 34, n: 1, k: 'text', t: 'Every<br><em>focus minute</em>', hl: '#8fd0ff' },
+  { a: 35, n: 1, k: 'text', t: 'counts on the<br><em>leaderboard</em>', hl: '#ffc917', s: 'Race your friends every week' },
+  { a: 36, n: 8, k: 'end' }
+];
+var TOTAL = (S[S.length - 1].a + S[S.length - 1].n) * B;
+var SHOTS = {}; S.forEach(function (s) { if (s.img) SHOTS[s.img] = 1; });
+var $ = function (id) { return document.getElementById(id); };
+// a fixed starfield
+(function () { var h = '', r = 7; function rnd() { r = (r * 16807) % 2147483647; return r / 2147483647; } for (var i = 0; i < 70; i++) h += '<i style="left:' + (rnd() * 360).toFixed(1) + 'px;top:' + (rnd() * 640).toFixed(1) + 'px;opacity:' + (0.2 + rnd() * 0.7).toFixed(2) + '"></i>'; $('stars').innerHTML = h; })();
+function ease(x) { return 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); }
+function back(x) { x = Math.max(0, Math.min(1, x)); var c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); }
+var lastImg = null;
+window.ready = function () { return Promise.all(Object.keys(SHOTS).map(function (k) { return new Promise(function (ok) { var i = new Image(); i.onload = i.onerror = function () { ok(); }; i.src = 'shots/' + k + '.png'; }); })); };
+window.render = function (t) {
+  var beat = t / B, s = S[0];
+  for (var i = 0; i < S.length; i++) if (beat >= S[i].a) s = S[i];
+  var lb = beat - s.a, u = lb / s.n;          // beats into this shot, and 0..1 through it
+  var onBeat = beat - Math.floor(beat);       // 0..1 within the current beat
+  var hit = 1 - ease(onBeat / 0.35);          // a punch on every beat
+  document.body.style.setProperty('--hl', s.hl || '#8fd0ff');
+  $('glow').style.setProperty('--g', s.hl || '#3b9be8');
+  $('glow').style.transform = 'translate(' + (Math.sin(t * .7) * 60).toFixed(1) + 'px,' + (Math.cos(t * .5) * 80).toFixed(1) + 'px)';
+  $('stars').style.transform = 'translateY(' + (-t * 6).toFixed(1) + 'px)';
+  $('beatbar').style.width = (100 * t / TOTAL).toFixed(2) + '%';
+  // flash on each new shot
+  $('flash').style.opacity = String(s.a > 0 && lb < 0.12 ? 0.55 * (1 - lb / 0.12) : 0);
+  var isText = s.k === 'text', isShot = s.k === 'shot', isEnd = s.k === 'end';
+  $('card').style.display = isShot ? '' : 'none'; $('cap').style.display = isShot ? '' : 'none';
+  $('big').style.display = isText ? '' : 'none'; $('end').style.display = isEnd ? '' : 'none';
+  $('tag').style.display = isShot && s.tag ? '' : 'none';
+  $('tap').style.display = 'none';
+  if (isText) {
+    var bb = $('big').querySelector('b'), sm = $('big').querySelector('small');
+    if (bb.innerHTML !== s.t) bb.innerHTML = s.t; sm.textContent = s.s || ''; sm.style.display = s.s ? '' : 'none';
+    var sc = 0.6 + 0.4 * back(lb / 0.3);
+    $('big').style.transform = 'scale(' + (sc + hit * 0.04).toFixed(4) + ') rotate(' + ((1 - ease(lb / 0.3)) * -4).toFixed(2) + 'deg)';
+    $('big').style.opacity = String(ease(lb / 0.12));
+  }
+  if (isShot) {
+    if (lastImg !== s.img) { $('shot').src = 'shots/' + s.img + '.png'; lastImg = s.img; }
+    var z = s.zoom || [1.0, 1.06], zz = z[0] + (z[1] - z[0]) * ease(u * 0.9 + 0.1 * u);
+    var fy = s.fy == null ? 0.4 : s.fy;
+    // the card lands with a little bounce and pushes in through the shot
+    var land = back(Math.min(1, lb / 0.28)), cs = 0.765 * (0.92 + 0.08 * land) * (1 + hit * 0.012);
+    var tilt = (s.a % 2 ? 1 : -1) * (1 - ease(lb / 0.3)) * 3;
+    $('card').style.transform = 'scale(' + cs.toFixed(4) + ') rotate(' + tilt.toFixed(2) + 'deg)';
+    var img = $('shot'); img.style.transformOrigin = '50% ' + (fy * 100) + '%'; img.style.transform = 'scale(' + zz.toFixed(4) + ')';
+    var cb = $('cap').querySelector('b'); if (cb.innerHTML !== s.cap) cb.innerHTML = s.cap;
+    var cy = (1 - back(Math.min(1, lb / 0.25))) * -18;
+    $('cap').style.transform = 'translateY(' + cy.toFixed(1) + 'px) scale(' + (1 + hit * 0.03).toFixed(4) + ')';
+    $('cap').style.opacity = String(ease(lb / 0.1));
+    $('tag').style.transform = 'translateX(-50%) rotate(-6deg) scale(' + (0.7 + 0.3 * back(lb / 0.3)).toFixed(3) + ')';
+    if (s.tap) { // a finger tap on the screen, in screenshot coordinates
+      var tt = (lb - s.tap[2]) / 0.35;
+      if (tt > -0.6 && tt < 1) {
+        var r = $('card').getBoundingClientRect(), k = r.width / 360, x = r.left + s.tap[0] * k * zz, y = r.top + s.tap[1] * k * zz - (zz - 1) * fy * 640 * k;
+        $('tap').style.display = ''; $('tap').style.left = x + 'px'; $('tap').style.top = y + 'px';
+        var press = tt < 0 ? 1 : 1 - 0.25 * Math.sin(Math.min(1, tt) * Math.PI);
+        $('tap').style.transform = 'scale(' + (tt < 0 ? 0.6 + 0.4 * ease((tt + 0.6) / 0.6) : press + tt * 0.8).toFixed(3) + ')';
+        $('tap').style.opacity = String(tt < 0 ? ease((tt + 0.6) / 0.6) : 1 - ease(tt));
+      }
+    }
+  }
+  if (isEnd) {
+    var e = $('end'), kids = e.children;
+    for (var j = 0; j < kids.length; j++) { var d = lb - j * 0.5; kids[j].style.opacity = String(ease(d / 0.4)); kids[j].style.transform = 'translateY(' + ((1 - back(Math.min(1, Math.max(0, d / 0.45)))) * 26).toFixed(1) + 'px) scale(' + (1 + (j === 0 ? hit * 0.04 : 0)).toFixed(3) + ')'; }
+    $('sweep').style.transform = 'rotate(' + (t * 70).toFixed(1) + 'deg)';
+  }
+};
+window.TOTAL = TOTAL; window.SHOTLIST = S; window.BEAT = B;
+</script>
+</body></html>
