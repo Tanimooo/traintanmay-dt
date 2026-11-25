@@ -92,7 +92,7 @@ h1 em::after{content:"";position:absolute;left:-2%;right:-2%;bottom:.04em;height
 .world:hover .planet,.world:focus-visible .planet{scale:1.1}
 .world:hover .planet::before,.world:focus-visible .planet::before{opacity:.6;inset:-4%}
 .world:active .planet{scale:1.02;transition-duration:.12s}
-.spin{transform-origin:100px 100px;animation:spin 26s linear infinite}
+.spin{transform-box:view-box;transform-origin:50% 50%;animation:spin 26s linear infinite} /* spin round the middle of the 200×200 drawing, whatever size it is shown at, in every browser */
 .spin.rev{animation-duration:14s;animation-direction:reverse}
 .spin.slow{animation-duration:60s}
 @keyframes spin{to{transform:rotate(360deg)}}

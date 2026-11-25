@@ -53,16 +53,16 @@ window.ttBudget = function (A) {
   }
   function dotTitle(s) { return !s.budget ? 'No budget set yet' : Math.round(s.pct) + '% of your ' + money(s.budget, s.cur) + ' budget spent' + (s.pct > 100 ? ' (over budget)' : s.pct > 90 ? ' (nearly all of it)' : s.pct >= 70 ? ' (getting close)' : ''); }
   function dot(pid, cls) { var s = state(pid); if (!s || (cls === 'corner' && s.col === 'none')) return ''; return '<i class="bdot ' + s.col + (cls ? ' ' + cls : '') + '" title="' + esc(dotTitle(s)) + '" aria-label="' + esc(dotTitle(s)) + '"></i>'; }
-  function enable(pid, type, amount, cur) {
-    var d = data(), c = d.projects[pid] || {}, now = Date.now();
-    c.on = true; if (amount != null) c.budget = amount; c.cur = cur || c.cur || '£'; d.projects[pid] = c;
-    if (!cats(d, pid).length) (DEFCATS[type] || DEFCATS.other).forEach(function (n, i) { var id = 'c' + uid() + i; d.cats[id] = { id: id, proj: pid, name: n, color: CCOLS[i % CCOLS.length], o: i, t: now }; });
+  function enable(pid, type, amount, cur, own) {
+    var d = data(), c = d.projects[pid] || {}, now = Date.now(), first = !c.seeded;
+    c.on = true; if (amount != null) c.budget = amount; c.cur = cur || c.cur || '£'; c.seeded = true; d.projects[pid] = c;
+    if (first && !own && !cats(d, pid).length) (DEFCATS[type] || DEFCATS.other).forEach(function (n, i) { var id = 'c' + uid() + i; d.cats[id] = { id: id, proj: pid, name: n, color: CCOLS[i % CCOLS.length], o: i, t: now }; });
     save(d);
   }
   function disable(pid) { var d = data(); if (d.projects[pid]) { d.projects[pid].on = false; save(d); } }
 
   /* ---------- the Budget view ---------- */
-  var sortBy = 'cat', keepFocus = null;
+  var sortBy = 'cat', keepFocus = null, lastCat = null; // lastCat: the category you last added an item to, so the next one starts there
   function html(pid, others) {
     var d = data(), c = cfg(d, pid), cur = c.cur || '£', s = state(pid), t = s.t, cs = cats(d, pid), list = items(d, pid), b = s.budget;
     var h = '<div class="bview">';
@@ -94,7 +94,7 @@ window.ttBudget = function (A) {
         var l = line(x), b2 = bought(x);
         h += '<tr data-bid="' + x.id + '" class="' + (b2 ? 'isb' : 'notb') + '">' +
           '<td class="bn"><input data-f="name" value="' + esc(x.name) + '" maxlength="80" aria-label="Item">' + (x.supplier || x.link ? '<span class="bsup">' + esc(x.supplier || '') + (x.link ? ' <a href="' + esc(safeUrl(x.link)) + '" target="_blank" rel="noopener">link</a>' : '') + '</span>' : '') + '</td>' +
-          '<td><select data-f="cat" aria-label="Category"><option value="">–</option>' + cs.map(function (c2) { return '<option value="' + c2.id + '"' + (x.cat === c2.id ? ' selected' : '') + '>' + esc(c2.name) + '</option>'; }).join('') + '</select></td>' +
+          '<td><select data-f="cat" aria-label="Category"><option value="">–</option>' + cs.map(function (c2) { return '<option value="' + c2.id + '"' + (x.cat === c2.id ? ' selected' : '') + '>' + esc(c2.name) + '</option>'; }).join('') + '<option value="__new">+ New category…</option></select></td>' +
           '<td class="r"><input data-f="qty" type="number" min="0" step="1" value="' + esc(x.qty) + '" aria-label="Bought"></td>' +
           '<td class="r"><input data-f="used" type="number" min="0" step="1" value="' + esc(x.used) + '" aria-label="Used"' + (num(x.used) > num(x.qty) ? ' class="warn" title="You\'re using more than you bought"' : '') + '></td>' +
           '<td class="r"><input data-f="est" type="number" min="0" step="0.01" value="' + esc(x.est) + '" aria-label="Estimated price each"></td>' +
@@ -105,11 +105,11 @@ window.ttBudget = function (A) {
           '<td class="c"><button type="button" class="gmore" data-bopen aria-label="More about ' + esc(x.name) + '">' + IC.edit.replace(/width="18" height="18"/, 'width="15" height="15"') + '</button></td></tr>';
       });
     });
-    h += '<tr class="badd"><td class="bn"><input id="bNew" maxlength="80" placeholder="Add an item, e.g. Rotary encoder" aria-label="New item"></td><td><select id="bNewC" aria-label="Category">' + cs.map(function (c2) { return '<option value="' + c2.id + '">' + esc(c2.name) + '</option>'; }).join('') + '</select></td>' +
+    h += '<tr class="badd"><td class="bn"><input id="bNew" maxlength="80" placeholder="Add an item, e.g. Rotary encoder" aria-label="New item"></td><td><select id="bNewC" aria-label="Category"><option value="">' + (cs.length ? 'No category' : 'Category…') + '</option>' + cs.map(function (c2, i) { return '<option value="' + c2.id + '"' + (i === 0 && lastCat !== '' && (!lastCat || lastCat === c2.id) || lastCat === c2.id ? ' selected' : '') + '>' + esc(c2.name) + '</option>'; }).join('') + '<option value="__new">+ New category…</option></select></td>' +
       '<td class="r"><input id="bNewQ" type="number" min="0" step="1" value="1" aria-label="How many"></td><td class="r"><input id="bNewU" type="number" min="0" step="1" value="1" aria-label="How many used"></td><td class="r"><input id="bNewP" type="number" min="0" step="0.01" placeholder="0.00" aria-label="Price each"></td>' +
       '<td colspan="5"><label class="row small" style="gap:6px;display:inline-flex"><input type="checkbox" class="check" id="bNewB">Already bought</label> <button type="button" class="btn sm pr" data-badd>' + IC.plus + 'Add</button></td></tr>';
     h += '</tbody><tfoot><tr><td class="bn"><b>Total</b></td><td></td><td></td><td></td><td class="r mono">' + money(t.est, cur) + '</td><td></td><td class="r mono"><b>' + money(t.spent, cur) + '</b>' + (t.todo ? '<span class="bspare">+ ~' + money(t.todo, cur) + ' to buy</span>' : '') + '</td><td class="r mono"><b>' + money(t.product, cur) + '</b></td><td colspan="2"></td></tr></tfoot></table></div>' +
-      (list.length ? '' : '<p class="small muted" style="margin:10px 4px 0">Type the first thing you need above and press Enter. Put in what you expect it to cost; when you buy it, type what you actually paid.</p>') + '</div>';
+      (list.length ? '' : '<p class="small muted" style="margin:10px 4px 0">Type the first thing you need above and press Enter. Put in what you expect it to cost; when you buy it, type what you actually paid. Need your own category? Pick “+ New category…” in the category box.</p>') + '</div>';
     // charts
     h += '<div class="bcharts">' + chartsHTML(d, pid, cur) + '</div>';
     // leftovers you can use elsewhere
@@ -169,8 +169,10 @@ window.ttBudget = function (A) {
       var id = tr.getAttribute('data-bid');
       $$('[data-f]', tr).forEach(function (inp) {
         var f = inp.getAttribute('data-f');
+        if (f === 'cat') inp.dataset.was = inp.value;
         inp.addEventListener('change', function () {
           var val = inp.type === 'checkbox' ? inp.checked : inp.value;
+          if (f === 'cat' && val === '__new') { inp.value = inp.dataset.was || ''; newCatDlg(pid, function (cid) { setItem(id, 'cat', cid); rerender(); }); return; }
           if (f === 'name') { val = String(val).trim().slice(0, 80); if (!val) { inp.value = data().items[id].name; return; } }
           if (f === 'qty' || f === 'used') val = val === '' ? 0 : Math.max(0, Math.round(num(val)));
           if (f === 'est') val = val === '' ? 0 : Math.max(0, num(val));
@@ -189,11 +191,20 @@ window.ttBudget = function (A) {
       var n = nb.value.trim(); if (!n) return nb.focus();
       var d = data(), id = 'b' + uid(), q = Math.max(0, Math.round(num($('#bNewQ', v).value) || 1)), u = $('#bNewU', v).value === '' ? q : Math.min(q, Math.max(0, Math.round(num($('#bNewU', v).value)))), p = Math.max(0, num($('#bNewP', v).value));
       d.items[id] = { id: id, proj: pid, cat: $('#bNewC', v).value, name: n.slice(0, 80), supplier: '', link: '', qty: q, used: u, est: p, paid: $('#bNewB', v).checked ? p : null, reuse: q > u, gave: 0, note: '', o: items(d, pid).length, t: Date.now() };
-      save(d); keepFocus = { el: 'bNew' }; rerender();
+      lastCat = $('#bNewC', v).value; save(d); keepFocus = { el: 'bNew' }; rerender();
       if (q > u) toast('Bought ' + q + ', using ' + u + ': ' + (q - u === 1 ? 'the spare one is' : 'the ' + (q - u) + ' spares are') + ' counted as left over.');
     }
     $('[data-badd]', v).onclick = add;
     ['#bNew', '#bNewQ', '#bNewU', '#bNewP'].forEach(function (s) { $(s, v).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } }); });
+    $('#bNewC', v).addEventListener('change', function () {
+      var sel = this; if (sel.value !== '__new') { lastCat = sel.value; return; }
+      sel.value = lastCat && data().cats[lastCat] ? lastCat : '';
+      newCatDlg(pid, function (cid, c) {
+        // add it to every dropdown without redrawing, so what you've typed in the add row stays
+        $$('select[data-f="cat"], #bNewC', v).forEach(function (s2) { var o = document.createElement('option'); o.value = cid; o.textContent = c.name; s2.insertBefore(o, s2.querySelector('option[value="__new"]')); });
+        sel.value = cid; lastCat = cid; $('#bNew', v).focus();
+      });
+    });
     $('#bNewQ', v).addEventListener('input', function () { var u = $('#bNewU', v); if (num(u.value) > num(this.value) || u.dataset.touched !== '1') u.value = this.value; });
     $('#bNewU', v).addEventListener('input', function () { this.dataset.touched = '1'; });
     // spares
@@ -238,6 +249,23 @@ window.ttBudget = function (A) {
       var nid = 'b' + uid(); dd.items[nid] = { id: nid, proj: to, cat: cat ? cat.id : '', name: y.name, supplier: y.supplier || '', link: y.link || '', qty: k, used: k, est: 0, paid: 0, reuse: false, gave: 0, note: 'Spares from ' + src + ' (already paid for there).', o: items(dd, to).length, t: Date.now() };
       y.gave = num(y.gave) + k; save(dd); m.close(); A.render(); toast(k + ' × ' + y.name + ' moved to ' + (other ? other.name : 'the other project') + '.');
     };
+  }
+  /* make up a category: a name and a colour */
+  function newCatDlg(pid, done) {
+    var d = data(), used = cats(d, pid).map(function (c) { return c.color; }), col = CCOLS.filter(function (c) { return used.indexOf(c) < 0; })[0] || CCOLS[cats(d, pid).length % CCOLS.length];
+    var m = modal('<h2>New category</h2><div class="fields"><div><label class="f" for="ncN">Name</label><input type="text" id="ncN" maxlength="40" autofocus placeholder="e.g. 3D printing, Fabric, Sensors"></div>' +
+      '<div><div class="f lbl">Colour</div><div class="pcols">' + CCOLS.map(function (c) { return '<button type="button" data-col="' + c + '" style="--c:' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (c === col) + '"></button>'; }).join('') + '</div></div></div>' +
+      '<div class="foot"><button type="button" class="btn pr" data-s>' + IC.plus + 'Add category</button></div>');
+    var B = m.box;
+    $$('[data-col]', B).forEach(function (b) { b.onclick = function () { col = b.getAttribute('data-col'); $$('[data-col]', B).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }; });
+    B.querySelector('[data-s]').onclick = function () {
+      var n = $('#ncN', B).value.trim(); if (!n) return $('#ncN', B).focus();
+      var dd = data(), same = cats(dd, pid).filter(function (c) { return c.name.toLowerCase() === n.toLowerCase(); })[0];
+      if (same) { m.close(); done(same.id, same); return; }
+      var id = 'c' + uid(); dd.cats[id] = { id: id, proj: pid, name: n.slice(0, 40), color: col, o: cats(dd, pid).length, t: Date.now() };
+      save(dd); m.close(); done(id, dd.cats[id]);
+    };
+    $('#ncN', B).onkeydown = function (e) { if (e.key === 'Enter') B.querySelector('[data-s]').click(); };
   }
   function catsDlg(pid) {
     var d = data(), cs = cats(d, pid);
@@ -305,10 +333,13 @@ window.ttBudget = function (A) {
     var c = cfg(data(), pid) || {};
     var m = modal('<h2>Budget builder</h2><p class="muted" style="margin-top:-4px">Keep track of what you buy for this project: what it cost, what ends up in the product, and what\'s left over. The dot by your project goes <span class="bdot ok"></span> green, <span class="bdot warn"></span> amber at 70% of your budget and <span class="bdot bad"></span> red past 90%.</p><div class="fields">' +
       '<div class="row"><div><label class="f" for="sCur">Currency</label><select id="sCur" style="width:auto">' + ['£', '€', '$', '₹', '¥'].map(function (k) { return '<option' + (k === (c.cur || '£') ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
-      '<div class="grow"><label class="f" for="sAmt">Your budget (you can leave it empty and add it later)</label><input type="number" id="sAmt" min="0" step="1" inputmode="decimal" autofocus value="' + (c.budget || '') + '" placeholder="e.g. 60"></div></div></div>' +
+      '<div class="grow"><label class="f" for="sAmt">Your budget (you can leave it empty and add it later)</label><input type="number" id="sAmt" min="0" step="1" inputmode="decimal" autofocus value="' + (c.budget || '') + '" placeholder="e.g. 60"></div></div>' +
+      (c.seeded ? '' : '<div><div class="f lbl">Categories for your spending</div><div class="seg" role="group" aria-label="Categories"><button type="button" data-own="0" aria-pressed="true">Suggest some for me</button><button type="button" data-own="1" aria-pressed="false">I\'ll make my own</button></div><p class="small muted" id="sOwnHint" style="margin:6px 0 0">' + esc((DEFCATS[type] || DEFCATS.other).join(', ')) + '. You can rename, add or remove them any time.</p></div>') + '</div>' +
       '<div class="foot"><button type="button" class="btn pr" data-s>' + I.pound + 'Start my budget</button></div>');
     var B = m.box;
-    B.querySelector('[data-s]').onclick = function () { var v = $('#sAmt', B).value; enable(pid, type, v === '' ? (c.budget || 0) : Math.max(0, num(v)), $('#sCur', B).value); m.close(); if (after) after(); };
+    var own = false;
+    $$('[data-own]', B).forEach(function (b) { b.onclick = function () { own = b.getAttribute('data-own') === '1'; $$('[data-own]', B).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); $('#sOwnHint', B).textContent = own ? 'Start with none. Pick "+ New category…" in any category box to make one up as you go.' : (DEFCATS[type] || DEFCATS.other).join(', ') + '. You can rename, add or remove them any time.'; }; });
+    B.querySelector('[data-s]').onclick = function () { var v = $('#sAmt', B).value; enable(pid, type, v === '' ? (c.budget || 0) : Math.max(0, num(v)), $('#sCur', B).value, own); m.close(); if (after) after(); };
     $('#sAmt', B).onkeydown = function (e) { if (e.key === 'Enter') B.querySelector('[data-s]').click(); };
   }
 
