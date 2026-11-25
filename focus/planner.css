@@ -200,3 +200,24 @@
 }
 @media (hover:none){.gbar .h{width:16px}}
 @media print{.ptools,.phint,.pbar .chip-edit,.pnotes{display:none}.gwrap{max-height:none;overflow:visible}}
+
+/* from a photo (AI) */
+.pwide{grid-column:1/-1;flex-direction:row;text-align:left;margin-top:14px;padding:16px 20px;width:100%}
+.pwide .pic{flex:none}
+.pwide b{font-size:18px}
+.pwide>span:last-child{flex:1}
+.aisteps{margin:0;padding-left:22px;display:grid;gap:14px}
+.aisteps li{padding-left:4px}
+.aisteps li::marker{font-weight:800;color:var(--acc)}
+.aiprompt,.aireply{display:block;width:100%;margin:8px 0;font:12.5px/1.45 var(--f-mono)!important;resize:vertical}
+.aiprompt{height:130px;color:var(--muted)}
+.aireply{height:96px}
+.aierr{color:var(--bad);font-size:13.5px;margin:4px 0}
+.aiprev{border:1px solid var(--line2);border-radius:14px;padding:12px;background:var(--card2)}
+.aiprev ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px;max-height:220px;overflow:auto}
+.aiprev li{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:3px 2px}
+.aiprev li .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiprev li svg{width:13px;height:13px;flex:none;color:var(--acc)}
+.aibar{width:13px;height:7px;border-radius:3px;background:var(--acc);flex:none}
+.aiq{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--warn);color:#fff;font-size:11px}
+@media (max-width:700px){.pwide{flex-direction:column;text-align:center}}

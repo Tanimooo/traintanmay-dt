@@ -21,6 +21,8 @@ window.ttPlanner = function (A) {
     download: ic('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'), print: ic('<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>'),
     overlay: ic('<rect x="3" y="6" width="12" height="5" rx="2"/><rect x="9" y="13" width="12" height="5" rx="2"/>'),
     chart: ic('<path d="M4 6h8M7 11h10M10 16h9"/><path d="M3 3v18"/>'), up: ic('<path d="M6 15l6-6 6 6"/>'), down: ic('<path d="M6 9l6 6 6-6"/>'),
+    cam: ic('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+    copy: ic('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
     eye: ic('<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'), log: ic('<path d="M4 19h16M6 15l4-4 3 3 6-7"/>')
   };
 
@@ -37,7 +39,7 @@ window.ttPlanner = function (A) {
   function stepCol(d, s) { var k = s.key && d.keys[s.key]; return (k && okCol(k.color)) || (d.projects[s.proj] && okCol(d.projects[s.proj].color)) || '#2186d8'; }
   function firstLayer(d, pid) { var l = layersOf(d, pid)[0]; if (l) return l.id; var id = 'l' + uid(); d.layers[id] = { id: id, proj: pid, name: 'Steps', o: 0, t: Date.now() }; return id; }
   function maxO(list) { return list.reduce(function (m, x) { return Math.max(m, x.o || 0); }, 0); }
-  function pp() { var p = A.prefs().plan || {}; return { cur: p.cur || '', zoom: p.zoom || 'week', overlay: !!p.overlay, actual: p.actual !== false, hint: p.hint !== false }; }
+  function pp() { var p = A.prefs().plan || {}; return { cur: p.cur || '', zoom: p.zoom || 'week', overlay: !!p.overlay, actual: p.actual !== false, hint: p.hint !== false, ai: p.ai !== false }; }
   function setPP(k, v) { var p = A.prefs().plan || {}; p[k] = v; A.setPref('plan', p); }
   function curProj(d) { var c = pp().cur, ps = projects(d); if (c === 'all' && ps.length > 1) return 'all'; return d.projects[c] ? c : ps.length ? ps[0].id : ''; }
   function days(a, b) { return daysBetween(a, b); }
@@ -141,6 +143,7 @@ window.ttPlanner = function (A) {
       '<button type="button" class="btn sm" data-today>Today</button>' +
       '<span class="psep"></span>' +
       '<button type="button" class="btn sm" data-add="step">' + IC.plus + 'Step</button><button type="button" class="btn sm" data-add="milestone">' + I.diamond + 'Milestone</button><button type="button" class="btn sm" data-add="note">' + I.note + 'Note</button>' +
+      (P.ai ? '<button type="button" class="btn sm" data-ai title="Turn a photo of your deadlines into a plan, using any AI">' + I.cam + 'From a photo</button>' : '') +
       '<span class="psep"></span>' +
       '<button type="button" class="btn sm" data-keys' + (one ? '' : ' disabled title="Pick one project first"') + '>' + I.key + 'Colour key</button>' +
       '<button type="button" class="btn sm" data-layers' + (one ? '' : ' disabled title="Pick one project first"') + '>' + I.layers + 'Layers</button>' +
@@ -163,9 +166,9 @@ window.ttPlanner = function (A) {
       '<button type="button" class="pcard" data-start="nea"><span class="pic" style="--c:#1f5fbf">' + I.chart + '</span><b>DT NEA</b><span>Sections A to F already filled in: research, brief, ideas, development, making, testing and evaluation.</span></button>' +
       '<button type="button" class="pcard" data-start="epq"><span class="pic" style="--c:#c81e66">' + I.note + '</span><b>EPQ</b><span>Proposal, research, production log, writing, review and presentation.</span></button>' +
       '<button type="button" class="pcard" data-start="other"><span class="pic" style="--c:#1a7f45">' + IC.plus + '</span><b>Something else</b><span>Start with an empty plan and add your own steps.</span></button>' +
-      '</div></div>';
+      '</div>' + (pp().ai ? '<button type="button" class="pcard pwide" data-ai><span class="pic" style="--c:#7a5af5">' + I.cam + '</span><b>From a photo of your deadlines</b><span>Take a picture of your deadline sheet, give it to any AI with our prompt, and paste its answer here.</span></button>' : '') + '</div>';
   }
-  function wireWelcome(v) { $$('[data-start]', v).forEach(function (b) { b.onclick = function () { projDlg(null, b.getAttribute('data-start')); }; }); }
+  function wireWelcome(v) { $$('[data-start]', v).forEach(function (b) { b.onclick = function () { projDlg(null, b.getAttribute('data-start')); }; }); var ai = $('[data-ai]', v); if (ai) ai.onclick = function () { aiDlg(); }; }
 
   /* ---------- chart ---------- */
   function x(R, s) { return days(R.a, s) * R.ppd; }
@@ -300,6 +303,7 @@ window.ttPlanner = function (A) {
     $('[data-overlay]', v).onclick = function () { setPP('overlay', !pp().overlay); A.render(); };
     $('[data-actual]', v).onclick = function () { setPP('actual', !pp().actual); A.render(); };
     $('[data-export]', v).onclick = function () { exportDlg(pids); };
+    var aib = $('[data-ai]', v); if (aib) aib.onclick = function () { aiDlg(one ? one.id : ''); };
     var hh = $('[data-hidehint]', v); if (hh) hh.onclick = function () { setPP('hint', false); A.render(); };
     $$('[data-togglelayer]', v).forEach(function (b) { b.onclick = function () { var dd = data(), l = dd.layers[b.getAttribute('data-togglelayer')]; if (!l) return; l.hidden = !l.hidden; save(dd); A.render(); }; });
     var pn = $('#pNotes', v); if (pn) pn.onchange = function () { var dd = data(); if (dd.projects[one.id]) { dd.projects[one.id].notes = pn.value; save(dd); toast('Notes saved.'); } };
@@ -761,6 +765,136 @@ window.ttPlanner = function (A) {
     };
   }
 
+  /* ---------- from a photo: any AI reads your deadline sheet and writes a plan you paste in ----------
+     The app never sends anything anywhere: you copy our prompt into your own AI with your photo, then paste its reply back. */
+  function aiPrompt() {
+    var t = today();
+    return [
+      'You are helping a student turn a photo of their coursework deadlines into a simple project plan for the TrainTanmay planner app.',
+      '',
+      'Look at the photo (or photos) I have attached. It shows the deadlines for a school project, such as an A level DT NEA, an EPQ or other coursework.',
+      '',
+      "Today's date is " + t + '. Dates in the photo are written the UK way (day/month/year). If a date has no year, use the next time that date comes after today.',
+      '',
+      'Do this:',
+      '1. Find every deadline, hand-in, milestone and checkpoint in the photo. Use the name as it is written, shortened to under 60 characters if needed.',
+      '2. Give each one a "start" and an "end" date, written YYYY-MM-DD. The "end" is the deadline. If no start date is shown, start it the day after the previous deadline (the first one starts today, ' + t + ').',
+      '3. Anything that happens on a single day (a hand-in, an assessment, a review meeting, an exam) is a milestone: set "type" to "milestone" and give it the same start and end. Everything else has "type": "step".',
+      '4. If the photo groups the deadlines (for example by section, by term, or Portfolio and Practical), put the group name in "group". Otherwise leave "group" out.',
+      '5. Put the steps in date order. "project" is the name of the project. The top-level "end" is the final hand-in date (the latest deadline).',
+      '6. If you cannot read something clearly, make your best guess and add "check": true to that step. Do not add deadlines that are not in the photo.',
+      '',
+      'Reply with ONLY the plan in one code block, exactly in this format, and nothing else:',
+      '',
+      '{"tt_plan":1,"project":"DT NEA","end":"2027-05-07","steps":[',
+      '{"title":"Section A: research","start":"2026-11-25","end":"2026-12-11","type":"step","group":"Portfolio"},',
+      '{"title":"Design brief hand-in","start":"2026-12-11","end":"2026-12-11","type":"milestone","group":"Portfolio"}',
+      ']}'
+    ].join('\n');
+  }
+  function normDate(v) {
+    v = String(v == null ? '' : v).trim(); var m;
+    if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v))) return okDate(+m[1], +m[2], +m[3]);
+    if ((m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/.exec(v))) return okDate(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2], +m[1]);
+    return '';
+  }
+  function okDate(y, mo, da) { var d = new Date(y, mo - 1, da); return d.getFullYear() === y && d.getMonth() === mo - 1 && d.getDate() === da && y > 2000 && y < 2100 ? iso(d) : ''; }
+  /* read what the AI wrote: forgiving about code fences, curly quotes, trailing commas and UK dates */
+  function parsePlan(text) {
+    var t = String(text || '').replace(/[“”„″]/g, '"').replace(/[‘’]/g, "'");
+    var a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a < 0 || b < a) return { err: "That doesn't look like the AI's plan. Copy its whole reply, from the first { to the last }." };
+    var raw = t.slice(a, b + 1).replace(/,\s*([\]}])/g, '$1'), j;
+    try { j = JSON.parse(raw); } catch (e) { return { err: "Couldn't read that. Make sure you copied the AI's whole reply. If it's cut off, ask the AI: \"Give me the whole plan again in one code block.\"" }; }
+    var list = Array.isArray(j) ? j : j.steps || j.tasks || j.deadlines;
+    if (!Array.isArray(list) || !list.length) return { err: 'The plan has no deadlines in it. Ask the AI to try again with a clearer photo.' };
+    var steps = [], bad = 0;
+    list.slice(0, 200).forEach(function (x) {
+      if (!x || typeof x !== 'object') { bad++; return; }
+      var title = String(x.title || x.name || x.task || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+      var st = normDate(x.start), en = normDate(x.end || x.deadline || x.due || x.date);
+      if (!en) en = st; if (!st) st = en;
+      if (!title || !en) { bad++; return; }
+      if (st > en) { var q = st; st = en; en = q; }
+      var ms = /milestone/i.test(x.type || '');
+      steps.push({ title: title, start: ms ? en : st, end: en, kind: ms ? 'milestone' : 'step', group: String(x.group || '').trim().slice(0, 40), check: !!x.check });
+    });
+    if (!steps.length) return { err: "None of the deadlines had a name and a date I could read. Ask the AI to try again." };
+    steps.sort(function (p, q) { return p.end < q.end ? -1 : p.end > q.end ? 1 : 0; });
+    var lo = steps.reduce(function (m, s) { return s.start < m ? s.start : m; }, steps[0].start), hi = steps.reduce(function (m, s) { return s.end > m ? s.end : m; }, steps[0].end);
+    var end = normDate(j.end) || hi; if (end < hi) end = hi;
+    var start = normDate(j.start) || lo; if (start > lo) start = lo; if (today() < start && today() > addDays(start, -60)) start = today();
+    return { name: String(j.project || j.name || 'My project').trim().slice(0, 60) || 'My project', start: start, end: end, steps: steps, bad: bad };
+  }
+  function importPlan(pl, into) {
+    var d = data(), now = Date.now(), pid = into && d.projects[into] ? into : '';
+    if (!pid) {
+      pid = 'p' + uid(); var used = projects(d).map(function (p) { return p.color; });
+      d.projects[pid] = { id: pid, name: pl.name, type: /\bNEA\b/i.test(pl.name) ? 'nea' : /\bEPQ\b/i.test(pl.name) ? 'epq' : 'other', color: PCOLS.filter(function (c) { return used.indexOf(c) < 0; })[0] || PCOLS[0], start: pl.start, end: pl.end, notes: '', o: maxO(projects(d)) + 1, t: now };
+    } else { var pr = d.projects[pid]; if (!pr.end || pl.end > pr.end) pr.end = pl.end; if (!pr.start || pl.start < pr.start) pr.start = pl.start; }
+    // each group becomes a layer and a colour in the key, so the chart comes out coloured and grouped
+    var lay = {}, key = {}, ki = keysOf(d, pid).length;
+    layersOf(d, pid).forEach(function (l) { lay[l.name.toLowerCase()] = l.id; });
+    keysOf(d, pid).forEach(function (k) { key[k.name.toLowerCase()] = k.id; });
+    var base = maxO(stepsOf(d, pid)) + 1, grouped = pl.steps.some(function (s) { return s.group; });
+    pl.steps.forEach(function (s, i) {
+      var g = s.group || (grouped ? 'Deadlines' : ''), gl = g.toLowerCase(), lid = '', kid = '';
+      if (g) {
+        if (!lay[gl]) { lid = 'l' + uid() + i; d.layers[lid] = { id: lid, proj: pid, name: g, o: layersOf(d, pid).length, t: now }; lay[gl] = lid; }
+        if (!key[gl]) { kid = 'k' + uid() + i; d.keys[kid] = { id: kid, proj: pid, name: g, color: PCOLS[ki++ % PCOLS.length], o: ki, t: now }; key[gl] = kid; }
+      }
+      var id = 's' + uid() + i;
+      d.steps[id] = { id: id, proj: pid, layer: g ? lay[gl] : '', key: g ? key[gl] : '', kind: s.kind, title: s.title, start: s.start, end: s.end, pct: 0, note: s.check ? 'The AI was not sure about this one: check it against your sheet.' : '', cal: true, o: base + i, t: now };
+    });
+    var fl = firstLayer(d, pid); stepsOf(d, pid).forEach(function (s) { if (!s.layer || !d.layers[s.layer]) s.layer = fl; });
+    save(d); setPP('cur', pid); return pid;
+  }
+  function aiDlg(intoId) {
+    var d = data(), into = intoId && d.projects[intoId] ? d.projects[intoId] : null, pl = null;
+    var m = modal('<h2>Make a plan from a photo</h2>' +
+      '<p class="small muted" style="margin:-6px 0 14px">Works with any AI that can read pictures: ChatGPT, Claude, Gemini, Copilot… Nothing is sent from this app. You use your own AI, then paste its answer here.</p>' +
+      '<ol class="aisteps">' +
+      '<li><b>Take a photo</b> of your deadlines (the sheet from your teacher, the board, your planner). Make sure the dates are sharp and readable.</li>' +
+      '<li><b>Copy this prompt</b> and paste it into your AI along with the photo.' +
+      '<textarea id="aiP" readonly class="aiprompt" aria-label="Prompt for your AI">' + esc(aiPrompt()) + '</textarea>' +
+      '<button type="button" class="btn pr" data-copy>' + I.copy + 'Copy the prompt</button></li>' +
+      '<li><b>Paste the AI\'s answer</b> here (all of it is fine).' +
+      '<textarea id="aiR" class="aireply" placeholder=\'{"tt_plan":1,"project":"…","steps":[ … ]}\' aria-label="The AI\'s answer"></textarea>' +
+      '<div id="aiOut"></div></li></ol>' +
+      '<div class="foot"><button type="button" class="btn ghost left small" data-aioff title="You can turn it back on in Settings">Hide this feature</button><button type="button" class="btn pr" data-go disabled>' + I.chart + 'Make my Gantt chart</button></div>', 'wide');
+    var B = m.box, out = $('#aiOut', B), go = B.querySelector('[data-go]');
+    B.querySelector('[data-copy]').onclick = function () {
+      var ta = $('#aiP', B), done = function () { toast('Prompt copied. Now paste it into your AI with your photo.'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Select the prompt and copy it.'); } });
+      else { ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Select the prompt and copy it.'); } }
+    };
+    function check() {
+      var txt = $('#aiR', B).value; if (!txt.trim()) { out.innerHTML = ''; go.disabled = true; pl = null; return; }
+      var r = parsePlan(txt);
+      if (r.err) { out.innerHTML = '<p class="aierr">' + esc(r.err) + '</p>'; go.disabled = true; pl = null; return; }
+      pl = r; go.disabled = false;
+      var unsure = r.steps.filter(function (s) { return s.check; }).length;
+      out.innerHTML = '<div class="aiprev"><div class="row" style="justify-content:space-between"><b>Found ' + r.steps.length + ' deadline' + (r.steps.length > 1 ? 's' : '') + '</b><span class="small muted">Final hand-in ' + esc(niceDate(r.end, true)) + '</span></div>' +
+        (r.bad ? '<p class="small" style="color:#a06f00;margin:4px 0">' + r.bad + ' line' + (r.bad > 1 ? 's were' : ' was') + ' missing a name or date and left out.</p>' : '') +
+        (unsure ? '<p class="small" style="color:#a06f00;margin:4px 0">The AI wasn\'t sure about ' + unsure + ' (marked ?). Check them against your sheet.</p>' : '') +
+        '<ul>' + r.steps.map(function (s) { return '<li>' + (s.kind === 'milestone' ? I.diamond : '<i class="aibar"></i>') + '<span class="tt">' + esc(s.title) + (s.check ? ' <b class="aiq" title="Check this one">?</b>' : '') + '</span><span class="small muted">' + esc(s.kind === 'milestone' ? niceDate(s.end) : niceDate(s.start) + ' → ' + niceDate(s.end)) + '</span>' + (s.group ? '<span class="tag">' + esc(s.group) + '</span>' : '') + '</li>'; }).join('') + '</ul>' +
+        '<div class="fields" style="margin-top:10px">' +
+        (into ? '<div class="seg" role="group" aria-label="Where"><button type="button" data-where="new" aria-pressed="false">New project</button><button type="button" data-where="into" aria-pressed="true">Add to ' + esc(into.name) + '</button></div>' : '') +
+        '<div id="aiNameW"' + (into ? ' hidden' : '') + '><label class="f" for="aiName">Project name</label><input type="text" id="aiName" maxlength="60" value="' + esc(r.name) + '"></div></div></div>';
+      $$('[data-where]', out).forEach(function (b) { b.onclick = function () { $$('[data-where]', out).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); $('#aiNameW', out).hidden = b.getAttribute('data-where') !== 'new'; }; });
+    }
+    $('#aiR', B).addEventListener('input', check);
+    go.onclick = function () {
+      if (!pl) return;
+      var w = $('[data-where][aria-pressed=true]', out), toNew = !w || w.getAttribute('data-where') === 'new';
+      if (toNew) { var nm = ($('#aiName', out).value || '').trim(); if (nm) pl.name = nm.slice(0, 60); }
+      importPlan(pl, toNew ? '' : into.id); m.close(); scrollKeep = null; focusDate = null;
+      if (A.tab() !== 'planner') location.hash = '#planner'; else A.render();
+      toast('Your Gantt chart is ready. Drag the bars to fit how you work.');
+    };
+    B.querySelector('[data-aioff]').onclick = function () { setPP('ai', false); m.close(); A.render(); toast('Photo plans are hidden. Turn them back on in Settings.'); };
+  }
+
   /* ---------- the calendar: hand-in dates, milestones and step deadlines ---------- */
   function calItems(date) {
     var d = data(), out = [];
@@ -803,5 +937,5 @@ window.ttPlanner = function (A) {
     if (p) { setPP('cur', p.id); scrollKeep = null; }
     else setTimeout(function () { if (!$('.modal-back')) projDlg(null, ty); }, 120);
   }
-  return { calItems: calItems, upcoming: upcoming, open: open, moveTo: moveTo, arg: arg };
+  return { calItems: calItems, upcoming: upcoming, open: open, moveTo: moveTo, arg: arg, aiOn: function () { return pp().ai; }, setAi: function (on) { setPP('ai', !!on); }, parsePlan: parsePlan };
 };
