@@ -1,0 +1,88 @@
+/* TrainTanmay Focus: the budget builder (budget.js). The chart shapes are in budget.js so the printout can use them too. */
+.bdot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none;vertical-align:middle;margin:0 3px;box-shadow:0 0 0 2px var(--card-solid)}
+.bdot.ok{background:#17a273}.bdot.warn{background:#e0a800}.bdot.bad{background:#d6453d;animation:bpulse 2s ease-in-out infinite}.bdot.none{background:var(--faint)}
+@keyframes bpulse{50%{box-shadow:0 0 0 2px var(--card-solid),0 0 0 6px rgba(214,69,61,.25)}}
+@media (prefers-reduced-motion:reduce){.bdot.bad{animation:none}}
+.chip{position:relative}
+.bdot.corner{position:absolute;top:-3px;right:-3px;margin:0;width:12px;height:12px}
+.bpill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--card-solid);border-radius:999px;padding:4px 12px 4px 8px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.bpill:hover{border-color:var(--acc)}.bpill b{color:var(--ink)}
+.psum{position:relative}
+.pviews{margin-left:auto}
+.pviews button{display:inline-flex;align-items:center;gap:6px}
+.pviews svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn svg,.bleft h3 svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.bview{display:grid;gap:14px}
+.bstats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){.bstats{grid-template-columns:repeat(2,minmax(0,1fr))}.bstat.big{grid-column:1/-1}}
+.bstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.bstat .bl{font-size:12.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:4px}
+.bstat b{font:800 26px/1.1 var(--f-display);white-space:nowrap}
+.bstat b.neg{color:var(--bad)}
+.bstat.big{background:linear-gradient(135deg,var(--acc-soft),var(--card))}
+.bmoney{display:flex;align-items:center;gap:6px}
+.bmoney span{font:800 26px var(--f-display);color:var(--muted)}
+.bmoney input{font:800 24px var(--f-display)!important;padding:6px 10px!important}
+
+.bbar{padding:14px 16px}
+.bbar-t{display:flex;align-items:baseline;gap:6px 14px;flex-wrap:wrap;margin-bottom:10px}
+.btrack{position:relative;height:22px;border-radius:8px;background:var(--line);display:flex;overflow:visible;margin:22px 0 10px}
+.btrack>i{display:block;height:100%}
+.btrack>i:first-child{border-radius:8px 0 0 8px}
+.btrack .sp.ok,.blg .sp.ok{background:#17a273}.btrack .sp.warn,.blg .sp.warn{background:#e0a800}.btrack .sp.bad,.blg .sp.bad{background:#d6453d}.btrack .sp.none,.blg .sp.none{background:var(--acc)}
+.btrack .td,.blg .td{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 45%,transparent) 0 5px,transparent 5px 10px)}
+.btrack em{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2.5px solid var(--ink)}
+.btrack em span{position:absolute;bottom:100%;transform:translateX(-50%);font:700 11px var(--f-body);font-style:normal;white-space:nowrap;color:var(--ink);padding-bottom:2px}
+.blg{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.blg span{display:inline-flex;align-items:center;gap:6px}
+.blg i{width:18px;height:10px;border-radius:3px;display:inline-block}
+.blg i.bm{width:3px;height:14px;background:var(--ink);border-radius:1px}
+
+.blist{padding:14px}
+.blist-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.blist-h h3{margin:0}
+.blist-h .btn svg{width:15px;height:15px}
+.bscroll{overflow-x:auto;margin:0 -4px}
+.btab{width:100%;border-collapse:collapse;font-size:13.5px;min-width:920px}
+.btab th{text-align:left;font-size:11.5px;font-weight:700;color:var(--muted);padding:6px 6px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.btab td{padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+.btab .r{text-align:right}.btab .c{text-align:center}
+.btab .mono{font:500 12.5px var(--f-mono);white-space:nowrap}
+.btab td.bn{min-width:200px}
+.btab input:not(.check),.btab select{width:100%;padding:6px 7px;border-radius:9px;border:1px solid transparent;background:transparent;font-size:13.5px}
+.btab input:not(.check):hover,.btab select:hover{border-color:var(--line2);background:var(--card-solid)}
+.btab input:not(.check):focus,.btab select:focus{border-color:var(--acc);background:var(--card-solid)}
+.btab input[type=number]{text-align:right;max-width:92px;font-family:var(--f-mono);font-size:12.5px}
+.btab input.warn{color:var(--bad);border-color:var(--bad)}
+.btab input[data-f=paid]::placeholder{color:var(--faint);font-family:var(--f-body);font-style:italic}
+.btab tr.notb input[data-f=name]{font-style:italic}
+.btab tr.isb input[data-f=name]{font-weight:600}
+.btab select{max-width:150px}
+.bsup{display:block;font-size:11.5px;color:var(--muted);padding:0 8px}
+.bspare{display:block;font:600 11px var(--f-body);color:#a06f00}
+.bgrp td{padding:12px 6px 4px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--line2)}
+.bgrp i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.bgrp span{float:right;font:600 12px var(--f-mono);letter-spacing:0;text-transform:none}
+.badd td{background:var(--acc-soft);border-bottom:0}
+.badd td:first-child{border-radius:10px 0 0 10px}.badd td:last-child{border-radius:0 10px 10px 0}
+.badd input:not(.check),.badd select{border-color:var(--line2)!important;background:var(--card-solid)!important}
+.btab tfoot td{padding:9px 6px;border-top:2px solid var(--line2);border-bottom:0}
+
+.bcharts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.bcharts{grid-template-columns:1fr}}
+.bchart{padding:14px 16px}.bchart h3{margin:0 0 6px}.bchart p{margin:0 0 6px}
+.bview .bdonut .dt{fill:var(--ink)}.bview .bdonut .ds{fill:var(--muted)}
+.bview .bdonut li small,.bview .bcb>div span,.bview .bempty{color:var(--muted)}
+.bview .bcb i.e{background:color-mix(in srgb,var(--muted) 40%,transparent)}
+.bview .bcb i.w{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.bview .bdiff{color:var(--muted)}.bview .bdiff.up{color:var(--bad)}.bview .bdiff.down{color:var(--ok)}
+
+.bleft{padding:14px 16px}
+.bleft h3{display:flex;align-items:center;gap:8px;margin:0 0 8px}.bleft h3 svg{width:18px;height:18px}
+.bleft ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.bleft li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--card2)}
+.bleft li>span{margin-right:auto}
+.bleft .btn svg{width:14px;height:14px}
+.bopts{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:700px){.bstat b,.bmoney span{font-size:21px}.pviews{margin-left:0}}
