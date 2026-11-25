@@ -1098,6 +1098,7 @@
       '<label class="btn"><input type="file" id="bgFile" accept="image/*" hidden>' + IC.plus + (hasOwn ? 'Choose another photo' : 'Upload a photo') + '</label>' +
       (hasOwn ? '<button type="button" class="btn' + (b.k === 'own' ? ' pr' : '') + '" data-bk="own">Use my photo</button><button type="button" class="btn ghost danger" data-rmown>' + IC.trash + 'Remove</button>' : '') + '</div>' +
       '<label class="f" for="bgDim" style="margin-top:16px">Soften the background</label><input type="range" class="vol" id="bgDim" min="0" max="0.7" step="0.02" value="' + (typeof b.dim === 'number' ? b.dim : (b.k === 'img' || b.k === 'own' ? 0.18 : 0)) + '">' +
+      (P && P.setAi ? '<h3 class="sh">Project planner</h3><label class="row" style="gap:10px;cursor:pointer"><input type="checkbox" class="check" id="aiOn"' + (P.aiOn() ? ' checked' : '') + '>Make a plan from a photo of your deadlines, with your own AI</label>' : '') +
       '<h3 class="sh">Theme</h3><div class="seg" role="group" aria-label="Theme">' + [['', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(function (t) { return '<button type="button" data-th="' + t[0] + '" aria-pressed="' + (th === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div class="foot"><button type="button" class="btn pr" data-done>Done</button></div>', 'wide');
     var box = m.box;
@@ -1111,6 +1112,7 @@
     $('#bgCol', box).oninput = function () { setBg({ k: 'col', v: this.value }); var pk = $('.bgpick', box); pk.style.background = this.value; mark(); };
     $('#bgFile', box).onchange = function () { var f = this.files && this.files[0]; if (!f) return; readPhoto(f, function () { setBg({ k: 'own', v: '' }); m.close(); settingsDlg(); toast('Your photo is now the background.'); }); };
     $('#bgDim', box).oninput = function () { var nb = bgPref(); nb.dim = +this.value; setPref('bg', nb); applyBg(); };
+    var aiOn = $('#aiOn', box); if (aiOn) aiOn.onchange = function () { P.setAi(aiOn.checked); if (cur === 'planner') render(); };
     box.querySelector('[data-done]').onclick = m.close;
   }
   function applyTheme() { var t = prefs().theme; if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); }
