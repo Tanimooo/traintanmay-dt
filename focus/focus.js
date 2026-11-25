@@ -7,6 +7,7 @@
      tt-focus-notes  { items: {id: note} }
      tt-focus-log    { id: session or development }
      tt-focus-prefs  timer and sound choices, theme
+     tt-focus-plan   { projects, keys, layers, steps } the project planner (planner.js)
    Objects are keyed by id (never arrays) so a change on one device merges cleanly with a change on another. */
 (function () {
   'use strict';
@@ -17,6 +18,7 @@
   function NOW() { return window.ttClock ? window.ttClock.now() : Date.now(); }
   function clockOK() { return window.ttClock ? window.ttClock.ready : Date.now() - T0 > 6000; }
 
+  var P = null; // the project planner, if planner.js loaded
   var K = { cal: 'tt-focus-cal', goals: 'tt-focus-goals', notes: 'tt-focus-notes', log: 'tt-focus-log', prefs: 'tt-focus-prefs' };
 
   /* ---------- small helpers ---------- */
@@ -220,16 +222,18 @@
   function chipVal(root, name) { var b = root.querySelector('[data-chips="' + name + '"] .chip[aria-pressed=true]'); return b ? b.getAttribute('data-v') : ''; }
 
   /* ---------- router ---------- */
-  var TABS = ['focus', 'tasks', 'calendar', 'goals', 'notes', 'progress'], cur = null;
+  var TABS = ['focus', 'tasks', 'calendar', 'planner', 'goals', 'notes', 'progress'], cur = null;
   var RENDER = {};
   function route() {
-    var h = location.hash.replace('#', ''), reflect = h === 'reflect';
+    var h = location.hash.replace('#', ''), reflect = h === 'reflect', arg = '';
+    if (h.indexOf(':') > 0) { arg = h.slice(h.indexOf(':') + 1); h = h.slice(0, h.indexOf(':')); }
     var t = TABS.indexOf(h) >= 0 ? h : 'focus';
+    if (arg && P && P.arg) { history.replaceState(null, '', '#' + t); P.arg(arg); }
     if (t !== cur) {
       cur = t;
       $$('.view').forEach(function (v) { v.hidden = v.getAttribute('data-view') !== t; });
       $$('.tabs a').forEach(function (a) { if (a.getAttribute('data-tab') === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-      document.title = (t === 'focus' ? 'Focus' : t[0].toUpperCase() + t.slice(1)) + ' · TrainTanmay Focus';
+      document.title = (t === 'focus' ? 'Focus' : t === 'planner' ? 'Project planner' : t[0].toUpperCase() + t.slice(1)) + ' · TrainTanmay Focus';
     }
     render();
     if (reflect) { history.replaceState(null, '', '#focus'); var id = null; try { id = sessionStorage.getItem('tt-focus-reflect'); sessionStorage.removeItem('tt-focus-reflect'); } catch (e) {} if (id) reflectDlg(id); }
@@ -251,7 +255,7 @@
     else soft();
   });
   window.addEventListener('tt-focus-finished', function (e) { if (e.detail) setTimeout(function () { reflectDlg(e.detail); }, 50); });
-  window.addEventListener('storage', function (e) { if (e.key && /^tt-focus-(cal|goals|notes|log|prefs)$/.test(e.key)) soft(); });
+  window.addEventListener('storage', function (e) { if (e.key && /^tt-focus-(cal|goals|notes|log|prefs|plan)$/.test(e.key)) soft(); });
 
   /* ======================================================================
      FOCUS
@@ -623,10 +627,11 @@
   function itemsOn(date) {
     var evs = vals(cal().events).filter(function (e) { return e.date === date; }).map(function (e) { return { src: 'ev', e: e }; });
     var tds = vals(F.todos().items).filter(function (x) { return x.due === date; }).map(function (x) { return { src: 'todo', e: { id: x.id, title: x.text, kind: 'task', subj: x.subj, done: x.done, date: x.due } }; });
-    return evs.concat(tds).sort(function (a, b) { var ka = a.e.kind === 'deadline' ? 0 : a.e.start ? 1 : 2, kb = b.e.kind === 'deadline' ? 0 : b.e.start ? 1 : 2; return ka - kb || (toMin(a.e.start) || 0) - (toMin(b.e.start) || 0); });
+    var pls = P && P.calItems ? P.calItems(date) : []; // project planner deadlines and milestones
+    return evs.concat(tds, pls).sort(function (a, b) { var ka = a.e.kind === 'deadline' ? 0 : a.e.start ? 1 : 2, kb = b.e.kind === 'deadline' ? 0 : b.e.start ? 1 : 2; return ka - kb || (toMin(a.e.start) || 0) - (toMin(b.e.start) || 0); });
   }
   function pill(it) {
-    var e = it.e, cls = 'pill' + (e.kind === 'deadline' ? ' dl' : '') + (it.src === 'todo' ? ' task' : '') + (e.done ? ' dnx' : '');
+    var e = it.e, cls = 'pill' + (e.kind === 'deadline' ? ' dl' : '') + (it.src === 'todo' || (it.src === 'plan' && e.kind === 'task') ? ' task' : '') + (e.done ? ' dnx' : '');
     return '<div class="' + cls + '" style="--c:' + evCol(e) + '" data-src="' + it.src + '" data-id="' + esc(e.id) + '" tabindex="0" title="' + esc(e.title) + '">' +
       (e.kind === 'deadline' ? IC.flag.replace(/width="18" height="18"/, '') : e.kind === 'task' ? (e.done ? IC.check.replace(/width="18" height="18"/, '') : '') : '') +
       (e.start ? '<span class="tm">' + esc(e.start) + '</span>' : '') + '<span class="tt">' + esc(e.title) + '</span></div>';
@@ -644,12 +649,28 @@
     h += '<aside class="card upc"><div class="ch"><h3>Upcoming deadlines</h3></div>' + upcomingHTML() + '</aside></div>';
     v.innerHTML = h;
     $$('[data-nav]', v).forEach(function (b) { b.onclick = function () { var n = +b.getAttribute('data-nav'); if (!n) { cAnchor = today(); selDay = today(); } else if (view === 'month') { var d = parseISO(cAnchor); d.setDate(1); d.setMonth(d.getMonth() + n); cAnchor = iso(d); } else cAnchor = addDays(cAnchor, 7 * n); render(); }; });
-    $$('[data-cv]', v).forEach(function (b) { b.onclick = function () { setPref('calView', b.getAttribute('data-cv')); render(); }; });
+    $$('[data-cv]', v).forEach(function (b) { b.onclick = function () {
+      var to = b.getAttribute('data-cv');
+      /* Month to Week: open the week you were working in (the day you last clicked or added to in this month,
+         else today if it is this month, else the first week of the month that has something in it), not the week of the 1st */
+      if (to === 'week' && view === 'month') cAnchor = weekFor(cAnchor);
+      setPref('calView', to); render();
+    }; });
     $('[data-newev]', v).onclick = function () { evDlg(null, { date: view === 'month' && cAnchor.slice(0, 7) !== today().slice(0, 7) ? cAnchor : today() }); };
     $$('.upc [data-open]', v).forEach(function (x) { x.onclick = function () { evDlg(x.getAttribute('data-open')); }; });
+    $$('.upc [data-plan]', v).forEach(function (x) { x.onclick = function () { P.open(x.getAttribute('data-plan')); }; });
     if (nar) wireAgenda(v);
     if (view === 'month') wireMonth(v); else if (!nar) wireWeek(v);
   };
+  var lastDay = null; // the last day you clicked on or added something to
+  function weekFor(anchor) {
+    var ym = anchor.slice(0, 7), t = today();
+    if (lastDay && lastDay.slice(0, 7) === ym) return lastDay;
+    if (t.slice(0, 7) === ym) return t;
+    var first = ym + '-01', a = parseISO(first), n = new Date(a.getFullYear(), a.getMonth() + 1, 0).getDate();
+    for (var i = 0; i < n; i++) { var d = addDays(first, i); if (itemsOn(d).length) return d; }
+    return first;
+  }
   /* phones: a readable list of what's on a day, instead of tiny boxes */
   var selDay = today();
   function narrow() { return matchMedia('(max-width: 700px)').matches; }
@@ -659,7 +680,7 @@
       '<button type="button" class="btn sm" data-addday="' + d + '">' + IC.plus + 'Add</button></div>' +
       (its.length ? its.map(function (it) {
         var e = it.e, todo = it.src === 'todo';
-        var when = e.start ? e.start + (e.end ? '–' + e.end : '') : e.kind === 'deadline' ? 'Deadline' : todo ? 'Task due' : 'All day';
+        var when = e.start ? e.start + (e.end ? '–' + e.end : '') : e.kind === 'deadline' ? 'Deadline' : todo ? 'Task due' : it.src === 'plan' ? 'Project' : 'All day';
         return '<div class="agi' + (e.kind === 'deadline' ? ' dl' : '') + (e.done ? ' dnx' : '') + '" data-src="' + it.src + '" data-id="' + esc(e.id) + '" role="button" tabindex="0" style="--c:' + evCol(e) + '">' +
           (todo ? '<input type="checkbox" class="check pop" data-agdone aria-label="Done"' + (e.done ? ' checked' : '') + '>' : '<span class="bar"></span>') +
           '<span class="when">' + esc(when) + '</span><span class="tt">' + esc(e.title) + '</span></div>';
@@ -688,9 +709,9 @@
     return h + '</div></div>';
   }
   function upcomingHTML() {
-    var t = today(), dls = vals(cal().events).filter(function (e) { return e.kind === 'deadline' && !e.done && e.date >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 8);
+    var t = today(), dls = vals(cal().events).filter(function (e) { return e.kind === 'deadline' && !e.done && e.date >= t; }).concat(P && P.upcoming ? P.upcoming(t) : []).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).slice(0, 8);
     if (!dls.length) return '<div class="empty" style="padding:14px 4px">' + IC.flag.replace(/width="18" height="18"/, '') + '<div class="small">No deadlines yet. Add exams, coursework and mocks so you can count down to them.</div></div>';
-    return dls.map(function (e) { var n = daysBetween(t, e.date); return '<div class="it" data-open="' + esc(e.id) + '" role="button" tabindex="0"><span class="cd' + (n <= 3 ? ' soon' : '') + '">' + (n === 0 ? '!' : n) + '<small>' + (n === 0 ? 'today' : n === 1 ? 'day' : 'days') + '</small></span><span><b>' + esc(e.title) + '</b><br><span class="small muted">' + esc(niceDate(e.date, true)) + (e.start ? ' · ' + esc(e.start) : '') + '</span></span></div>'; }).join('');
+    return dls.map(function (e) { var n = daysBetween(t, e.date); return '<div class="it" ' + (e.plan ? 'data-plan' : 'data-open') + '="' + esc(e.id) + '" role="button" tabindex="0"><span class="cd' + (n <= 3 ? ' soon' : '') + '">' + (n === 0 ? '!' : n) + '<small>' + (n === 0 ? 'today' : n === 1 ? 'day' : 'days') + '</small></span><span><b>' + esc(e.title) + '</b><br><span class="small muted">' + esc(niceDate(e.date, true)) + (e.start ? ' · ' + esc(e.start) : '') + '</span></span></div>'; }).join('');
   }
   /* drag a pill to another day (works with mouse, pen and touch) */
   function pillDrag(v, onDrop, onClick) {
@@ -716,18 +737,19 @@
   }
   function moveItem(src, id, date) {
     if (src === 'todo') F.setTodo(id, { due: date });
+    else if (src === 'plan') P.moveTo(id, date);
     else { var c = cal(); if (c.events[id]) { c.events[id].date = date; putJ(K.cal, c); } }
     render(); toast('Moved to ' + niceDate(date) + '.');
   }
-  function openItem(src, id) { if (src === 'todo') taskDlg(id); else evDlg(id); }
+  function openItem(src, id) { if (src === 'todo') taskDlg(id); else if (src === 'plan') P.open(id); else evDlg(id); }
   function wireMonth(v) {
     if (narrow()) { // phones: tap a day to see it below
-      $$('.mcell', v).forEach(function (c) { c.onclick = function () { selDay = c.getAttribute('data-date'); render(); var a = $('.agenda'); if (a) a.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }; });
+      $$('.mcell', v).forEach(function (c) { c.onclick = function () { selDay = lastDay = c.getAttribute('data-date'); render(); var a = $('.agenda'); if (a) a.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }; });
       return;
     }
     pillDrag(v, moveItem, openItem);
     $$('.mcell', v).forEach(function (c) {
-      var open = function (e) { if (e && e.target.closest('.pill')) return; var d = c.getAttribute('data-date'), its = itemsOn(d); if (its.length > 3 && e && e.target.closest('.more')) dayDlg(d); else evDlg(null, { date: d }); };
+      var open = function (e) { if (e && e.target.closest('.pill')) return; var d = c.getAttribute('data-date'), its = itemsOn(d); lastDay = d; if (its.length > 3 && e && e.target.closest('.more')) dayDlg(d); else evDlg(null, { date: d }); };
       c.onclick = open; c.onkeydown = function (e) { if (e.key === 'Enter' && e.target === c) open(); };
     });
   }
@@ -840,7 +862,7 @@
       var c2 = cal(), base = { title: t.slice(0, 120), kind: kind, date: d, start: s, end: en, subj: chipVal(m.box, 'cs'), note: $('#cN', m.box).value.trim(), done: id ? $('#cDone', m.box).checked : false };
       if (id) { c2.events[id] = Object.assign(c2.events[id] || { id: id, t: NOW() }, base); }
       else { var rep = +(($('#cRep', m.box) || {}).value || 0); for (var i = 0; i < Math.max(1, rep); i++) { var nid = uid() + i; c2.events[nid] = Object.assign({ id: nid, t: NOW() }, base, { date: addDays(d, 7 * i) }); } }
-      putJ(K.cal, c2); m.close(); render(); toast(id ? 'Saved.' : kind === 'deadline' ? 'Deadline added. The countdown is on.' : 'Added to your calendar.');
+      putJ(K.cal, c2); lastDay = d; m.close(); render(); toast(id ? 'Saved.' : kind === 'deadline' ? 'Deadline added. The countdown is on.' : 'Added to your calendar.');
     };
     $('#cT', m.box).onkeydown = function (ev) { if (ev.key === 'Enter') m.box.querySelector('[data-s]').click(); };
     var del = m.box.querySelector('[data-del]'); if (del) del.onclick = function () { var c2 = cal(), old = c2.events[id]; delete c2.events[id]; putJ(K.cal, c2); m.close(); render(); toast('Deleted.', 'Undo', function () { var c3 = cal(); c3.events[id] = old; putJ(K.cal, c3); render(); }); };
@@ -1116,6 +1138,12 @@
 
   applyTheme(); applyBg();
   $('#btnSettings').onclick = settingsDlg;
+  /* the project planner (planner.js) plugs in here: it draws the Planner tab and puts its deadlines on the calendar */
+  if (typeof window.ttPlanner === 'function') P = window.ttPlanner({
+    $: $, $$: $$, esc: esc, getJ: getJ, putJ: putJ, uid: uid, pad: pad, iso: iso, parseISO: parseISO, today: today, addDays: addDays, monday: monday,
+    daysBetween: daysBetween, niceDate: niceDate, MON: MON, DOW: DOW, IC: IC, ic: ic, COLS: COLS, modal: modal, toast: toast, confetti: confetti,
+    prefs: prefs, setPref: setPref, RENDER: RENDER, render: function () { render(); }, tab: function () { return cur; }, setDragging: function (b) { dragging = !!b; }
+  }) || null;
   route();
   /* first visit: ask which subjects you study (Not now asks again in a few days) */
   (function () { var st = getJ(K_SUBJ, null) || {}; if (!st.done && !(st.snooze > NOW())) setTimeout(function () { if (!$('.modal-back')) subjDlg(true); }, 700); })();

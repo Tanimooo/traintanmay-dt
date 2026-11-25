@@ -55,6 +55,7 @@ app.innerHTML = `
   <a class="brand" href="#home" aria-label="TrainTanmay home">${LOGO}<span><b>TrainTanmay</b><small>D&amp;T · Edexcel 9DT0</small></span></a>
   <nav class="nav" aria-label="Main">${NAV.map(([k,l])=>`<a href="#${k}" data-nav="${k}">${l}</a>`).join('')}</nav>
   <div class="tb-right">
+    <a class="btn btn-sm neabtn" href="focus/#planner:nea" title="Plan your NEA as a Gantt chart"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16h16"/><path d="M7 8h7M10 12h8M8 16h6"/></svg><span>NEA planner</span></a>
     <button class="iconbtn" id="btnSearch" aria-label="Search">${I.search}</button>
     <button class="iconbtn dysbtn" id="btnDys" aria-pressed="false" title="Dyslexia-friendly font" aria-label="Dyslexia-friendly font">Aa</button>
     <select class="theme-select" id="theme" aria-label="Colour theme">
@@ -198,7 +199,7 @@ function viewHome(v){
       <span class="eyebrow">Edexcel A level · Product Design · Paper 1</span>
       <h1 id="pun" class="pun" aria-live="polite"></h1>
       <p>Notes for all 12 topics, ${D.topics.reduce((a,t)=>a+t.flash.length,0)} flashcards, ${D.topics.reduce((a,t)=>a+t.quiz.length,0)} quiz questions, ${D.pp.length} past-paper questions from 2019–2025 with mark schemes and model answers, and ${Object.keys(LABS).length} interactive labs.</p>
-      <div class="row">${last?`<a class="btn primary" href="#t-${last.id}">Continue: ${esc(last.id)} ${esc(last.title)}</a>`:`<a class="btn primary" href="#topics">Start revising</a>`}<a class="btn" href="#exam">Exam questions</a><a class="btn ghost" href="#labs">Explore the labs →</a></div>
+      <div class="row">${last?`<a class="btn primary" href="#t-${last.id}">Continue: ${esc(last.id)} ${esc(last.title)}</a>`:`<a class="btn primary" href="#topics">Start revising</a>`}<a class="btn" href="#exam">Exam questions</a><a class="btn" href="focus/#planner:nea">Plan your NEA</a><a class="btn ghost" href="#labs">Explore the labs →</a></div>
     </div>
     <div class="hero-3d" id="hero3d"><div class="titleblock"><span>DRAWN</span><span>TrainTanmay</span><span>SPEC</span><span>9DT0/01</span></div></div>
   </section>
