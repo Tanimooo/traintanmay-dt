@@ -1,6 +1,6 @@
 # Focus ad: adding "Counting Stars"
 
-`TrainTanmay-focus-ad.mp4` is a silent vertical (1080×1920) cut, 21.6 s, edited to **122 BPM**, the tempo of
+`TrainTanmay-focus-ad.mp4` is a silent vertical (1080×1920) cut, 24.6 s, edited to **122 BPM**, the tempo of
 *Counting Stars* by OneRepublic. The song isn't in the file (it's copyrighted), so add it from the app's licensed
 music library: TikTok, Instagram Reels and YouTube Shorts all have it.
 
@@ -25,6 +25,7 @@ after that stays on the beat. The opening four text cards change on each of the 
 | 30 | 14.75 s | Weekly goal |
 | 32 | 15.74 s | Streaks and progress |
 | 34–35 | 16.72 s | Every focus minute counts on the leaderboard |
-| 36 | 17.70 s | End card (holds to 21.6 s) |
+| 36 | 17.70 s | Plus bug fixes: a fix ticks in every half beat |
+| 42 | 20.66 s | End card (holds to 24.6 s) |
 
 Rebuild: `cd promo/source/focus-ad && node cap.js && node render.js` (needs Playwright and ffmpeg).

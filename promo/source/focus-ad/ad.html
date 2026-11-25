@@ -28,6 +28,13 @@ html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-famil
 #end p{font-weight:800;font-size:22px;margin-top:6px;color:#8fd0ff;letter-spacing:-.01em}
 #end small{display:block;margin-top:18px;font-weight:600;font-size:13.5px;color:rgba(235,240,255,.75)}
 #end .pill{margin-top:16px;padding:9px 16px;border-radius:99px;background:#fff;color:#07051a;font-weight:800;font-size:14px}
+#fix{position:absolute;inset:0;padding:56px 24px 0;color:#fff}
+#fix h2{font-weight:900;font-size:44px;letter-spacing:-.03em;line-height:1}
+#fix h2 em{font-style:normal;color:#3ddc84}
+#fix p{font-weight:600;font-size:14px;color:rgba(235,240,255,.7);margin:6px 0 14px}
+#fix li{list-style:none;display:flex;gap:12px;align-items:flex-start;padding:8px 12px;margin-bottom:7px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-weight:700;font-size:14.5px;line-height:1.22}
+#fix li i{flex:none;width:22px;height:22px;border-radius:50%;background:#3ddc84;color:#07051a;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:13px;margin-top:-1px}
+#fix li small{display:block;font-weight:500;font-size:12.5px;color:rgba(235,240,255,.65);margin-top:2px}
 #beatbar{position:absolute;left:0;bottom:0;height:5px;background:linear-gradient(90deg,#8fd0ff,#ffc917,#ff4f96)}
 </style></head>
 <body>
@@ -48,6 +55,15 @@ html,body{width:360px;height:640px;overflow:hidden;background:#07051a;font-famil
   <small>Free · works on your phone, tablet and laptop</small>
   <div class="pill">tanimooo.github.io/traintanmay-dt</div>
 </div>
+<div id="fix"><h2>Plus <em>bug fixes</em></h2><p>Thanks for every report</p><ul>
+  <li><i>✓</i><span>Time in PDF papers now counts<small>No more lost minutes on long papers</small></span></li>
+  <li><i>✓</i><span>Fairer leaderboard time<small>Uses real time, not your device clock</small></span></li>
+  <li><i>✓</i><span>Progress you delete stays deleted<small>On every device you sync</small></span></li>
+  <li><i>✓</i><span>Full mark schemes and diagrams<small>In cut-out questions</small></span></li>
+  <li><i>✓</i><span>PDFs open on school WiFi</span></li>
+  <li><i>✓</i><span>Maths packs on the right topics<small>Broken links fixed</small></span></li>
+  <li><i>✓</i><span>Back now closes pop-ups in Maths</span></li>
+</ul></div>
 <div id="tap"></div>
 <div id="flash"></div>
 <div id="beatbar"></div>
@@ -81,7 +97,8 @@ var S = [
   { a: 32, n: 2, k: 'shot', img: 'progress', cap: 'Watch your<br><em>streak</em> grow', hl: '#ff8a3d', zoom: [1.0, 1.1], fy: .3 },
   { a: 34, n: 1, k: 'text', t: 'Every<br><em>focus minute</em>', hl: '#8fd0ff' },
   { a: 35, n: 1, k: 'text', t: 'counts on the<br><em>leaderboard</em>', hl: '#ffc917', s: 'Race your friends every week' },
-  { a: 36, n: 8, k: 'end' }
+  { a: 36, n: 6, k: 'fix', hl: '#3ddc84' },
+  { a: 42, n: 8, k: 'end' }
 ];
 var TOTAL = (S[S.length - 1].a + S[S.length - 1].n) * B;
 var SHOTS = {}; S.forEach(function (s) { if (s.img) SHOTS[s.img] = 1; });
@@ -108,6 +125,12 @@ window.render = function (t) {
   var isText = s.k === 'text', isShot = s.k === 'shot', isEnd = s.k === 'end';
   $('card').style.display = isShot ? '' : 'none'; $('cap').style.display = isShot ? '' : 'none';
   $('big').style.display = isText ? '' : 'none'; $('end').style.display = isEnd ? '' : 'none';
+  var isFix = s.k === 'fix'; $('fix').style.display = isFix ? '' : 'none';
+  if (isFix) { // the title lands, then a fix ticks in on every half beat
+    var fx = $('fix'), h = fx.querySelector('h2'), pp = fx.querySelector('p'), li = fx.querySelectorAll('li');
+    h.style.transform = 'scale(' + (0.7 + 0.3 * back(lb / 0.3) + hit * 0.03).toFixed(3) + ')'; h.style.transformOrigin = '0 50%'; h.style.opacity = String(ease(lb / 0.15)); pp.style.opacity = String(ease((lb - 0.3) / 0.3));
+    for (var q = 0; q < li.length; q++) { var dq = (lb - 0.75 - q * 0.5) / 0.3; li[q].style.opacity = String(ease(dq)); li[q].style.transform = 'translateX(' + ((1 - back(Math.min(1, Math.max(0, dq)))) * -40).toFixed(1) + 'px)'; var ck = li[q].querySelector('i'); ck.style.transform = 'scale(' + (dq < 0.6 ? 0 : back(Math.min(1, (dq - 0.6) / 0.8))).toFixed(3) + ')'; }
+  }
   $('tag').style.display = isShot && s.tag ? '' : 'none';
   $('tap').style.display = 'none';
   if (isText) {
