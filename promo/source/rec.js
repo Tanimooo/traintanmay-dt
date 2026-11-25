@@ -41,9 +41,22 @@ const CURSOR_JS = `window.__ttPhone=${PHONE};
   add();
 })();`;
 
+/* LOCAL=1: answer http://localhost:8765 (the site) and :8766 (promo/source/www) straight from disk,
+   so no web servers need to be running */
+const TYPES = { html: 'text/html', js: 'application/javascript', css: 'text/css', json: 'application/json', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', woff2: 'font/woff2', pdf: 'application/pdf', mp4: 'video/mp4', webmanifest: 'application/json' };
+async function serveLocal(ctx) {
+  const roots = { 8765: path.join(__dirname, '..', '..'), 8766: path.join(__dirname, 'www') };
+  await ctx.route(/^http:\/\/localhost:(8765|8766)\//, r => {
+    const u = new URL(r.request().url()); let f = path.join(roots[u.port], decodeURIComponent(u.pathname));
+    if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, 'index.html');
+    if (!fs.existsSync(f)) return r.fulfill({ status: 404, body: 'not found' });
+    return r.fulfill({ body: fs.readFileSync(f), contentType: TYPES[f.split('.').pop()] || 'application/octet-stream' });
+  });
+}
 async function startRecording(name, { url, seed = {}, prep, init = [] } = {}) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: SCALE });
+  if (process.env.LOCAL) await serveLocal(ctx);
   await ctx.addInitScript(CURSOR_JS);
   for (const s of init) await ctx.addInitScript(s);
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
@@ -129,4 +142,4 @@ async function startRecording(name, { url, seed = {}, prep, init = [] } = {}) {
   return { page, glide, moveTo, click, scrollBy, stop, sleep, now, centre, type, reveal };
 }
 
-module.exports = { startRecording, sleep, W, H, PHONE };
+module.exports = { startRecording, serveLocal, sleep, W, H, PHONE };

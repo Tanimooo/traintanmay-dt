@@ -299,6 +299,18 @@
   }
 
   /* --- draw the strip(s) --- */
+  /* cut the empty white space off the bottom of a strip (a pasted-in picture can carry a lot of it) */
+  function trimBottom(c) {
+    var o = c;
+    try {
+      var g = c.getContext('2d'), W = c.width, H = c.height, d = g.getImageData(0, 0, W, H).data, st = Math.max(1, Math.round(W / 300)), y = H - 1;
+      for (; y > 0; y--) { var ink = false; for (var x = 0; x < W; x += st) { var i = (y * W + x) * 4; if (d[i] < 235 || d[i + 1] < 235 || d[i + 2] < 235) { ink = true; break; } } if (ink) break; }
+      var keepH = Math.min(H, y + Math.round(W * 0.02) + 1);
+      if (keepH < H - W * 0.04 && keepH > 20) { o = document.createElement('canvas'); o.width = W; o.height = keepH; o.getContext('2d').drawImage(c, 0, 0, W, keepH, 0, 0, W, keepH); }
+    } catch (e) {}
+    o.style.width = '100%'; o.style.display = 'block';
+    return o;
+  }
   function render(doc, url, loc, box) {
     var pages = []; for (var p = loc.start.page; p <= loc.end.page; p++) pages.push(p);
     var width = Math.min(box.clientWidth || 700, 900), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -318,7 +330,9 @@
         // Keep the question, drop the answer space: bands of dotted answer lines are cut out, and so is the
         // empty space after the last words (figures always have a caption or labels, so they stay).
         var words = inside.filter(function (i) { return !DOTS.test(i.s) && !/^\d{1,2}$/.test(i.s) && !HEADER.test(i.s); });
-        if (!words.length && pn !== loc.start.page) return null;
+        // pictures in this part of the page (some mark schemes are pasted in as images, with only "Q1." as text)
+        var pics = imgs.filter(function (bx) { return bx[1] > top + 4 && bx[0] < bot - 4; });
+        if (!words.length && !pics.length && pn !== loc.start.page) return null;
         var xs = inside.map(function (i) { return i.x; });
         var left = Math.max(0, (xs.length ? Math.min.apply(null, xs) : 40) - 12);
         // right edge: the widest line of text (dotted answer lines included), not the page edge with its margin bar
@@ -330,7 +344,10 @@
           left = Math.max(0, Math.min(left, bx[2] - 12)); right = Math.min(P.w, Math.max(right, bx[3] + 14));
         });
         var dots = inside.filter(function (i) { return DOTS.test(i.s); }).map(function (i) { return i.y; }).sort(function (a, b) { return a - b; });
+        var bot0 = bot;
         if (words.length) bot = Math.min(bot, Math.max.apply(null, words.map(function (i) { return i.y; })) + 10);
+        // ...but never above the bottom of a picture that belongs to it
+        pics.forEach(function (bx) { bot = Math.max(bot, Math.min(bot0, bx[1] + 6)); });
         var cuts = [];
         dots.forEach(function (y) { var last = cuts[cuts.length - 1]; if (last && y - last[1] < 40) last[1] = y; else cuts.push([y, y]); });
         // big empty gaps between lines of words (boxes for working) go too, unless a picture is in them
@@ -362,8 +379,7 @@
             x.drawImage(full, left * k, r[0] * k, c.width, h, 0, at, c.width, h); at += h;
             if (i < keep.length - 1) { x.fillStyle = '#e4e6eb'; x.fillRect(0, at + 2 * dpr, c.width, dpr); at += 6 * dpr; }
           });
-          c.style.width = '100%'; c.style.display = 'block';
-          return c;
+          return trimBottom(c);
         });
       });
     })).then(function (cs) { return cs.filter(Boolean); });

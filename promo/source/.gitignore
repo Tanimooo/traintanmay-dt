@@ -1,0 +1,6 @@
+# recording output, rebuilt by the scripts
+clips/
+frames/
+out/
+# copied in from ../../fonts before building (see promo/README.md)
+www/opendyslexic-latin-*.woff2
