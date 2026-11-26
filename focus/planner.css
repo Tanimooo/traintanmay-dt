@@ -221,3 +221,12 @@
 .aibar{width:13px;height:7px;border-radius:3px;background:var(--acc);flex:none}
 .aiq{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--warn);color:#fff;font-size:11px}
 @media (max-width:700px){.pwide{flex-direction:column;text-align:center}}
+
+/* clear the chart: the warning */
+.cwarn{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad);margin-bottom:10px}
+.copts{display:grid;gap:8px}
+.copt{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line2);border-radius:14px;cursor:pointer}
+.copt:has(input:checked){border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,transparent)}
+.copt input{margin-top:3px;accent-color:var(--bad);width:17px;height:17px;flex:none}
+.copt b{display:block;font-size:14.5px}.copt small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.btn.cdanger{background:var(--bad);border-color:var(--bad);color:#fff}
