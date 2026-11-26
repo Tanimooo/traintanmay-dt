@@ -136,7 +136,8 @@ window.ttPlanner = function (A) {
     if (one) {
       var pc = projPct(d, one.id), left = one.end ? days(today(), one.end) : null, lateN = stepsOf(d, one.id).filter(late).length;
       h += '<div class="psum card"><div class="psum-t"><span class="ptype" style="--c:' + one.color + '">' + esc((TPL[one.type] || TPL.other).name) + '</span><b>' + esc(one.name) + '</b>' +
-        '<button type="button" class="btn ghost sm" data-editproj>' + IC.edit + 'Edit project</button></div>' +
+        '<button type="button" class="btn ghost sm" data-editproj>' + IC.edit + 'Edit project</button>' +
+        '<button type="button" class="btn ghost sm danger" data-clear title="Clear this chart">' + IC.trash + 'Clear chart</button></div>' +
         '<div class="psum-s"><div class="pmeter" title="' + pc + '% done"><i style="width:' + pc + '%"></i></div><span><b>' + pc + '%</b> done</span>' +
         (left != null ? '<span class="' + (left < 0 ? 'bad' : left <= 14 ? 'warn' : '') + '">' + IC.flag.replace(/width="18" height="18"/, 'width="15" height="15"') + (left > 0 ? '<b>' + left + '</b> days to hand-in (' + esc(niceDate(one.end)) + ')' : left === 0 ? '<b>Hand-in is today</b>' : 'Hand-in was ' + esc(niceDate(one.end))) + '</span>' : '') +
         (lateN ? '<span class="bad"><b>' + lateN + '</b> behind</span>' : '') + budgetPill(one) + '</div>' + viewSeg(one, P) + '</div>';
@@ -185,6 +186,7 @@ window.ttPlanner = function (A) {
     $$('.pchips [data-proj]', v).forEach(function (b) { b.onclick = function () { setPP('cur', b.getAttribute('data-proj')); scrollKeep = null; A.render(); }; });
     $('[data-newproj]', v).onclick = function () { projDlg(null); };
     var ep = $('[data-editproj]', v); if (ep && one) ep.onclick = function () { projDlg(one.id); };
+    var cl = $('[data-clear]', v); if (cl && one) cl.onclick = function () { clearDlg(one.id); };
     $$('[data-view]', v).forEach(function (b) { b.onclick = function () { setPP('view', b.getAttribute('data-view')); A.render(); }; });
     var bp = $('[data-budget]', v); if (bp && one) bp.onclick = function () { if (BG.on(one.id)) { setPP('view', 'budget'); A.render(); } else BG.setupDlg(one.id, one.type, function () { setPP('view', 'budget'); A.render(); }); };
   }
@@ -587,6 +589,41 @@ window.ttPlanner = function (A) {
     var del = B.querySelector('[data-del]'); if (del) del.onclick = function () { var dd = data(), old = dd.steps[id]; delete dd.steps[id]; save(dd); m.close(); A.render(); toast('Deleted.', 'Undo', function () { var d3 = data(); d3.steps[id] = old; save(d3); A.render(); }); };
   }
 
+  /* clear a chart, after a clear warning: everything, just the dates, or just the progress. Undo is offered afterwards too. */
+  function clearDlg(pid) {
+    var d = data(), p = d.projects[pid]; if (!p) return;
+    var ss = stepsOf(d, pid), placed = ss.filter(function (s) { return s.start; }).length, prog = ss.filter(function (s) { return (s.pct || 0) > 0 || vals(s.log).length || s.as; }).length;
+    if (!ss.length) { toast('This chart is already empty.'); return; }
+    var how = 'all';
+    var OPTS = [
+      ['all', 'Remove every step', 'Deletes all ' + ss.length + ' step' + (ss.length === 1 ? '' : 's') + ', milestones and notes, with their progress logs. The project, its hand-in date, colour key, layers, notes and budget stay.'],
+      ['dates', 'Keep the steps, clear their dates', 'Your list of steps stays, but every bar comes off the timeline' + (placed ? ' (' + placed + ' placed)' : '') + ' so you can draw them again. Progress is kept.'],
+      ['progress', 'Reset progress only', 'Sets every step back to 0% and removes the progress log and "what you actually did"' + (prog ? ' (' + prog + (prog === 1 ? ' step has' : ' steps have') + ' progress)' : '') + '. Steps and dates stay.']
+    ];
+    var m = modal('<div class="cwarn">' + ic('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>', 30) + '</div><h2>Clear the chart for ' + esc(p.name) + '?</h2>' +
+      '<p class="muted" style="margin-top:-6px">You get a few seconds to undo it afterwards, then it\'s gone for good. Pick what to clear:</p>' +
+      '<div class="copts" role="radiogroup">' + OPTS.map(function (o, i) { return '<label class="copt"><input type="radio" name="clr" value="' + o[0] + '"' + (i === 0 ? ' checked' : '') + '><span><b>' + o[1] + '</b><small>' + esc(o[2]) + '</small></span></label>'; }).join('') + '</div>' +
+      '<label class="f" for="clrT" style="margin-top:14px">To confirm, type <b>clear</b></label><input type="text" id="clrT" autocomplete="off" spellcheck="false" placeholder="clear">' +
+      '<div class="foot"><button type="button" class="btn" data-no>Cancel</button><button type="button" class="btn pr cdanger" data-yes disabled>' + IC.trash + 'Clear the chart</button></div>');
+    var B = m.box, yes = B.querySelector('[data-yes]'), t = $('#clrT', B);
+    var LBL = { all: 'Remove every step', dates: 'Clear the dates', progress: 'Reset progress' };
+    $$('input[name=clr]', B).forEach(function (r) { r.onchange = function () { how = r.value; yes.lastChild.textContent = LBL[how]; }; });
+    t.oninput = function () { yes.disabled = t.value.trim().toLowerCase() !== 'clear'; };
+    t.onkeydown = function (e) { if (e.key === 'Enter' && !yes.disabled) yes.click(); };
+    setTimeout(function () { t.focus(); }, 40);
+    B.querySelector('[data-no]').onclick = m.close;
+    yes.onclick = function () {
+      var dd = data(), snap = JSON.stringify(dd), n = 0;
+      stepsOf(dd, pid).forEach(function (s) {
+        n++;
+        if (how === 'all') delete dd.steps[s.id];
+        else if (how === 'dates') { s.start = ''; s.end = ''; }
+        else { s.pct = 0; delete s.log; delete s.as; delete s.ae; }
+      });
+      save(dd); m.close(); A.render();
+      toast(how === 'all' ? 'Chart cleared: ' + n + ' step' + (n === 1 ? '' : 's') + ' removed.' : how === 'dates' ? 'Dates cleared. Drag along each row to draw them again.' : 'Progress reset to 0%.', 'Undo', function () { save(JSON.parse(snap)); A.render(); toast('Put back.'); });
+    };
+  }
   function projDlg(id, type) {
     var d = data(), p = id ? d.projects[id] : null, ty = p ? p.type : type || 'nea';
     var m = modal('<h2>' + (p ? 'Edit project' : 'New project') + '</h2><div class="fields">' +
