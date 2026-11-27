@@ -9,7 +9,8 @@ window.LABHOW={
  cells:'choose a half-cell for each side. The voltmeter shows the cell potential; electrons flow through the wire from the negative electrode to the positive one. Change concentrations or remove the salt bridge to see what happens.',
  iontests:'pick an unknown and click reagents to test it, one after another, like adding them to a test tube. Use <b>Fresh sample</b> to start a new test. When you think you know, choose the cation and anion and press <b>Check</b>.',
  shapes:'pick a molecule from the tray (grouped by regions of electron density). Drag it to rotate; untick <b>Spin</b> to hold it still. Purple lobes are lone pairs and orange arcs mark the bond angles. Switch to <b>Exam drawing</b> to see the same molecule as a wedge-and-dash diagram, the way you would draw it in an exam.',
- spectra:'choose a compound and a type of spectrum, then point at (or tap) a peak. The part of the molecule that causes it lights up.'};
+ spectra:'choose a compound and a type of spectrum, then point at (or tap) a peak. The part of the molecule that causes it lights up.',
+ iupac:'in <b>Type a name</b> mode, start typing any IUPAC name: the molecule is drawn as you type, with its parent chain numbered. If your name isn\u2019t the correct IUPAC name, you\u2019ll see the right one and why. Switch to <b>Name the molecule</b> for a quiz: type the name of the drawn molecule and press Enter. Pick the difficulty and families in the controls.'};
 const seq=(a,steps)=>steps.forEach(s=>{ if(s[0]==='set') a.set(s[1],s[2]); else if(s[0]==='click') a.click(s[1]); });
 window.LABGUIDES={
  titration:[
@@ -50,9 +51,16 @@ window.LABGUIDES={
  spectra:[
   {t:'Propan-1-ol or propan-2-ol?',d:'Compare the ¹³C NMR of both.',set:a=>{ a.set('Compound','prop1'); a.set('Spectrum','c'); },q:'How does ¹³C NMR tell them apart?',a:'Propan-1-ol has 3 carbon environments (3 peaks); propan-2-ol has 2, because its two CH₃ groups are equivalent.'},
   {t:'The ethyl group pattern',d:'Look at the ¹H NMR of ethyl ethanoate.',set:a=>{ a.set('Compound','ester'); a.set('Spectrum','h'); },q:'Which two peaks show an ethyl group?',a:'A 2H quartet and a 3H triplet: the CH₂ (next to CH₃) and the CH₃ (next to CH₂). Here the quartet is at 4.1 ppm because the CH₂ is bonded to oxygen.'},
-  {t:'Alcohol, aldehyde or acid?',d:'Compare the IR spectra of ethanol, ethanal and ethanoic acid.',set:a=>{ a.set('Compound','acid'); a.set('Spectrum','ir'); },q:'What two features identify a carboxylic acid?',a:'A very broad O–H absorption from 2500 to 3300 cm⁻¹ and a strong C=O absorption near 1710 cm⁻¹.'}]};
+  {t:'Alcohol, aldehyde or acid?',d:'Compare the IR spectra of ethanol, ethanal and ethanoic acid.',set:a=>{ a.set('Compound','acid'); a.set('Spectrum','ir'); },q:'What two features identify a carboxylic acid?',a:'A very broad O–H absorption from 2500 to 3300 cm⁻¹ and a strong C=O absorption near 1710 cm⁻¹.'}],
+ iupac:[
+  {t:'The longest chain can bend',d:'Type “2-ethylpropane”, a common mistake.',set:a=>a.preset({name:'2-ethylpropane',numbers:true}),q:'Why is 2-ethylpropane not a correct name?',a:'The ethyl group’s two carbons continue the chain round a bend, so the longest chain has 4 carbons, not 3. The molecule is 2-methylbutane.'},
+  {t:'Lowest numbers for the functional group',d:'Type “butan-3-ol”.',set:a=>a.preset({name:'butan-3-ol',numbers:true}),q:'What is the correct name, and why?',a:'Butan-2-ol. Numbering from the other end puts the OH on carbon 2, and the main functional group must get the lowest number possible.'},
+  {t:'Alphabetical order',d:'Type “2-methyl-3-ethylpentane”.',set:a=>a.preset({name:'2-methyl-3-ethylpentane',numbers:true}),q:'What is wrong with the name?',a:'Substituents are listed alphabetically: ethyl before methyl. The name is 3-ethyl-2-methylpentane (the numbers stay with their groups).'},
+  {t:'Esters: two words',d:'Compare “ethyl propanoate” with “propyl ethanoate”.',set:a=>a.preset({name:'ethyl propanoate',numbers:true}),q:'Are these the same molecule?',a:'No, they are isomers (both C₅H₁₀O₂). The first word is the alkyl group from the alcohol, bonded to the single-bonded O. The second word is the acid part, including the C=O carbon. Ethyl propanoate is CH₃CH₂COOCH₂CH₃; propyl ethanoate is CH₃COOCH₂CH₂CH₃.'},
+  {t:'Priority of functional groups',d:'Type “2-hydroxypropanoic acid” (lactic acid).',set:a=>a.preset({name:'2-hydroxypropanoic acid',numbers:true}),q:'Why is the OH a prefix (hydroxy) and not the suffix (-ol)?',a:'The carboxylic acid outranks the alcohol, so the acid gets the suffix (-oic acid) and carbon 1. The OH becomes the prefix hydroxy-, on carbon 2.'},
+  {t:'Quiz yourself',d:'Name randomly drawn molecules. Keep a streak going!',set:a=>a.preset({mode:'quiz'})}]};
 /* which topics each lab appears on */
-const MAP={titration:['3.1.2','3.1.12'],calorimetry:['3.1.4'],boltzmann:['3.1.5','3.1.9'],equilibrium:['3.1.6','3.1.10'],cells:['3.1.11'],iontests:['3.2.3','3.2.6'],shapes:['3.1.3','3.3.4','3.3.7'],spectra:['3.3.6','3.3.15']};
+const MAP={titration:['3.1.2','3.1.12'],calorimetry:['3.1.4'],boltzmann:['3.1.5','3.1.9'],equilibrium:['3.1.6','3.1.10'],cells:['3.1.11'],iontests:['3.2.3','3.2.6'],shapes:['3.1.3','3.3.4','3.3.7'],spectra:['3.3.6','3.3.15'],iupac:['3.3.1','3.3.2','3.3.3','3.3.4','3.3.5','3.3.8','3.3.9']};
 const S=window.SPEC; if(S) Object.entries(MAP).forEach(([lab,ids])=>ids.forEach(id=>{ const t=S.topics.find(x=>x.id===id); if(t){ t.labs=t.labs||[]; if(!t.labs.includes(lab)) t.labs.push(lab); } }));
 /* required practical pages run the matching lab in "Run the experiment" */
 const PAGLAB={'rp1':'titration','rp2':'calorimetry','rp4':'iontests','rp8':'cells','rp9':'titration','rp11':'iontests'};
