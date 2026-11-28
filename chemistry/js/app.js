@@ -52,7 +52,7 @@ const PSW=lab=>`<div class="psw" role="note"><svg viewBox="0 0 24 24" aria-hidde
 const NAV=[['home','Home'],['topics','Topics'],['labs','Labs'],['pags','Practicals'],['bank','Practice questions'],['mock','Practice tests'],['flash','Flashcards'],['quiz','Quiz'],['videos','Videos'],['papers','Past papers'],['sheet','Data sheet'],['progress','Progress']];
 const NAVG=[
  {k:'home',l:'Home'},
- {l:'Learn',items:[['topics','Topics','Notes, equations, key terms and spec checklist'],['labs','Labs','Interactive simulations: titration, cells, equilibrium and more'],['rxmap','Reaction map','Every organic reaction, with reagents and conditions'],['pags','Practicals','The 12 AQA required practicals: method, safety and evaluation'],['videos','Videos','Over 300 videos sorted by topic']]},
+ {l:'Learn',items:[['topics','Topics','Notes, equations, key terms and spec checklist'],['labs','Labs','Interactive simulations: titration, cells, equilibrium and more'],['rxmap','Reaction map','Every organic reaction, with reagents and conditions'],['naming','IUPAC naming','Build a molecule and see its name, then quiz yourself on the rules'],['pags','Practicals','The 12 AQA required practicals: method, safety and evaluation'],['videos','Videos','Over 300 videos sorted by topic']]},
  {l:'Practise',items:[['drills','Calculation drills','Fresh numbers every time, marked with a worked solution'],['spec','Spectroscopy practice','Identify compounds from IR, MS and NMR data'],['bank','Practice questions','Browse exam questions by topic and mark them'],['mock','Practice tests','A timed mixed test with a score at the end'],['quiz','Quiz','Quick multiple-choice checks'],['flash','Flashcards','Learn definitions and equations with spaced repetition']]},
  {k:'papers',l:'Past papers'},{k:'sheet',l:'Data sheet'},{k:'progress',l:'Progress'}];
 /* hide sections that have no content yet (no videos; no question bank until one is built) */
@@ -77,6 +77,7 @@ const NI={
  progress:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
  drills:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h4"/>',
  rxmap:'<circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 6h9M6.5 8.2l4.2 7.6M17.5 8.2l-4.2 7.6"/>',
+ naming:'<path d="M3 6V4h9v2"/><path d="M7.5 4v12"/><path d="M5.5 16h4"/><path d="M14 18l3-5 3 5"/><path d="M17 13V9"/><circle cx="17" cy="7.5" r="1.5"/>',
  spec:'<path d="M3 20h18"/><path d="M4 20V9l2 11 2-15 2 15 2-8 2 8 2-12 2 12 2-6v6"/>'};
 const navIcon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NI[k]||''}</svg>`;
 
@@ -106,14 +107,14 @@ $$('.navmenu a').forEach(x=>x.addEventListener('click',()=>closeMenus()));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const open=document.querySelector('.navg.open'); closeMenus(); if(open) open.querySelector('.navgb').focus(); } });
 drawer.addEventListener('click',e=>{ if(e.target===drawer||e.target.closest('a')) closeDrawer(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!drawer.hidden) closeDrawer(); });
-function markNav(){ const r=(location.hash||'#home').slice(1); const k=r.startsWith('pq-')?'bank':r.startsWith('mockr')?'mock':r.startsWith('t-')?'topics':r.startsWith('lab-')?'labs':r.startsWith('pag-')?'pags':r.startsWith('drill-')?'drills':r.startsWith('q-')?'bank':r; $$('[data-k]').forEach(a=>{ if(a.dataset.k===k) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); $$('.navgb').forEach(b=>b.classList.toggle('cur',b.dataset.keys.split(' ').includes(k))); }
+function markNav(){ const r=(location.hash||'#home').slice(1); const k=r.startsWith('pq-')?'bank':r.startsWith('mockr')?'mock':r.startsWith('t-')?'topics':r==='lab-iupac'?'naming':r.startsWith('lab-')?'labs':r.startsWith('pag-')?'pags':r.startsWith('drill-')?'drills':r.startsWith('q-')?'bank':r; $$('[data-k]').forEach(a=>{ if(a.dataset.k===k) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }); $$('.navgb').forEach(b=>b.classList.toggle('cur',b.dataset.keys.split(' ').includes(k))); }
 
 let cleanup=null;
 const FPUN=['Powered by caffeine (C₈H₁₀N₄O₂).','No electrons were lost in the making of this site. Some were gained.','Built at standard conditions.','Catalysed, not consumed.','100% yield, 100% atom economy.'];
 function route(){ if(cleanup){ try{cleanup();}catch(e){} cleanup=null; } const dsp=document.getElementById('dspanel'); if(dsp) dsp.remove();
   const r=(location.hash||'#home').slice(1)||'home'; const v=$('#view'); v.innerHTML=''; v.style.animation='none'; void v.offsetWidth; v.style.animation='';
   touchDay(); markNav();
-  if(r==='home') viewHome(v); else if(r==='topics') viewTopics(v); else if(r.startsWith('t-')) viewTopic(v,r.slice(2)); else if(r==='labs') viewLabs(v); else if(r.startsWith('lab-')) viewLab(v,r.slice(4));
+  if(r==='home') viewHome(v); else if(r==='topics') viewTopics(v); else if(r.startsWith('t-')) viewTopic(v,r.slice(2)); else if(r==='labs') viewLabs(v); else if(r==='lab-iupac'){ location.replace('#naming'); return; } else if(r==='naming') viewNaming(v); else if(r.startsWith('lab-')) viewLab(v,r.slice(4));
   else if(r==='pags') viewPags(v); else if(r.startsWith('pag-')) viewPag(v,r.slice(4)); else if(r==='flash') viewFlash(v); else if(r==='quiz') viewQuiz(v); else if(r==='exam'){ sessionStorage.setItem('tt-bankf',JSON.stringify({src:'tt'})); location.replace('#bank'); return; } else if(r.startsWith('q-')){ location.replace('#pq-w_'+r.slice(2)); return; }
   else if(r==='bank'&&BK) BK.viewBank(v); else if(r.startsWith('pq-')&&BK) BK.viewBankQ(v,r.slice(3)); else if(r==='mock'&&BK) BK.viewMock(v); else if(r.startsWith('mockrun-')&&BK) cleanup=BK.viewMockRun(v,r.slice(8)); else if(r.startsWith('mockres-')&&BK) BK.viewMockRes(v,r.slice(8)); else if(r==='videos'||r.startsWith('videos_')) viewVideos(v,r.split('_')[1]); else if(r==='papers') viewPapers(v); else if(r==='sheet') viewSheet(v); else if(r==='progress') viewProgress(v); else if(r==='search') viewSearch(v); else if(r==='drills'&&window.CHEMX) CHEMX.drills(v); else if(r.startsWith('drill-')&&window.CHEMX) CHEMX.drill(v,r.slice(6)); else if(r==='rxmap'&&window.CHEMX) CHEMX.rxmap(v); else if(r==='spec'&&window.CHEMX) CHEMX.spec(v); else viewHome(v);
   if(BK&&!r.startsWith('mockrun-')) BK.resumeBar(v); const fp=document.getElementById('fpun'); if(fp) fp.textContent=pick(FPUN);
@@ -126,7 +127,8 @@ const topicConf=id=>S.conf[id]||'';
 const practiceOf=id=>(BK&&BK.score)?BK.score(id):{got:0,max:0,n:0};
 const topicPct=t=>{ let n=0,d=0; d++; if(S.revised[t.id]) n++; const fc=CARDS.filter(c=>c.topic===t.id); d++; n+=fc.length?fc.filter(c=>(S.flash[c.id]||{}).box>=3).length/fc.length:0; const ps=practiceOf(t.id); d++; n+=ps.max?(ps.got/ps.max)*Math.min(1,ps.n/8):0; d++; n+=S.conf[t.id]==='g'?1:S.conf[t.id]==='a'?0.5:0; return Math.round(n/d*100); };
 const overall=()=>Math.round(T.reduce((a,t)=>a+topicPct(t),0)/T.length);
-const labCard=id=>{ const L=LABS[id]; return `<a class="labcard" href="#lab-${id}"><div class="thumb"><svg viewBox="0 0 120 120" aria-hidden="true">${L.icon||''}</svg></div><div class="txt"><span class="eyebrow">${esc(L.cat)} · ${esc(L.topic)}</span><h4>${esc(L.title)}</h4><p>${esc(L.desc)}</p></div></a>`; };
+const OWNPAGE={iupac:'naming'}; const labHref=id=>'#'+(OWNPAGE[id]||'lab-'+id);
+const labCard=id=>{ const L=LABS[id]; return `<a class="labcard" href="${labHref(id)}"><div class="thumb"><svg viewBox="0 0 120 120" aria-hidden="true">${L.icon||''}</svg></div><div class="txt"><span class="eyebrow">${esc(L.cat)} · ${esc(L.topic)}</span><h4>${esc(L.title)}</h4><p>${esc(L.desc)}</p></div></a>`; };
 const pagCard=p=>`<a class="tcard" href="#pag-${p.id}"><span class="id">Required practical ${p.pag}${p.pag<=6?' · AS':''}</span><h4>${esc(p.title)}</h4><p>${esc(p.aim)}</p><div class="meta"><span>Topic ${p.topic}</span></div></a>`;
 const dueCards=list=>list.filter(c=>{ const f=S.flash[c.id]; return !f||f.due<=Date.now(); });
 
@@ -203,7 +205,7 @@ function weaveLabs(art,t){ if(!art) return null; weaveVids(art);
   const secs=hs.map((h,i)=>{ const els=[h]; let n=h.nextElementSibling; while(n&&n.tagName!=='H2'){ els.push(n); n=n.nextElementSibling; } const head=new Set(words(h.textContent).filter(w=>!STOPW.has(w))); const body=new Set(els.flatMap(e=>words(e.textContent)).filter(w=>!STOPW.has(w))); return {h,last:els[els.length-1],head,body,n:0}; });
   const place={};
   items.forEach(it=>{ const ws=words(it.title+' '+it.desc).filter(w=>!STOPW.has(w)); let best=-1,bs=0; secs.forEach((s,i)=>{ let sc=0; ws.forEach(w=>{ const stem=w.slice(0,5); if([...s.head].some(x=>x.startsWith(stem))) sc+=3; else if([...s.body].some(x=>x.startsWith(stem))) sc+=1; }); sc-=s.n*0.5; if(sc>bs){ bs=sc; best=i; } }); if(bs<2) best=-1; if(best>=0) secs[best].n++; (place[best]=place[best]||[]).push(it); });
-  const card=it=>`<aside class="labweave" data-kind="${it.kind}" data-id="${esc(it.id)}"><div class="lw-head"><span class="lw-ic" aria-hidden="true">${it.kind==='lab'?navIcon('labs'):navIcon('pags')}</span><div><span class="eyebrow">${it.kind==='lab'?'Try it in the lab':'Required practical'}</span><b>${esc(it.title)}</b><p>${esc(it.desc)}</p></div></div><div class="row lw-btns">${it.kind==='lab'?`<button type="button" class="btn btn-sm primary" data-run>Run it here</button>`:''}<a class="btn btn-sm" href="#${it.kind==='lab'?'lab':'pag'}-${esc(it.id)}">Open ${it.kind==='lab'?'full lab':'practical'} →</a></div><div class="lw-slot"></div></aside>`;
+  const card=it=>`<aside class="labweave" data-kind="${it.kind}" data-id="${esc(it.id)}"><div class="lw-head"><span class="lw-ic" aria-hidden="true">${it.kind==='lab'?navIcon('labs'):navIcon('pags')}</span><div><span class="eyebrow">${it.kind==='lab'?'Try it in the lab':'Required practical'}</span><b>${esc(it.title)}</b><p>${esc(it.desc)}</p></div></div><div class="row lw-btns">${it.kind==='lab'?`<button type="button" class="btn btn-sm primary" data-run>Run it here</button>`:''}<a class="btn btn-sm" href="${it.kind==='lab'?labHref(it.id):'#pag-'+esc(it.id)}">Open ${it.kind==='lab'?(OWNPAGE[it.id]?'full page':'full lab'):'practical'} →</a></div><div class="lw-slot"></div></aside>`;
   Object.entries(place).forEach(([i,list])=>{ const html=list.map(card).join(''); if(+i>=0) secs[+i].last.insertAdjacentHTML('afterend',html); else art.insertAdjacentHTML('beforeend',`<h2>Labs and practicals for this topic</h2>${html}`); });
   let stop=null, open=null;
   const close=()=>{ if(stop){ try{ stop(); }catch(e){} stop=null; } if(open){ open.querySelector('.lw-slot').innerHTML=''; const b=open.querySelector('[data-run]'); if(b) b.textContent='Run it here'; open.classList.remove('on'); open=null; } };
@@ -219,7 +221,7 @@ function viewTopic(v,id){
    <div class="card specbox"><span class="eyebrow">Specification checklist</span><ol>${t.spec.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>
    <div class="card"><span class="eyebrow">How confident are you?</span><div class="conf">${[['r','Not yet'],['a','Getting there'],['g','Confident']].map(([k,l])=>`<button class="${k}" data-c="${k}" aria-pressed="${S.conf[t.id]===k}">${l}</button>`).join('')}</div>
    <label class="toggle" style="margin-top:12px" for="rev"><input type="checkbox" id="rev" ${S.revised[t.id]?'checked':''}> Notes revised</label></div>
-   ${t.labs.length?`<div class="card"><span class="eyebrow">Try it in the lab</span><div class="stack" style="gap:6px;margin-top:6px">${t.labs.map(l=>`<a href="#lab-${l}">${esc(LABS[l].title)}</a>`).join('')}${t.pags.map(p=>{ const q=PG.list.find(x=>x.id===p); return `<a href="#pag-${p}">RP ${q.pag}: ${esc(q.title)}</a>`; }).join('')}</div></div>`:''}
+   ${t.labs.length?`<div class="card"><span class="eyebrow">Try it in the lab</span><div class="stack" style="gap:6px;margin-top:6px">${t.labs.map(l=>`<a href="${labHref(l)}">${esc(LABS[l].title)}</a>`).join('')}${t.pags.map(p=>{ const q=PG.list.find(x=>x.id===p); return `<a href="#pag-${p}">RP ${q.pag}: ${esc(q.title)}</a>`; }).join('')}</div></div>`:''}
   </aside></div>
   <nav class="nexttopic" aria-label="Topic navigation">${prev?`<a class="prevt" href="#t-${prev.id}">← ${prev.id} ${esc(prev.title)}</a>`:'<span></span>'}${next?`<a class="big" href="#t-${next.id}"><small>Next topic</small>${next.id} ${esc(next.title)} →</a>`:`<a class="big" href="#topics"><small>That’s the whole course!</small>All topics →</a>`}</nav>`;
   $$('.conf button',v).forEach(b=>b.onclick=()=>{ S.conf[t.id]=b.dataset.c; save(); $$('.conf button',v).forEach(x=>x.setAttribute('aria-pressed',x===b)); });
@@ -324,14 +326,17 @@ function viewQuestion(v,key){
 
 /* ---------- LABS ---------- */
 const LABCATS=['Practical skills','Atoms & bonding','Energetics','Organic','Rates & equilibrium','Acids & bases','Electrochemistry','Transition elements','Analysis'];
-function viewLabs(v){ const ids=Object.keys(LABS); const cats=LABCATS.filter(c=>ids.some(id=>LABS[id].cat===c));
+function viewLabs(v){ const ids=Object.keys(LABS).filter(id=>!OWNPAGE[id]); const cats=LABCATS.filter(c=>ids.some(id=>LABS[id].cat===c));
   v.innerHTML=`<span class="eyebrow">Interactive simulations</span><h1>Labs</h1><p class="muted" style="max-width:76ch">${ids.length} interactive labs: run a titration and plot the pH curve, measure ΔH, watch collisions and the Boltzmann distribution, disturb equilibria, build cells, test for ions, spin molecules in 3D and explore spectra. The required practical pages under <a href="#pags">Practicals</a> use the same labs.</p>
   ${LABS.shapes?`<a class="featlab fl-mol" href="#lab-shapes"><div><span class="eyebrow">Featured lab</span><h2>${esc(LABS.shapes.title)}</h2><p>${esc(LABS.shapes.desc)}</p><span class="btn primary btn-sm">Explore lab →</span></div><canvas aria-hidden="true"></canvas></a>`:''}<div class="subtabs" role="group" aria-label="Filter labs"><button aria-pressed="true" data-c="">All</button>${cats.map(c=>`<button aria-pressed="false" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="grid g3" id="lg"></div>`;
   const draw=c=>{ $('#lg').innerHTML=ids.filter(id=>!c||LABS[id].cat===c).map(labCard).join(''); $$('.subtabs button',v).forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===c)); };
   $$('.subtabs button',v).forEach(b=>b.onclick=()=>draw(b.dataset.c)); draw('');
   const fc=v.querySelector('.fl-mol canvas'); if(fc&&LABS.shapes.preview) try{ LABS.shapes.preview(fc,{bare:true}); }catch(e){} }
+function viewNaming(v){ const L=LABS.iupac; if(!L){ v.innerHTML='<div class="empty">IUPAC naming did not load. Try refreshing the page.</div>'; return; }
+  v.innerHTML=`<div class="tp-head"><div><span class="eyebrow">Learn / Organic</span><h1>IUPAC naming</h1><p class="muted" style="margin:6px 0 0;max-width:72ch">${esc(L.desc)}</p></div><div class="row">${byId[L.topic]?topicLink(L.topic):''}</div></div><div class="lab" id="labroot"></div>`;
+  L.id='iupac'; cleanup=LK.frame($('#labroot'),L,(window.LABGUIDES||{}).iupac); }
 function viewLab(v,id){ const L=LABS[id]; if(!L){ v.innerHTML='<div class="empty">Lab not found. <a href="#labs">All labs</a></div>'; return; }
-  const t=byId[L.topic]; const rel=Object.keys(LABS).filter(k=>k!==id&&LABS[k].topic===L.topic);
+  const t=byId[L.topic]; const rel=Object.keys(LABS).filter(k=>k!==id&&!OWNPAGE[k]&&LABS[k].topic===L.topic);
   v.innerHTML=`<div class="tp-head"><div><span class="eyebrow"><a href="#labs">Labs</a> / ${esc(L.cat)}</span><h1>${esc(L.title)}</h1><p class="muted" style="margin:6px 0 0;max-width:72ch">${esc(L.desc)}</p></div><div class="row">${t?topicLink(L.topic):''}</div></div>${PSWSET.has(id)?PSW(1):''}<div class="lab" id="labroot"></div>${rel.length?`<h3 style="margin:24px 0 10px">More labs for ${esc(L.topic)}</h3><div class="grid g3">${rel.map(labCard).join('')}</div>`:''}`;
   L.id=id; cleanup=LK.frame($('#labroot'),L,(window.LABGUIDES||{})[id]); }
 
@@ -462,7 +467,7 @@ function viewProgress(v){
 
 /* ---------- SEARCH ---------- */
 const IDX=[]; T.forEach(t=>{ IDX.push({k:'Topic',t:t.id+' '+t.title,s:t.short+' '+strip(t.notes),h:'#t-'+t.id}); t.terms.forEach(([a,b])=>IDX.push({k:'Definition',t:a,s:b,h:'#t-'+t.id})); t.eqs.forEach(([e,d])=>IDX.push({k:'Equation',t:strip(e),s:d+' ('+t.id+')',h:'#t-'+t.id})); t.exam.forEach(q=>IDX.push({k:'Exam question',t:q.id+' '+q.style,s:q.stem+' '+q.parts.map(p=>p.q).join(' '),h:'#q-'+qKey(q.id)})); });
-Object.entries(LABS).forEach(([id,L])=>IDX.push({k:'Lab',t:L.title,s:L.desc,h:'#lab-'+id})); if(window.BANK) window.BANK.q.forEach(q=>IDX.push({k:'Exam question',t:window.BANK.packs[q.p].title+' · Q'+(q.l||q.n),s:q.t.join(' '),h:'#pq-'+q.id})); (window.MEDIA||{videos:[]}).videos.forEach(x=>IDX.push({k:'Video',t:x.title,s:(x.sec||'')+' '+(x.kind||''),h:'#videos_'+x.g})); PG.list.forEach(p=>IDX.push({k:'Practical',t:'Required practical '+p.pag+': '+p.title,s:p.aim+' '+p.method.join(' '),h:'#pag-'+p.id}));
+Object.entries(LABS).forEach(([id,L])=>IDX.push({k:OWNPAGE[id]?'Learn':'Lab',t:L.title,s:L.desc,h:labHref(id)})); if(window.BANK) window.BANK.q.forEach(q=>IDX.push({k:'Exam question',t:window.BANK.packs[q.p].title+' · Q'+(q.l||q.n),s:q.t.join(' '),h:'#pq-'+q.id})); (window.MEDIA||{videos:[]}).videos.forEach(x=>IDX.push({k:'Video',t:x.title,s:(x.sec||'')+' '+(x.kind||''),h:'#videos_'+x.g})); PG.list.forEach(p=>IDX.push({k:'Practical',t:'Required practical '+p.pag+': '+p.title,s:p.aim+' '+p.method.join(' '),h:'#pag-'+p.id}));
 function viewSearch(v){
   v.innerHTML=`<span class="eyebrow">Search everything</span><h1>Search</h1><div class="searchbox" style="margin:12px 0 16px">${I.search}<input type="search" id="sq" placeholder="Try ‘terminal velocity’, ‘work function’ or ‘Kirchhoff’" aria-label="Search"></div><div id="sr"></div>`;
   const inp=$('#sq'); inp.focus();
