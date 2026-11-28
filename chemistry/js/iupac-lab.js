@@ -261,6 +261,7 @@ const CSS=`.iu{display:flex;flex-direction:column;gap:12px}
 .iu-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .iu-in{flex:1;min-width:200px;font-size:1.05rem;padding:10px 13px!important;border-radius:12px!important;font-family:var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .iu-in:focus{outline:2px solid var(--brand);outline-offset:1px}
+.iu-credit{font-size:.72rem;color:var(--muted);opacity:.8;margin:4px 2px 0;text-align:right}
 .iu-nmbox{text-align:center;padding:4px 0 2px}
 .iu-nm{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;font-size:clamp(1.35rem,3.4vw,2.15rem);font-weight:700;line-height:1.35;font-family:var(--f-body);word-break:break-word}
 .iu-part{font:inherit;color:inherit;background:none;border:0;border-bottom:3px solid currentColor;padding:0 1px;margin:0;border-radius:4px 4px 0 0;cursor:pointer;line-height:1.2}
@@ -614,6 +615,7 @@ mount(el){ addCSS(); const S=LK.scope(); const pop=makePop(S);
     <section class="iu-explore" style="display:flex;flex-direction:column;gap:12px">
       <div class="iu-card"><div class="iu-nmbox" aria-live="polite"></div><div class="iu-legend" aria-hidden="true"><span class="k-pre">prefixes</span><span class="k-stem">stem</span><span class="k-uns">bonds</span><span class="k-suf">suffix</span></div><div class="iu-hint">Hover over (or tap) part of the name to see it in the molecule; click it to change it.</div></div>
       <div class="iu-row"><input type="text" class="iu-in" id="iuIn" aria-label="Type an IUPAC name or a structural formula to build it" placeholder="…or type a name or a formula, e.g. 2-methylbutan-2-ol or CH3CH(OH)CH3" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="iu-credit">Typing a formula: suggested by Arnav :)</div>
       <details class="iu-ex"><summary>Examples</summary><div class="iu-exg">${EXAMPLES.map(([h,l])=>`<section><h6>${esc(h)}</h6><div>${l.map(n=>`<button type="button" data-ex="${esc(n)}">${esc(n)}</button>`).join('')}</div></section>`).join('')}</div></details>
       <div class="iu-msg" role="status" aria-live="polite"></div>
       <div class="iu-grid"><div class="iu-card iu-edhost"></div>
