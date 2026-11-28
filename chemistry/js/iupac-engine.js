@@ -792,7 +792,7 @@ function extra(P){ if(P.esterWords&&P.esterWords.length>1) return; if(P.kind!=='
 function random(opts){
   opts=opts||{}; const fam=(opts.families&&opts.families.length?opts.families:Object.keys(FAMILIES)); const L=opts.level==null?1:opts.level; const Lc=Math.min(2,L); const avoid=opts.avoid||[];
   for(let t=0;t<500;t++){
-    const f=pick(fam); let P; try{ P=FAMILIES[f].make(Lc); P.amb=[]; if(L===3&&Math.random()<.7) extra(P); if(P.ez&&P.ez.length){ P.notes=[]; } const B=build(P); if(B.amb.length) continue; if(odd(B.mol)) continue; const nm=nameOf(B.mol); if(nm.name.length>[22,32,44,58][L]) continue; if(L===3&&nm.name.length<14&&Math.random()<.8) continue; if(avoid.includes(nm.name)) continue; if((nm.a.spec.ez||[]).some(z=>!z.d)) continue; return {mol:B.mol,name:nm.name,full:nm.full,an:nm.a,family:f}; }catch(e){ if(!e.iu) throw e; }
+    const f=pick(fam); let P; try{ P=FAMILIES[f].make(Lc); P.amb=[]; if(L===3&&Math.random()<.7) extra(P); if(P.ez&&P.ez.length){ P.notes=[]; } const B=build(P); if(B.amb.length) continue; if(odd(B.mol)) continue; const nm=nameOf(B.mol); if(nm.name.length>[22,32,44,58][L]) continue; if(L===3&&nm.name.length<14&&Math.random()<.8) continue; if(avoid.includes(nm.name)) continue; if(nm.a.spec.n>6&&!opts.long) continue; if((nm.a.spec.ez||[]).some(z=>!z.d)) continue; return {mol:B.mol,name:nm.name,full:nm.full,an:nm.a,family:f}; }catch(e){ if(!e.iu) throw e; }
   }
   const B=build({kind:'chain',n:4,unsat:[],suffix:null,prefixes:[],amb:[]}); const nm=nameOf(B.mol); return {mol:B.mol,name:nm.name,full:nm.full,an:nm.a,family:'alkane'};
 }
