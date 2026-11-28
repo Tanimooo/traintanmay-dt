@@ -798,7 +798,87 @@ function random(opts){
 }
 const fromName=s=>{ const P=parseName(s); return build(P).mol; };
 
-root.IUPAC={parse:parseName,build,check,nameOf,analyse,canon,formula,classify,random,whyNot,nameParts,stringify,fromName,FAMILIES,adj,hcount,findRings,isArom,stereoBonds,cipKey,cmpCip,subMol,removeAtoms,clone,norm,
+/* ---------------- reading a structural formula: CH3CH(OH)CH3, (CH3)2CHCOOH, CH3COOCH2CH3, C6H5CH3 … ---------------- */
+const subDig=s=>String(s).replace(/[₀-₉]/g,c=>String('₀₁₂₃₄₅₆₇₈₉'.indexOf(c)));
+function looksLikeFormula(s){ s=subDig(String(s||'').trim()); if(!s||!/[CH]/.test(s)) return false;
+  if(!/^[A-Za-z0-9()=≡#+\-–⁺⁻\s{}·]+$/.test(s)) return false;
+  return !/[a-z]{2,}/.test(s.replace(/Cl|Br|Na|Li/g,'')); }
+const FSPEC=['C6H5','COOH','COO','CONH2','CONH','COCl','CHO','OHC','CN','CO','NO2','NH3','NH2','NH','H2N','HO','OH'];
+function tokFormula(s){
+  const T=[]; let i=0;
+  while(i<s.length){ const c=s[i], t=s.slice(i); let mm;
+    if(/[\s\-–·]/.test(c)){ i++; continue; }
+    if(c==='='){ T.push({t:'bond',o:2}); i++; continue; }
+    if(c==='≡'||c==='#'){ T.push({t:'bond',o:3}); i++; continue; }
+    if(c==='{'){ const q=s.indexOf('}',i); T.push({t:'ion',v:s.slice(i+1,q)}); i=q+1; continue; }
+    if(c==='('){ let d=0,q=i; for(;q<s.length;q++){ if(s[q]==='(') d++; else if(s[q]===')'){ d--; if(!d) break; } } if(q>=s.length) throw E('A bracket in the formula is not closed.');
+      const inner=s.slice(i+1,q); i=q+1; mm=s.slice(i).match(/^\d+/); let n=1; if(mm){ n=+mm[0]; i+=mm[0].length; } if(!inner) throw E('Empty brackets in the formula.'); T.push({t:'paren',inner,n}); continue; }
+    if(c===')') throw E('There is a “)” without a matching “(”.');
+    const atStart=!T.length||T[T.length-1].t==='bond';
+    const sp=FSPEC.find(x=>t.startsWith(x)&&(atStart||!['HO','H2N','OHC'].includes(x)));
+    if(sp&&!(sp==='CO'&&/^CO\d/.test(t))&&!(sp==='CN'&&/^CNH/.test(t))&&!(sp==='HO'&&/^HOOC/.test(t))&&!(sp==='CHO'&&/^CHOH/.test(t))){ T.push({t:'sp',v:sp}); i+=sp.length; continue; }
+    if(atStart&&(mm=t.match(/^HOOC/))){ T.push({t:'sp',v:'HOOC'}); i+=4; continue; }
+    if((mm=t.match(/^(Cl|Br|C|N|O|F|I|H)(\d*)/))){ T.push({t:'el',v:mm[1],n:mm[2]?+mm[2]:1}); i+=mm[0].length; continue; }
+    throw E(`I can't read “${t.slice(0,6)}” in that formula. Use groups like CH3, CH2, OH, COOH, CHO, NH2, Cl, C6H5 and brackets for branches.`);
+  }
+  return T;
+}
+function fromFormula(input){
+  let s=subDig(String(input).trim());
+  s=s.replace(/COO[-⁻]?\s*(Na|K|Li)[+⁺]?/g,'COO{$1}').replace(/(N(?:H\d?)?)[+⁺]?\s*(Cl|Br|I)[-⁻]?(?![a-z])/g,(w,n,x)=>/\+|⁺/.test(w)||/^NH3$/.test(n)||/^N$/.test(n)?n+'{'+x+'}':w).replace(/[+⁺⁻]/g,'');
+  const m=mk(), stated=new Map(), label=new Map(); let nC=0;
+  const ord=['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
+  const newAtom=(el)=>{ const j=addA(m,el); if(el==='C'){ label.set(j,`the ${ord[nC]||(nC+1)+'th'} carbon`); nC++; } else label.set(j,`the ${el==='O'?'oxygen':el==='N'?'nitrogen':el}`); return j; };
+  function run(T,attach){
+    let prev=attach, pend=1, last=null, pendB=[], leadH=0;
+    const back=(el,h)=>{ const j=newAtom(el); if(prev!=null) addB(m,prev,j,pend); else if(pend>1) throw E('A double or triple bond needs an atom on each side.'); pend=1; if(h!=null) stated.set(j,h+(prev==null&&attach==null?leadH:0)); leadH=0; pendB.splice(0).forEach(f=>f(j)); prev=j; last=j; return j; };
+    const term=(fn)=>{ if(prev==null){ pendB.push(fn); } else fn(prev); };
+    const leaf=(at,el,o)=>{ const j=newAtom(el); addB(m,at,j,o||1); return j; };
+    for(let k=0;k<T.length;k++){ const tk=T[k];
+      if(tk.t==='bond'){ if(prev==null) throw E('A formula can’t start with a bond.'); pend=tk.o; continue; }
+      if(tk.t==='ion'){ if(last==null) throw E('Put the ion after the group it belongs to, e.g. CH3COO⁻Na⁺.'); const a=m.atoms[last]; if(a.el==='O'){ a.ch=-1; a.ion=tk.v; } else if(a.el==='N'){ a.ch=1; a.ion=tk.v; } continue; }
+      if(tk.t==='paren'){ const sub=tokFormula(tk.inner); const isCH2=tk.inner==='CH2';
+        if(isCH2){ for(let r=0;r<tk.n;r++) back('C',2); continue; }
+        for(let r=0;r<tk.n;r++){ if(prev==null) pendB.push(at=>run(sub,at)); else run(sub,prev); } continue; }
+      if(tk.t==='el'){ const {v,n}=tk;
+        if(v==='H'){ if(last==null) leadH+=n; else stated.set(last,(stated.get(last)||0)+n); continue; }
+        if(v==='C'&&n>1){ let H=null; if(T[k+1]&&T[k+1].t==='el'&&T[k+1].v==='H'){ H=T[k+1].n; k++; } for(let r=0;r<n;r++) back('C',null); continue; }
+        if(v==='C'||v==='N'||v==='O'){ if(n>1) throw E(`“${v}${n}” isn’t a group I can place. Write each atom with its H, e.g. CH3CH2…`); back(v,0); continue; }
+        for(let r=0;r<n;r++) term(at=>{ last=leaf(at,v); }); continue; }
+      switch(tk.v){
+        case 'C6H5': { const ids=[]; for(let r=0;r<6;r++) ids.push(newAtom('C')); for(let r=0;r<6;r++) addB(m,ids[r],ids[(r+1)%6],r%2?1:2,true); if(prev!=null) addB(m,prev,ids[0],1); pendB.splice(0).forEach(f=>f(ids[0])); pend=1; prev=ids[0]; last=ids[0]; break; }
+        case 'COOH': { const c=back('C',null); leaf(c,'O',2); last=leaf(c,'O'); stated.set(last,1); prev=c; break; }
+        case 'HOOC': { const c=back('C',null); leaf(c,'O',2); leaf(c,'O'); break; }
+        case 'COO': { const c=back('C',null); leaf(c,'O',2); const o=leaf(c,'O'); stated.set(o,0); prev=o; last=o; break; }
+        case 'CONH2': { const c=back('C',null); leaf(c,'O',2); last=leaf(c,'N'); stated.set(last,2); prev=c; break; }
+        case 'CONH': { const c=back('C',null); leaf(c,'O',2); const n=leaf(c,'N'); stated.set(n,1); prev=n; last=n; break; }
+        case 'COCl': { const c=back('C',null); leaf(c,'O',2); leaf(c,'Cl'); stated.set(c,0); break; }
+        case 'CHO': { const c=back('C',1); leaf(c,'O',2); break; }
+        case 'OHC': { const c=back('C',1); leaf(c,'O',2); break; }
+        case 'CN': { const c=back('C',0); leaf(c,'N',3); break; }
+        case 'CO': { const c=back('C',0); leaf(c,'O',2); break; }
+        case 'NO2': term(at=>{ last=leaf(at,'NO2'); }); break;
+        case 'OH': if(prev==null) back('O',1); else { last=leaf(prev,'O'); stated.set(last,1); } break;
+        case 'HO': back('O',1); break;
+        case 'NH2': if(prev==null) back('N',2); else { last=leaf(prev,'N'); stated.set(last,2); } break;
+        case 'H2N': back('N',2); break;
+        case 'NH': back('N',1); break;
+        case 'NH3': if(prev==null) back('N',3); else { last=leaf(prev,'N'); stated.set(last,3); } break;
+      }
+    }
+    if(pendB.length) throw E('There’s a group at the start with nothing after it to attach to.');
+    if(pend>1) throw E('A double or triple bond at the end has nothing on the other side.');
+  }
+  run(tokFormula(s),null);
+  if(!m.atoms.length) throw E('Type a formula, e.g. CH3CH2OH.');
+  const A=adj(m);
+  for(let i=0;i<m.atoms.length;i++){ const h=hcount(m,A,i), st=stated.get(i), L=label.get(i);
+    if(h<0) throw E(`${L[0].toUpperCase()+L.slice(1)} would have too many bonds. Check the formula.`);
+    if(st!=null&&st!==h&&m.atoms[i].el!=='NO2') throw E(`${L[0].toUpperCase()+L.slice(1)} is written with ${st} H, but with its bonds it needs ${h}. Each C makes 4 bonds, N 3 and O 2.`); }
+  return m;
+}
+
+root.IUPAC={parse:parseName,build,check,nameOf,analyse,canon,formula,classify,random,whyNot,nameParts,stringify,fromName,fromFormula,looksLikeFormula,FAMILIES,adj,hcount,findRings,isArom,stereoBonds,cipKey,cmpCip,subMol,removeAtoms,clone,norm,
   STEM,MULT,GROUPWORD,SUFW,TERM,PRI,METALN,HALIDEN,HALON,SERIES,valOf};
 if(typeof module!=='undefined'&&module.exports) module.exports=root.IUPAC;
 })(typeof window!=='undefined'?window:globalThis);

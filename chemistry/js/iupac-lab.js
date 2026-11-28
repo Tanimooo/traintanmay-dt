@@ -613,7 +613,7 @@ mount(el){ addCSS(); const S=LK.scope(); const pop=makePop(S);
     <div class="subtabs" role="group" aria-label="Mode"><button type="button" data-m="explore" aria-pressed="true">Explorer</button><button type="button" data-m="quiz" aria-pressed="false">Quiz</button><button type="button" data-m="cheat" aria-pressed="false">Cheat sheet</button></div>
     <section class="iu-explore" style="display:flex;flex-direction:column;gap:12px">
       <div class="iu-card"><div class="iu-nmbox" aria-live="polite"></div><div class="iu-legend" aria-hidden="true"><span class="k-pre">prefixes</span><span class="k-stem">stem</span><span class="k-uns">bonds</span><span class="k-suf">suffix</span></div><div class="iu-hint">Hover over (or tap) part of the name to see it in the molecule; click it to change it.</div></div>
-      <div class="iu-row"><input type="text" class="iu-in" id="iuIn" aria-label="Type an IUPAC name to build it" placeholder="…or type a name to build it, e.g. 2-methylbutan-2-ol" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="iu-row"><input type="text" class="iu-in" id="iuIn" aria-label="Type an IUPAC name or a structural formula to build it" placeholder="…or type a name or a formula, e.g. 2-methylbutan-2-ol or CH3CH(OH)CH3" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       <details class="iu-ex"><summary>Examples</summary><div class="iu-exg">${EXAMPLES.map(([h,l])=>`<section><h6>${esc(h)}</h6><div>${l.map(n=>`<button type="button" data-ex="${esc(n)}">${esc(n)}</button>`).join('')}</div></section>`).join('')}</div></details>
       <div class="iu-msg" role="status" aria-live="polite"></div>
       <div class="iu-grid"><div class="iu-card iu-edhost"></div>
@@ -720,6 +720,11 @@ mount(el){ addCSS(); const S=LK.scope(); const pop=makePop(S);
   /* typing a name builds it */
   let tmr=0;
   function renderTyped(){ const v=inp.value.trim(); if(!v){ setMsg(msg,'',''); return; }
+    if(I.looksLikeFormula(v)){ let fm;
+      try{ fm=I.fromFormula(v); }catch(e){ if(!e.iu) console.error(e); setMsg(msg,'warn',`<b>Can’t read that formula yet.</b> ${esc(e.iu?e.message:'Something went wrong reading it.')}`); return; }
+      ed.set(fm,{src:'type'}); const c=ed.cur; let ez=false; try{ ez=c.an&&c.an.stereo.length>0; }catch(e){}
+      if(c.err){ setMsg(msg,'warn',`Built from your formula, but: ${esc(c.err)}`); return; }
+      setMsg(msg,'good',`<div>That formula is <span class="nm">${esc(c.name)}</span></div><div class="mu">Read as a structural formula: groups in brackets are branches on the atom before them, e.g. CH3CH(OH)CH3.${ez?' This C=C has E/Z isomers and a formula doesn’t say which, so it’s drawn as E: click the C=C to swap.':''}</div>`); return; }
     let r; try{ r=I.check(v); }catch(e){ if(!e.iu) console.error(e); setMsg(msg,'warn',`<b>Can’t build that yet.</b> ${esc(e.iu?e.message:'Something went wrong reading that name.')}`); return; }
     ed.set(r.mol,{src:'type'});
     const notes=r.notes&&r.notes.length?`<div class="mu" style="margin-top:6px">${r.notes.map(esc).join(' ')}${r.ezMissing?' The drawing shows E: click the C=C to swap.':''}</div>`:'';
