@@ -681,7 +681,7 @@ function check(input){
   const B=build(P);
   let an; try{ an=analyse(B.mol,B.order.length?{order:B.order,ring:B.ring}:null); }catch(e){ if(!e.iu) throw e; return {ok:false,mol:B.mol,order:B.order,notes:P.notes,amb:B.amb,unnamed:e.message,valid:false,parsed:P}; }
   const name=stringify(an.spec,false), full=stringify(an.spec,true);
-  const issues=B.amb.slice(); if(P.spaced) issues.push('Apart from esters, salts, acids, acyl chlorides and anhydrides, IUPAC names are one word: no spaces.'); let reason=null;
+  const issues=B.amb.slice(); if(P.spaced) issues.push('Prefixes, the stem and the suffix join up with no spaces. A space only goes before a separate word, such as “acid” in ethanoic acid or “ethanoate” in ethyl ethanoate.'); let reason=null;
   const flat=s=>norm(s).replace(/\s/g,'');
   if(an.spec.kind==='ammonium'||an.spec.kind==='anhydride'){ if(!issues.length&&![name,full].some(x=>flat(x)===flat(input))) reason=an.spec.kind==='ammonium'?`Name the groups on the N in alphabetical order, combining repeats with di-, tri-, tetra-: ${name}.`:`Name the acid(s) in alphabetical order, then “anhydride”: ${name}.`; }
   else if(!an.forced) reason='That numbering doesn’t work for this molecule.';
@@ -742,7 +742,7 @@ function whyNot(m){
   // punctuation
   if(/\d-[a-z]/.test(right)) add(right.replace(/(\d)-([a-z])/,'$1$2'),'Put a hyphen between a number and a letter.','format');
   if(/\d,\d/.test(right)) add(right.replace(/(\d),(\d)/,'$1-$2'),'Use commas between numbers (and hyphens between numbers and letters).','format');
-  if(sp.prefixes.length&&sp.ester==null){ const parts=nameParts(sp,false); const k=parts.findIndex(p=>p.k==='stem'); if(k>0) add(fixN(parts.slice(0,k).map(p=>p.t).join('')+' '+parts.slice(k).map(p=>p.t).join('')),'Apart from esters, salts, acids, acyl chlorides and anhydrides, an IUPAC name is one word: no spaces.','format'); }
+  if(sp.prefixes.length&&sp.ester==null){ const parts=nameParts(sp,false); const k=parts.findIndex(p=>p.k==='stem'); if(k>0) add(fixN(parts.slice(0,k).map(p=>p.t).join('')+' '+parts.slice(k).map(p=>p.t).join('')),`A prefix joins straight onto the parent name, with no space: ${right}. Spaces only ever separate whole words, such as “acid” in ethanoic acid.`,'format'); }
   // E/Z flipped
   const ezs=(sp.ez||[]).filter(z=>z.d);
   if(ezs.length){ const sp2=Object.assign({},sp,{ez:sp.ez.map(z=>z.d?Object.assign({},z,{d:z.d==='E'?'Z':'E'}):z)}); const d=ezs[0].d;
